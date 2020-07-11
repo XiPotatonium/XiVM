@@ -1,54 +1,60 @@
-﻿using XiLang.Exceptions;
+﻿using System.Runtime.InteropServices;
+using XiLang.Exceptions;
 using XiLang.Lexical;
 
 namespace XiLang.AbstractSyntaxTree
 {
     public class TypeExpr : Expr
     {
+        /// <summary>
+        /// 注意void不是Type
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static TypeExpr FromToken(Token t)
         {
             TypeExpr ret = new TypeExpr();
             switch (t.Type)
             {
                 case TokenType.BOOL:
-                    ret.Type = BasicVarType.BOOL;
+                    ret.Type = SyntacticValueType.BOOL;
                     break;
-                case TokenType.I32:
-                    ret.Type = BasicVarType.I32;
+                case TokenType.INT:
+                    ret.Type = SyntacticValueType.INT;
                     break;
-                case TokenType.F32:
-                    ret.Type = BasicVarType.F32;
+                case TokenType.FLOAT:
+                    ret.Type = SyntacticValueType.FLOAT;
                     break;
                 case TokenType.VOID:
-                    ret.Type = BasicVarType.VOID;
+                    ret.Type = SyntacticValueType.VOID;
                     break;
                 case TokenType.STRING:
-                    ret.Type = BasicVarType.STRING;
+                    ret.Type = SyntacticValueType.STRING;
                     break;
                 case TokenType.ID:
-                    ret.Type = BasicVarType.USER_DEF;
-                    ret.UserDefTypeName = t.Literal;
+                    ret.Type = SyntacticValueType.CLASS;
+                    ret.ClassName = t.Literal;
                     break;
                 default:
-                    throw new SyntaxException("Unknown var type", t);
+                    throw new SyntaxException("Unknown type", t);
             }
             return ret;
         }
 
-        public BasicVarType Type { private set; get; }
+        public SyntacticValueType Type { private set; get; }
         public bool IsArray { set; get; }
-        public string UserDefTypeName { private set; get; }
+        public string ClassName { private set; get; }
 
         protected override string JsonName()
         {
             return "<" + Type switch
             {
-                BasicVarType.BOOL => "bool",
-                BasicVarType.I32 => "i32",
-                BasicVarType.F32 => "f32",
-                BasicVarType.VOID => "void",
-                BasicVarType.STRING => "string",
-                BasicVarType.USER_DEF => UserDefTypeName,
+                SyntacticValueType.BOOL => "bool",
+                SyntacticValueType.INT => "int",
+                SyntacticValueType.FLOAT => "float",
+                SyntacticValueType.STRING => "string",
+                SyntacticValueType.CLASS => ClassName,
+                SyntacticValueType.VOID => "void",
                 _ => "UNK",
             } + (IsArray ? "[]>" : ">");
         }

@@ -9,7 +9,7 @@ namespace XiLang.Lexical
         // 特殊符号
         EOF,
         // 类型
-        BOOL, I32, F32, VOID, STRING,
+        BOOL, INT, FLOAT, VOID, STRING,
         // 其他关键词
         CLASS, BASE, FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN,
         // 常量
@@ -40,8 +40,8 @@ namespace XiLang.Lexical
         private static readonly Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>()
         {
             { "bool", TokenType.BOOL },
-            { "i32", TokenType.I32 },
-            { "f32", TokenType.F32 },
+            { "int", TokenType.INT },
+            { "float", TokenType.FLOAT },
             { "void", TokenType.VOID },
             { "string", TokenType.STRING },
 
@@ -67,7 +67,7 @@ namespace XiLang.Lexical
         /// </summary>
         public static readonly TokenType[] TypeTokens =
         {
-            TokenType.BOOL, TokenType.I32, TokenType.F32, TokenType.VOID, TokenType.STRING
+            TokenType.BOOL, TokenType.INT, TokenType.FLOAT, TokenType.VOID, TokenType.STRING
         };
 
         /// <summary>

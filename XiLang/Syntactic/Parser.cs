@@ -127,20 +127,18 @@ namespace XiLang.Syntactic
         }
 
         /// <summary>
+        /// 参数中不能出现void
         /// FuncDeclarator
-        ///     ID LPAREN (VOID | ParamsAST)? RPAREN
+        ///     ID LPAREN ParamsAST? RPAREN
         /// </summary>
+        /// <param name="retType"></param>
         /// <returns></returns>
         private FuncStmt ParseFuncDeclarator(TypeExpr retType)
         {
             string id = Consume(TokenType.ID).Literal;
             Consume(TokenType.LPAREN);
             ParamsAst ps = null;
-            if (Check(TokenType.VOID))
-            {
-                Consume(TokenType.VOID);
-            }
-            else if (!Check(TokenType.RPAREN))
+            if (!Check(TokenType.RPAREN))
             {
                 ps = ParseParamsAST();
             }

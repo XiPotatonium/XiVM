@@ -10,8 +10,8 @@
 
 * 类型
     * 布尔：bool
-    * 整数：i32
-    * 浮点：f32
+    * 整数：32位整数int
+    * 浮点：32位浮点数float
     * 数组
     * 其他：void, string
 * 运算符
@@ -24,10 +24,10 @@
     * 浮点数：十进制
     * 字符串
 * 分支
-    * If语句
+    * if语句
 * 循环
-    * While
-    * For：可以在init中定义变量
+    * while
+    * for：可以在init中定义变量
 * 类
     * 成员变量
     * 成员函数
@@ -51,10 +51,10 @@ GlobalStmt
 ClassStmt
     CLASS ID LBRACES DeclOrDefStmt* RBRACES
 DeclOrDefStmt
-    TypeExpr FuncDeclarator BlockStmt
+    (TypeExpr | VOID) FuncDeclarator BlockStmt
     TypeExpr VarDeclarator SEMICOLON
 FuncDeclarator
-    ID LPAREN (VOID | ParamsAST)? RPAREN
+    ID LPAREN ParamsAST? RPAREN
 VarDeclarator
     ID (ASSIGN Expr)? (COMMA VarDeclarator)?
 ParamsAST

@@ -1,9 +1,13 @@
 ﻿namespace XiLang
 {
-    public enum BasicVarType
+    public enum SyntacticValueType
     {
-        BOOL, I32, F32, VOID, STRING,
-        USER_DEF        // 用户定义的类型，比如class
+        BOOL, INT, FLOAT, STRING, CLASS, VOID
+    }
+
+    public enum ValueType
+    {
+        INT, FLOAT, STR, BOOL, NULL
     }
 
     public enum OpType
@@ -16,10 +20,5 @@
         ASSIGN, ADD_ASSIGN, SUB_ASSIGN, MUL_ASSIGN, DIV_ASSIGN, MOD_ASSIGN, AND_ASSIGN, OR_ASSIGN, XOR_ASSIGN, SL_ASSIGN, SR_ASSIGN,
         CONDITIONAL,
         CAST, CALL, CLASS_ACCESS, ARRAY_ACCESS
-    }
-
-    public enum ValueType
-    {
-        INT, FLOAT, STR, BOOL, NULL
     }
 }
