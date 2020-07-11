@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XiLang", "XiLang\XiLang.csproj", "{CD49E6F4-062D-4041-ABFF-3FFEFA56449F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XiVM", "XiVM\XiVM.csproj", "{714418D5-74A6-46AB-8C4F-BD743E0E43A7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{47C458C4-7AD8-4D15-8E14-7F56F1999895}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CD49E6F4-062D-4041-ABFF-3FFEFA56449F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD49E6F4-062D-4041-ABFF-3FFEFA56449F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD49E6F4-062D-4041-ABFF-3FFEFA56449F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD49E6F4-062D-4041-ABFF-3FFEFA56449F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A85DEEA8-446E-4684-B881-63B40DAE1BE5}
+	EndGlobalSection
+EndGlobal

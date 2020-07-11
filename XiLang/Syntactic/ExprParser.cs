@@ -1,0 +1,457 @@
+﻿using System;
+using XiLang.AbstractSyntaxTree;
+using XiLang.Lexical;
+
+namespace XiLang.Syntactic
+{
+    public partial class Parser
+    {
+        /// <summary>
+        /// TypeExpr
+        ///     ANY_TYPE_SPEC* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+        /// </summary>
+        /// <returns></returns>
+        private TypeExpr ParseTypeExpr()
+        {
+            // TODO 使用Type Spec
+            TypeExpr ret = TypeExpr.FromToken(Consume());
+            if (Check(TokenType.LBRACKET))
+            {
+                Consume(TokenType.LBRACKET);
+                Consume(TokenType.RBRACKET);
+                ret.IsArray = true;
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// ListExpr
+        ///     Expr [COMMA Expr]*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseExprList()
+        {
+            Expr root = ParseExpr();
+            Expr cur = root;
+            while (Check(TokenType.COMMA))
+            {
+                Consume(TokenType.COMMA);
+                AppendASTLinkedList(ref root, ref cur, ParseExpr());
+            }
+            return root;
+        }
+
+        /// <summary>
+        /// 就是AssignmentExpr
+        /// Expr
+        ///     (ConditionalExpr | Id) (ANY_ASSIGN Expr)?
+        /// </summary>
+        /// <param name="isDecl">true表示decl，lhs只能是id不能是表达式</param>
+        /// <returns></returns>
+        private Expr ParseExpr(bool isDecl = false)
+        {
+            Expr lhs = isDecl ? ParseId() : ParseCondtionalExpr();
+            if (Check(TokenType.ASSIGN, TokenType.ADD_ASSIGN, TokenType.SUB_ASSIGN, TokenType.MUL_ASSIGN, TokenType.DIV_ASSIGN,
+                TokenType.MOD_ASSIGN, TokenType.OR_ASSIGN, TokenType.AND_ASSIGN, TokenType.SR_ASSIGN, TokenType.SL_ASSIGN))
+            {
+                Token t = Consume(TokenType.ASSIGN, TokenType.ADD_ASSIGN, TokenType.SUB_ASSIGN, TokenType.MUL_ASSIGN, TokenType.DIV_ASSIGN,
+                    TokenType.MOD_ASSIGN, TokenType.OR_ASSIGN, TokenType.AND_ASSIGN, TokenType.SR_ASSIGN, TokenType.SL_ASSIGN);
+                return t.Type switch
+                {
+                    TokenType.ASSIGN => Expr.MakeOp(OpType.ASSIGN, lhs, ParseExpr()),
+                    TokenType.ADD_ASSIGN => Expr.MakeOp(OpType.ADD_ASSIGN, lhs, ParseExpr()),
+                    TokenType.SUB_ASSIGN => Expr.MakeOp(OpType.SUB_ASSIGN, lhs, ParseExpr()),
+                    TokenType.MUL_ASSIGN => Expr.MakeOp(OpType.MUL_ASSIGN, lhs, ParseExpr()),
+                    TokenType.DIV_ASSIGN => Expr.MakeOp(OpType.DIV_ASSIGN, lhs, ParseExpr()),
+                    TokenType.MOD_ASSIGN => Expr.MakeOp(OpType.MOD_ASSIGN, lhs, ParseExpr()),
+                    TokenType.AND_ASSIGN => Expr.MakeOp(OpType.AND_ASSIGN, lhs, ParseExpr()),
+                    TokenType.OR_ASSIGN => Expr.MakeOp(OpType.OR_ASSIGN, lhs, ParseExpr()),
+                    TokenType.XOR_ASSIGN => Expr.MakeOp(OpType.XOR_ASSIGN, lhs, ParseExpr()),
+                    TokenType.SL_ASSIGN => Expr.MakeOp(OpType.SL_ASSIGN, lhs, ParseExpr()),
+                    TokenType.SR_ASSIGN => Expr.MakeOp(OpType.SR_ASSIGN, lhs, ParseExpr()),
+                    _ => null,// 不会运行到这
+                };
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// ConditionalExpr
+        ///     LogicalOrExpr (QUESTION Expr COLON ConditionalExpr)?
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseCondtionalExpr()
+        {
+            Expr expr1 = ParseLogicalOrExpr();
+            if (Check(TokenType.QUESTION))
+            {
+                Consume(TokenType.QUESTION);
+                Expr expr2 = ParseExpr();
+                Consume(TokenType.COLON);
+                Expr expr3 = ParseCondtionalExpr();
+                return Expr.MakeOp(OpType.CONDITIONAL, expr1, expr2, expr3);
+            }
+            return expr1;
+        }
+
+        /// <summary>
+        /// LogicalOrExpr
+        ///     LogicalAndExpr (LOG_OR LogicalAndExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseLogicalOrExpr()
+        {
+            Expr lhs = ParseLogicalAndExpr();
+            while (Check(TokenType.LOG_OR))
+            {
+                Consume(TokenType.LOG_OR);
+                lhs = Expr.MakeOp(OpType.LOG_OR, lhs, ParseLogicalAndExpr());
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// LogicalAndExpr
+        ///     BitOrExpr (LOG_AND BitOrExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseLogicalAndExpr()
+        {
+            Expr lhs = ParseBitOrExpr();
+            while (Check(TokenType.LOG_AND))
+            {
+                Consume(TokenType.LOG_AND);
+                lhs = Expr.MakeOp(OpType.LOG_AND, lhs, ParseBitOrExpr());
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// BitOrExpr
+        ///     BitXorExpr (BIT_OR BitXorExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseBitOrExpr()
+        {
+            Expr lhs = ParseBitXorExpr();
+            while (Check(TokenType.BIT_OR))
+            {
+                Consume(TokenType.BIT_OR);
+                lhs = Expr.MakeOp(OpType.BIT_OR, lhs, ParseBitXorExpr());
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// BitXorExpr
+        ///     BitAndExpr (BIT_XOR BitAndExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseBitXorExpr()
+        {
+            Expr lhs = ParseBitAndExpr();
+            while (Check(TokenType.BIT_XOR))
+            {
+                Consume(TokenType.BIT_XOR);
+                lhs = Expr.MakeOp(OpType.BIT_XOR, lhs, ParseBitAndExpr());
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// BitAndExpr
+        ///     EqExpr (BIT_AND EqExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseBitAndExpr()
+        {
+            Expr lhs = ParseEqExpr();
+            while (Check(TokenType.BIT_AND))
+            {
+                Consume(TokenType.BIT_AND);
+                lhs = Expr.MakeOp(OpType.BIT_AND, lhs, ParseEqExpr());
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// EqExpr
+        ///     CompExpr ((EQ | NE) CompExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseEqExpr()
+        {
+            Expr lhs = ParseCompExpr();
+            while (Check(TokenType.EQ, TokenType.NE))
+            {
+                Token t = Consume(TokenType.EQ, TokenType.NE);
+                lhs = t.Type switch
+                {
+                    TokenType.EQ => Expr.MakeOp(OpType.EQ, lhs, ParseCompExpr()),
+                    TokenType.NE => Expr.MakeOp(OpType.NE, lhs, ParseCompExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// CompExpr
+        ///     ShiftExpr ((LE | LT | GE | GT) ShiftExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseCompExpr()
+        {
+            Expr lhs = ParseShiftExpr();
+            while (Check(TokenType.GT, TokenType.GE, TokenType.LT, TokenType.LE))
+            {
+                Token t = Consume(TokenType.GT, TokenType.GE, TokenType.LT, TokenType.LE);
+                lhs = t.Type switch
+                {
+                    TokenType.GT => Expr.MakeOp(OpType.GT, lhs, ParseShiftExpr()),
+                    TokenType.GE => Expr.MakeOp(OpType.GE, lhs, ParseShiftExpr()),
+                    TokenType.LT => Expr.MakeOp(OpType.LT, lhs, ParseShiftExpr()),
+                    TokenType.LE => Expr.MakeOp(OpType.LE, lhs, ParseShiftExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// ShiftExpr
+        ///     AddExpr ((BIT_SL | BIT_SR) AddExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseShiftExpr()
+        {
+            Expr lhs = ParseAddExpr();
+            while (Check(TokenType.BIT_SL, TokenType.BIT_SR))
+            {
+                Token t = Consume(TokenType.BIT_SL, TokenType.BIT_SR);
+                lhs = t.Type switch
+                {
+                    TokenType.BIT_SL => Expr.MakeOp(OpType.BIT_SL, lhs, ParseAddExpr()),
+                    TokenType.BIT_SR => Expr.MakeOp(OpType.BIT_SR, lhs, ParseAddExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// AddExpr
+        ///     MulExpr ((ADD | SUB) MulExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseAddExpr()
+        {
+            Expr lhs = ParseMulExpr();
+            while (Check(TokenType.ADD, TokenType.SUB))
+            {
+                Token t = Consume(TokenType.ADD, TokenType.SUB);
+                lhs = t.Type switch
+                {
+                    TokenType.ADD => Expr.MakeOp(OpType.ADD, lhs, ParseMulExpr()),
+                    TokenType.SUB => Expr.MakeOp(OpType.SUB, lhs, ParseMulExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// MulExpr
+        ///     CastExpr ((DIV | MUL | MOD) CastExpr)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseMulExpr()
+        {
+            Expr lhs = ParseCastExpr();
+            while (Check(TokenType.MUL, TokenType.DIV, TokenType.MOD))
+            {
+                Token t = Consume(TokenType.MUL, TokenType.DIV, TokenType.MOD);
+                lhs = t.Type switch
+                {
+                    TokenType.MUL => Expr.MakeOp(OpType.MUL, lhs, ParseCastExpr()),
+                    TokenType.DIV => Expr.MakeOp(OpType.DIV, lhs, ParseCastExpr()),
+                    TokenType.MOD => Expr.MakeOp(OpType.MOD, lhs, ParseCastExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// CastExpr
+        ///     LPAREN TypeExpr RPAREN CastExpr
+        ///     UnaryExpr
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseCastExpr()
+        {
+            // 注意UnaryExpr中存在括号表达式
+            // 需要解决Cast和括号表达式的冲突，因此需要判断是否是TypeExpr
+            if (Check(TokenType.LPAREN) && IsTypeExprPrefix(1))
+            {
+                Consume(TokenType.LPAREN);
+                Expr type = ParseTypeExpr();
+                Consume(TokenType.RPAREN);
+                return Expr.MakeOp(OpType.CAST, type, ParseCastExpr());
+            }
+            return ParseUnaryExpr();
+        }
+
+        /// <summary>
+        /// UnaryExpr
+        ///     (LOG_NOT | SUB) CastExpr | (INC | DEC) UnaryExpr | CallExpr
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseUnaryExpr()
+        {
+            if (Check(TokenType.LOG_NOT, TokenType.SUB))
+            {
+                Token t = Consume(TokenType.LOG_NOT, TokenType.SUB);
+                return t.Type switch
+                {
+                    TokenType.LOG_NOT => Expr.MakeOp(OpType.LOG_NOT, ParseCastExpr()),
+                    TokenType.SUB => Expr.MakeOp(OpType.NEG, ParseCastExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            else if (Check(TokenType.INC, TokenType.DEC))
+            {
+                Token t = Consume(TokenType.INC, TokenType.DEC);
+                return t.Type switch
+                {
+                    TokenType.INC => Expr.MakeOp(OpType.INC, ParseUnaryExpr()),
+                    TokenType.DEC => Expr.MakeOp(OpType.DEC, ParseUnaryExpr()),
+                    _ => null   // 不会运行到这
+                };
+            }
+            return ParseCallExpr();
+        }
+
+        /// <summary>
+        /// CallExpr
+        ///     PrimaryExpr (LPAREN (Expr (COMMA Expr)*)? RPAREN | DOT Id | LBRACKET Expr RBRACKET)*
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseCallExpr()
+        {
+            Expr lhs = ParsePrimaryExpr();
+            Expr ps = null;
+            Expr cur = null;
+            while (true)
+            {
+                if (Check(TokenType.LPAREN))
+                {   // Call
+                    Consume(TokenType.LPAREN);
+                    if (!Check(TokenType.RPAREN))
+                    {
+                        while (true)
+                        {
+                            AppendASTLinkedList(ref ps, ref cur, ParseExpr());
+
+                            if (Check(TokenType.COMMA))
+                            {
+                                Consume(TokenType.COMMA);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    Consume(TokenType.RPAREN);
+                    lhs = Expr.MakeOp(OpType.CALL, lhs, ps);
+                }
+                else if (Check(TokenType.DOT))
+                {   // Access
+                    Consume(TokenType.DOT);
+                    lhs = Expr.MakeOp(OpType.CLASS_ACCESS, lhs, ParseId());
+                }
+                else if (Check(TokenType.LBRACKET))
+                {   // 数组访问
+                    Consume(TokenType.LBRACKET);
+                    lhs = Expr.MakeOp(OpType.ARRAY_ACCESS, lhs, ParseExpr());
+                    Consume(TokenType.RBRACKET);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return lhs;
+        }
+
+        /// <summary>
+        /// PrimaryExpr
+        ///     ConstExpr | Id | LPAREN Expr RPAREN | BASE DOT Id
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParsePrimaryExpr()
+        {
+            if (Check(TokenType.ID))
+            {
+                return ParseId();
+            }
+            if (Check(TokenType.LPAREN))
+            {
+                Consume(TokenType.LPAREN);
+                Expr ret = ParseExpr();
+                Consume(TokenType.RPAREN);
+                return ret;
+            }
+            if (Check(TokenType.BASE))
+            {
+                Consume(TokenType.BASE);
+                Consume(TokenType.DOT);
+                // TODO Base
+                throw new NotImplementedException();
+            }
+            return ParseConstExpr();
+        }
+
+        /// <summary>
+        /// Id
+        ///     ID
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseId()
+        {
+            return Expr.MakeId(Consume(TokenType.ID).Literal);
+        }
+
+        /// <summary>
+        /// ConstExpr
+        ///     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL
+        /// </summary>
+        /// <returns></returns>
+        private Expr ParseConstExpr()
+        {
+            Token t = Consume(TokenType.TRUE, TokenType.FALSE, TokenType.NULL,
+                            TokenType.DEC_LITERAL, TokenType.HEX_LITERAL, TokenType.FLOAT_LITERAL, TokenType.STR_LITERAL);
+            switch (t.Type)
+            {
+                case TokenType.NULL:
+                    return Expr.MakeNull();
+                case TokenType.TRUE:
+                    return Expr.MakeBool(true);
+                case TokenType.FALSE:
+                    return Expr.MakeBool(false);
+                case TokenType.DEC_LITERAL:
+                    return Expr.MakeInt(t.Literal);
+                case TokenType.HEX_LITERAL:
+                    return Expr.MakeInt(t.Literal, 16);
+                case TokenType.FLOAT_LITERAL:
+                    return Expr.MakeFloat(t.Literal);
+                case TokenType.STR_LITERAL:
+                    return Expr.MakeString(t.Literal);
+                default:
+                    break;
+            }
+            return null;        // 不会运行到这里
+        }
+    }
+}
