@@ -45,7 +45,7 @@ namespace XiLang.AbstractSyntaxTree
         public bool IsArray { set; get; }
         public string ClassName { private set; get; }
 
-        protected override string JsonName()
+        public override string ASTLabel()
         {
             return "<" + Type switch
             {
@@ -59,7 +59,11 @@ namespace XiLang.AbstractSyntaxTree
             } + (IsArray ? "[]>" : ">");
         }
 
-        protected override AST[] JsonChildren()
+        /// <summary>
+        /// Type表达式是一个常量，在设计中不允许有child
+        /// </summary>
+        /// <returns></returns>
+        public override AST[] Children()
         {
             return new AST[0];
         }

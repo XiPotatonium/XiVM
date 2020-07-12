@@ -10,7 +10,7 @@
             Params = ps;
         }
 
-        public override string JsonName()
+        public override string ASTLabel()
         {
             if (Body == null)
             {   // 函数声明
@@ -19,7 +19,7 @@
             return $"(FuncDef){Id}";
         }
 
-        public override AST[] JsonChildren()
+        public override AST[] Children()
         {
             return new AST[] { Type, Params, Body };
         }
@@ -34,12 +34,12 @@
             Params = ps;
         }
 
-        public override string JsonName()
+        public override string ASTLabel()
         {
             return "(Params)";
         }
 
-        public override AST[] JsonChildren()
+        public override AST[] Children()
         {
             return new AST[] { Params };
         }

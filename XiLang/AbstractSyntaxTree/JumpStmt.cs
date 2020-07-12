@@ -10,12 +10,12 @@
         public JumpType Type { set; get; }
         public Expr ReturnVal { set; get; }
 
-        public override AST[] JsonChildren()
+        public override AST[] Children()
         {
             return new AST[] { ReturnVal };
         }
 
-        public override string JsonName()
+        public override string ASTLabel()
         {
             return Type switch
             {

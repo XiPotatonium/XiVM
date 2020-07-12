@@ -102,7 +102,7 @@ namespace XiLang.AbstractSyntaxTree
         }
 
         public int Line { private set; get; }
-        public ExprType ExprType { private set; get; }
+        public ExprType ExprType { set; get; }
         public OpType OpType { set; get; }
         public Expr Expr1 { set; get; }
         public Expr Expr2 { set; get; }
@@ -110,6 +110,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public XiLangValue Value { set; get; }
 
+        protected Expr() { }
         private Expr(ExprType type, int line)
         {
             Line = line;
@@ -156,6 +157,18 @@ namespace XiLang.AbstractSyntaxTree
         {
             if (ExprType == ExprType.OPEXPR)
             {
+                if (Expr1 != null)
+                {
+                    Expr1.EvaluateConstExpr();
+                }
+                if (Expr2 != null)
+                {
+                    Expr2.EvaluateConstExpr();
+                }
+                if (Expr3 != null)
+                {
+                    Expr3.EvaluateConstExpr();
+                }
                 switch (OpType)
                 {
                     case OpType.NEG:
@@ -338,7 +351,7 @@ namespace XiLang.AbstractSyntaxTree
             return Value;
         }
 
-        public override string JsonName()
+        public override string ASTLabel()
         {
             return ExprType switch
             {
@@ -399,7 +412,7 @@ namespace XiLang.AbstractSyntaxTree
             };
         }
 
-        public override AST[] JsonChildren()
+        public override AST[] Children()
         {
             return new AST[] { Expr1, Expr2, Expr3 };
         }

@@ -9,12 +9,12 @@
             Expr = expr;
         }
 
-        public override string JsonName()
+        public override string ASTLabel()
         {
             return "(ExprStmt)";
         }
 
-        public override AST[] JsonChildren()
+        public override AST[] Children()
         {
             return new AST[] { Expr };
         }

@@ -39,7 +39,7 @@
         public Stmt Body { private set; get; }
 
 
-        public override string JsonName()
+        public override string ASTLabel()
         {
             return Type switch
             {
@@ -49,7 +49,7 @@
             };
         }
 
-        public override AST[] JsonChildren()
+        public override AST[] Children()
         {
             return new AST[] { Init, Cond, Step, Body };
         }

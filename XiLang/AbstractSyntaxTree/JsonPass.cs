@@ -15,7 +15,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public string ToJson(AST ast)
         {
-            string ret = $"{{\"name\": \"{ast.JsonName()}\" {PrintChildren(ast.JsonChildren())}}}";
+            string ret = $"{{\"name\": \"{ast.ASTLabel()}\" {PrintChildren(ast.Children())}}}";
             if (ast.SiblingAST != null)
             {
                 ret += ", " + ToJson(ast.SiblingAST);
