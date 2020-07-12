@@ -38,11 +38,9 @@ namespace ConsoleArgumentParser
                 {
                     if (Arguments.TryGetValue(args[i].Substring(1), out ConsoleArgument arg))
                     {
+                        arg.IsSet = true;
                         switch (arg.ValueType)
                         {
-                            case ArgumentValueType.NONE:
-                                arg.IsSet = true;
-                                break;
                             case ArgumentValueType.STRING:
                                 arg.StringValue = args[++i];
                                 break;

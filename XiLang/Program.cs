@@ -14,7 +14,7 @@ namespace XiLang
         {
             ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
             argumentParser.AddArgument(new ConsoleArgument("d", ArgumentValueType.STRING));
-            argumentParser.AddArgument(new ConsoleArgument("json", ArgumentValueType.STRING));
+            argumentParser.AddArgument(new ConsoleArgument("json"));
 
             argumentParser.Parse(args);
 
@@ -32,7 +32,7 @@ namespace XiLang
                 string fname = Path.GetFileName(f).ToString();
                 if (fname.StartsWith(moduleName + "."))
                 {
-                    fileName = fname;
+                    fileName = f;
                     break;  // TODO 不break，支持同模块多文件
                 }
             }
@@ -61,16 +61,10 @@ namespace XiLang
             astPasses.Run(new ConstExprPass());
 
             // pass 4，打印json文件
-            ConsoleArgument jsonArg = argumentParser.GetValue("json");
-            if (jsonArg.IsSet)
+            if (argumentParser.GetValue("json").IsSet)
             {
-                string jsonOutFile = jsonArg.StringValue;
-                if (string.IsNullOrEmpty(jsonOutFile))
-                {
-                    jsonOutFile = fileName + ".ast.json";
-                }
                 string json = (string)astPasses.Run(new JsonPass());
-                File.WriteAllText(jsonOutFile, json);
+                File.WriteAllText(fileName + ".ast.json", json);
             }
 
             // pass 5，编译生成ir或字节码
