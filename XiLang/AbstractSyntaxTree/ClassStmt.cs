@@ -11,12 +11,12 @@
             Id = id;
         }
 
-        protected override AST[] JsonChildren()
+        public override AST[] JsonChildren()
         {
             return new AST[] { Functions, Variables };
         }
 
-        protected override string JsonName()
+        public override string JsonName()
         {
             return $"(Class){Id}";
         }

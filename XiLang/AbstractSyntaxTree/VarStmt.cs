@@ -9,7 +9,7 @@
             Init = init;
         }
 
-        protected override string JsonName()
+        public override string JsonName()
         {
             if (Init != null)
             {
@@ -18,7 +18,7 @@
             return $"(VarDecl){Id}";
         }
 
-        protected override AST[] JsonChildren()
+        public override AST[] JsonChildren()
         {
             return new AST[] { Type, Init };
         }

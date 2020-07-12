@@ -9,7 +9,7 @@ namespace XiLang.Syntactic
     /// <summary>
     /// 语法分析，第二个Pass
     /// </summary>
-    public partial class Parser : AbstractParser, IPass
+    public partial class Parser : AbstractParser, ITokenPass
     {
         public Parser(HashSet<string> classes)
         {

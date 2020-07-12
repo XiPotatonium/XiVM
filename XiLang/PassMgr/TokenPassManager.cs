@@ -6,19 +6,19 @@ namespace XiLang.PassMgr
     /// <summary>
     /// 基于Token的PassManager
     /// </summary>
-    public class PassManager
+    public class TokenPassManager
     {
         private Lexer Lexer { set; get; }
         private bool FirstPass { set; get; } = true;
         private List<Token> TokenBuf { get; } = new List<Token>();
         private int TokenBufIndex { set; get; } = 0;
 
-        public PassManager(string file)
+        public TokenPassManager(string file)
         {
             Lexer = new Lexer(file);
         }
 
-        public object Run(IPass pass)
+        public object Run(ITokenPass pass)
         {
             TokenBufIndex = 0;
             return pass.Run(NextToken);

@@ -338,7 +338,7 @@ namespace XiLang.AbstractSyntaxTree
             return Value;
         }
 
-        protected override string JsonName()
+        public override string JsonName()
         {
             return ExprType switch
             {
@@ -399,7 +399,7 @@ namespace XiLang.AbstractSyntaxTree
             };
         }
 
-        protected override AST[] JsonChildren()
+        public override AST[] JsonChildren()
         {
             return new AST[] { Expr1, Expr2, Expr3 };
         }

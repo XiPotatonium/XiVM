@@ -9,12 +9,12 @@
             Child = child;
         }
 
-        protected override AST[] JsonChildren()
+        public override AST[] JsonChildren()
         {
             return new AST[] { Child };
         }
 
-        protected override string JsonName()
+        public override string JsonName()
         {
             return "(Block)";
         }

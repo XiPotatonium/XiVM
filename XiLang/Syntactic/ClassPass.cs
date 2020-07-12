@@ -9,7 +9,7 @@ namespace XiLang.Syntactic
     /// <summary>
     /// 负责提取文件中的所有class信息
     /// </summary>
-    public class ClassPass : AbstractParser, IPass
+    public class ClassPass : AbstractParser, ITokenPass
     {
         public object Run(Func<Token> nextToken)
         {

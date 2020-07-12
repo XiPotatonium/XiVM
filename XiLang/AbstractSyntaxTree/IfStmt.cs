@@ -16,12 +16,12 @@
         public Stmt Then { private set; get; }
         public Stmt Otherwise { private set; get; }
 
-        protected override string JsonName()
+        public override string JsonName()
         {
             return "(If)";
         }
 
-        protected override AST[] JsonChildren()
+        public override AST[] JsonChildren()
         {
             return new AST[] { Cond, Then, Otherwise };
         }
