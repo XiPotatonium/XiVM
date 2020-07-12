@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data;
-using System.Reflection.Emit;
 using XiLang.Errors;
 
 namespace XiLang.AbstractSyntaxTree

@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using XiLang.AbstractSyntaxTree;
 using XiLang.PassMgr;
 
-namespace XiLang.AbstractSyntaxTree
+namespace XiLang
 {
-    class ConstExprPass : IASTPass
+    internal class ConstExprPass : IASTPass
     {
         public object Run(AST root)
         {
@@ -31,7 +29,7 @@ namespace XiLang.AbstractSyntaxTree
                 }
             }
 
-            foreach (var child in ast.Children())
+            foreach (AST child in ast.Children())
             {
                 EvaluateConstExpr(child);
             }

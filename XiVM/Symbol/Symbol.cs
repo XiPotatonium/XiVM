@@ -1,6 +1,6 @@
-﻿namespace XiLang.Symbol
+﻿namespace XiVM.Symbol
 {
-    public abstract class Symbol
+    internal abstract class Symbol
     {
         public string Name { private set; get; }
 

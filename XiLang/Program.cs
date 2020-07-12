@@ -27,7 +27,7 @@ namespace XiLang
             }
 
             string fileName = null;
-            foreach (var f in Directory.EnumerateFiles(dirName))
+            foreach (string f in Directory.EnumerateFiles(dirName))
             {
                 string fname = Path.GetFileName(f).ToString();
                 if (fname.StartsWith(moduleName + "."))
@@ -68,6 +68,7 @@ namespace XiLang
             }
 
             // pass 5，编译生成ir或字节码
+            astPasses.Run(new XirGenPass());
         }
     }
 }

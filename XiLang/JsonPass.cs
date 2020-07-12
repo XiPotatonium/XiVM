@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using XiLang.AbstractSyntaxTree;
 using XiLang.PassMgr;
 
-namespace XiLang.AbstractSyntaxTree
+namespace XiLang
 {
-    public class JsonPass : IASTPass
+    internal class JsonPass : IASTPass
     {
         public object Run(AST root)
         {
