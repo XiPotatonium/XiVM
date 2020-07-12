@@ -12,6 +12,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XiLangTests", "XiLangTests\XiLangTests.csproj", "{D0E44B98-824C-4C80-A1CD-5C63057727F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleArgumentParser", "ConsoleArgumentParser\ConsoleArgumentParser.csproj", "{9AF6E658-610A-4BE3-BD6F-9B6B7F264A75}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +30,14 @@ Global
 		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{714418D5-74A6-46AB-8C4F-BD743E0E43A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0E44B98-824C-4C80-A1CD-5C63057727F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0E44B98-824C-4C80-A1CD-5C63057727F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0E44B98-824C-4C80-A1CD-5C63057727F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0E44B98-824C-4C80-A1CD-5C63057727F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AF6E658-610A-4BE3-BD6F-9B6B7F264A75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AF6E658-610A-4BE3-BD6F-9B6B7F264A75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AF6E658-610A-4BE3-BD6F-9B6B7F264A75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AF6E658-610A-4BE3-BD6F-9B6B7F264A75}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

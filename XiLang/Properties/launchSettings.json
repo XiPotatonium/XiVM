@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "XiLang": {
+      "commandName": "Project",
+      "commandLineArgs": "Test"
+    }
+  }
+}

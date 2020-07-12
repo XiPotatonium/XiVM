@@ -36,6 +36,7 @@ namespace XiLang.Lexical
                     LineStartIndex = Index;
                     ++Line;
                     Column = 0;
+                    continue;
                 }
                 int maxLen = 0;
                 Func<string, int, Token> func = null;
@@ -52,7 +53,7 @@ namespace XiLang.Lexical
                 {   // 无法匹配的字符串
                     int nlIndex = Text.IndexOf('\n', Index);
                     nlIndex = nlIndex < 0 ? Text.Length : nlIndex;
-                    throw new LexicalException(Line, Column, Text[LineStartIndex..nlIndex]);
+                    throw new LexicalError(Line, Column, Text[LineStartIndex..nlIndex]);
                 }
                 else
                 {

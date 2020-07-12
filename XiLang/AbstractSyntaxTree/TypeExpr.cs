@@ -36,7 +36,7 @@ namespace XiLang.AbstractSyntaxTree
                     ret.ClassName = t.Literal;
                     break;
                 default:
-                    throw new SyntaxException("Unknown type", t);
+                    throw new SyntaxError("Unknown type", t);
             }
             return ret;
         }

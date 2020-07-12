@@ -4,11 +4,11 @@ using XiLang.Lexical;
 namespace XiLang.Errors
 {
     [Serializable]
-    public class SyntaxException : XiLangError
+    public class SyntaxError : XiLangError
     {
         public Token Token { get; }
 
-        public SyntaxException(string msg, Token t) : base(msg, t.Line)
+        public SyntaxError(string msg, Token t) : base(msg, t.Line)
         {
             Token = t;
         }

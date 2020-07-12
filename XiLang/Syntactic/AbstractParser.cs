@@ -67,7 +67,7 @@ namespace XiLang.Syntactic
                 {
                     sb.Append("/").Append(types[i].ToString());
                 }
-                throw new SyntaxException(sb.ToString(), t);
+                throw new SyntaxError(sb.ToString(), t);
             }
             return TokenBuf.Dequeue();
         }

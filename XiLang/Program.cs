@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ConsoleArgumentParser;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using XiLang.AbstractSyntaxTree;
@@ -7,51 +8,72 @@ using XiLang.Syntactic;
 
 namespace XiLang
 {
-    internal class Program
+    public class Program
     {
-        private static readonly string ExprTest0 = "int[] foo(int a, float[] b) {      // 这样的注释\n" +
-            "   int c = b[12 * (a + a | (int)b[0] << 3)].bar(a > 10 ? 2.0 : b[4]); \n" +
-            "   return b;}\n" +
-            "// 这tm是一条注释";
-
-        private static readonly string BasicTest0 = "int foo(int a, float[] b) {      // 这样的注释\n" +
-            "   int c = a + b[2]; \n" +
-            "   return c;}\n" +
-            "// 这tm是一条注释";
-
-        private static readonly string ClassTest0 = "int a = 10;\n" +
-            "class Demo {\n" +
-            "   int id = 0;\n" +
-            "   float val = 10.0;\n" +
-            "   int getId() { return id; }\n" +
-            "}\n" +
-            "int main(int argc, string[] argv) { Demo d; return 0; }";
-
-        private static readonly string ConstExprTest0 = "int main(int argc, string[] argv) {" +
-            "   int a = 2;\n" +
-            "   if (80 > 0.0) { return a * (4 + 16 % 3); }\n" +
-            "   return 0; }";
-
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            TokenPassManager tokenPasses = new TokenPassManager(ConstExprTest0);
+            ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
+            argumentParser.AddArgument(new ConsoleArgument("d", ArgumentValueType.STRING));
+            argumentParser.AddArgument(new ConsoleArgument("json", ArgumentValueType.STRING));
 
-            // 第一个pass，获取所有类信息，因此我们的语法不允许分离类定义和声明
+            argumentParser.Parse(args);
+
+            string moduleName = argumentParser.GetValue().StringValue;
+            ConsoleArgument dirArg = argumentParser.GetValue("d");
+            string dirName = ".";
+            if (dirArg.IsSet)
+            {
+                dirName = dirArg.StringValue;
+            }
+
+            string fileName = null;
+            foreach (var f in Directory.EnumerateFiles(dirName))
+            {
+                string fname = Path.GetFileName(f).ToString();
+                if (fname.StartsWith(moduleName + "."))
+                {
+                    fileName = fname;
+                    break;  // TODO 不break，支持同模块多文件
+                }
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                Console.Error.WriteLine($"Module {moduleName} not found in {dirName}");
+                return;
+            }
+
+            string text = File.ReadAllText(fileName);
+
+            TokenPassManager tokenPasses = new TokenPassManager(text);
+
+            // pass 1，获取所有类信息，我们的语法不允许分离类定义和声明
             HashSet<string> classes = (HashSet<string>)tokenPasses.Run(new ClassPass());
 
-            // 第二个pass，解析类信息之外的部分并生成AST
+            // pass 2，解析类信息之外的部分并生成AST
             AST root = (AST)tokenPasses.Run(new Parser(classes));
 
             Console.WriteLine("Parse done!");
 
             ASTPassManager astPasses = new ASTPassManager(root);
 
-            // 第三个pass，常量表达式直接估值
+            // pass 3，常量表达式直接估值
             astPasses.Run(new ConstExprPass());
 
-            // 第四个pass，打印json文件，仅调试需要
-            string json = (string)astPasses.Run(new JsonPass());
-            File.WriteAllText("ast.json", json);
+            // pass 4，打印json文件
+            ConsoleArgument jsonArg = argumentParser.GetValue("json");
+            if (jsonArg.IsSet)
+            {
+                string jsonOutFile = jsonArg.StringValue;
+                if (string.IsNullOrEmpty(jsonOutFile))
+                {
+                    jsonOutFile = fileName + ".ast.json";
+                }
+                string json = (string)astPasses.Run(new JsonPass());
+                File.WriteAllText(jsonOutFile, json);
+            }
+
+            // pass 5，编译生成ir或字节码
         }
     }
 }
