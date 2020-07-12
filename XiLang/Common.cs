@@ -7,7 +7,7 @@
 
     public enum ValueType
     {
-        INT, FLOAT, STR, BOOL, NULL
+        INT, FLOAT, STRING, BOOL, NULL
     }
 
     public enum OpType
@@ -15,7 +15,7 @@
         NEG, INC, DEC,
         ADD, SUB, MUL, DIV, MOD,
         LOG_NOT, LOG_AND, LOG_OR,
-        BIT_AND, BIT_XOR, BIT_OR, BIT_SL, BIT_SR,
+        BIT_NOT, BIT_AND, BIT_XOR, BIT_OR, BIT_SL, BIT_SR,
         EQ, NE, GE, GT, LE, LT,
         ASSIGN, ADD_ASSIGN, SUB_ASSIGN, MUL_ASSIGN, DIV_ASSIGN, MOD_ASSIGN, AND_ASSIGN, OR_ASSIGN, XOR_ASSIGN, SL_ASSIGN, SR_ASSIGN,
         CONDITIONAL,

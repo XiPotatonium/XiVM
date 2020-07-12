@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using XiLang.Exceptions;
+using XiLang.Errors;
 using XiLang.Lexical;
 
 namespace XiLang.AbstractSyntaxTree

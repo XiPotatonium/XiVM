@@ -1,10 +1,10 @@
 ﻿using System;
 using XiLang.Lexical;
 
-namespace XiLang.Exceptions
+namespace XiLang.Errors
 {
     [Serializable]
-    public class SyntaxException : XiLangException
+    public class SyntaxException : XiLangError
     {
         public Token Token { get; }
 

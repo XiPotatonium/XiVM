@@ -1,21 +1,23 @@
 ﻿using System;
+using System.Text.Json.Serialization;
+using XiLang.Errors;
 
 namespace XiLang
 {
     public class XiLangValue
     {
-        private static readonly XiLangValue NullValue = new XiLangValue()
+        public static readonly XiLangValue NullValue = new XiLangValue()
         {
             Type = ValueType.NULL
         };
 
-        private static readonly XiLangValue TrueValue = new XiLangValue()
+        public static readonly XiLangValue TrueValue = new XiLangValue()
         {
             Type = ValueType.BOOL,
             IntVal = 1
         };
 
-        private static readonly XiLangValue FalseValue = new XiLangValue()
+        public static readonly XiLangValue FalseValue = new XiLangValue()
         {
             Type = ValueType.BOOL,
             IntVal = 0
@@ -30,13 +32,13 @@ namespace XiLang
         private static readonly XiLangValue DefaultFloat = new XiLangValue()
         {
             Type = ValueType.FLOAT,
-            FloatVal = 0.0
+            FloatVal = 0.0f
         };
 
         private static readonly XiLangValue DefaultString = new XiLangValue()
         {
-            Type = ValueType.STR,
-            StrVal = string.Empty
+            Type = ValueType.STRING,
+            StringVal = string.Empty
         };
 
         public static XiLangValue MakeNull()
@@ -54,7 +56,7 @@ namespace XiLang
             return new XiLangValue()
             {
                 Type = ValueType.INT,
-                IntVal = Convert.ToInt64(literal, fromBase)
+                IntVal = Convert.ToInt32(literal, fromBase)
             };
         }
 
@@ -63,20 +65,7 @@ namespace XiLang
             return new XiLangValue()
             {
                 Type = ValueType.FLOAT,
-                FloatVal = Convert.ToDouble(literal)
-            };
-        }
-
-        public static XiLangValue GetDefault(ValueType type)
-        {
-            return type switch
-            {
-                ValueType.INT => DefaultInt,
-                ValueType.FLOAT => DefaultFloat,
-                ValueType.STR => DefaultString,
-                ValueType.BOOL => FalseValue,
-                ValueType.NULL => NullValue,
-                _ => null,
+                FloatVal = (float)Convert.ToDouble(literal)
             };
         }
 
@@ -90,14 +79,58 @@ namespace XiLang
             literal = literal[1..^1];
             return new XiLangValue()
             {
-                Type = ValueType.STR,
-                StrVal = literal
+                Type = ValueType.STRING,
+                StringVal = literal
             };
         }
 
+        public static XiLangValue GetDefault(ValueType type)
+        {
+            return type switch
+            {
+                ValueType.INT => DefaultInt,
+                ValueType.FLOAT => DefaultFloat,
+                ValueType.STRING => DefaultString,
+                ValueType.BOOL => FalseValue,
+                ValueType.NULL => NullValue,
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        /// <summary>
+        /// 目前仅允许float和int相互cast
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <param name="line"></param>
+        /// <returns></returns>
+        public static XiLangValue Cast(ValueType type, XiLangValue value, int line = -1)
+        {
+            if (value.Type == type)
+            {
+                return value;
+            }
+            else if (type == ValueType.FLOAT)
+            {
+                if (value.Type == ValueType.INT)
+                {
+                    return new XiLangValue() { Type = type, FloatVal = value.IntVal };
+                }
+            }
+            else if (type == ValueType.INT)
+            {
+                if (value.Type == ValueType.FLOAT)
+                {
+                    return new XiLangValue() { Type = type, IntVal = (int)value.FloatVal };
+                }
+            }
+            throw new TypeError($"Cannot cast from {value.Type} to {type}", line);
+        }
+
         public ValueType Type { set; get; }
-        public string StrVal { set; get; }
-        public long IntVal { set; get; }
-        public double FloatVal { set; get; }
+        public string StringVal { set; get; }
+        public int IntVal { set; get; }
+        public float FloatVal { set; get; }
+        public bool BoolVal => this == TrueValue;
     }
 }

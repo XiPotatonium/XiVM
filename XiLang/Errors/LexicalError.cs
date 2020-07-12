@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace XiLang.Exceptions
+namespace XiLang.Errors
 {
     [Serializable]
-    public class LexicalException : XiLangException
+    public class LexicalException : XiLangError
     {
         public int Column { get; }
         public string LineStr { get; }

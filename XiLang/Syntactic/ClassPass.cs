@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using XiLang.Exceptions;
+using XiLang.Errors;
 using XiLang.Lexical;
 using XiLang.PassMgr;
 
@@ -31,7 +31,7 @@ namespace XiLang.Syntactic
                 t = Consume(TokenType.ID);
                 if (Classes.Contains(t.Literal))
                 {   // class已存在
-                    throw new ClassException($"Duplicate class definition {t.Literal}", t.Line);
+                    throw new ClassError($"Duplicate class definition {t.Literal}", t.Line);
                 }
                 Classes.Add(t.Literal);
                 BalencedBraces();

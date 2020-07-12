@@ -51,7 +51,7 @@ GlobalStmt
 ClassStmt
     CLASS ID LBRACES DeclOrDefStmt* RBRACES
 DeclOrDefStmt
-    (TypeExpr | VOID) FuncDeclarator BlockStmt
+    TypeExpr FuncDeclarator BlockStmt
     TypeExpr VarDeclarator SEMICOLON
 FuncDeclarator
     ID LPAREN ParamsAST? RPAREN

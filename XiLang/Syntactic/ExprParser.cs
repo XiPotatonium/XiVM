@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Lexical;
 
@@ -58,17 +59,17 @@ namespace XiLang.Syntactic
                     TokenType.MOD_ASSIGN, TokenType.OR_ASSIGN, TokenType.AND_ASSIGN, TokenType.SR_ASSIGN, TokenType.SL_ASSIGN);
                 return t.Type switch
                 {
-                    TokenType.ASSIGN => Expr.MakeOp(OpType.ASSIGN, lhs, ParseExpr()),
-                    TokenType.ADD_ASSIGN => Expr.MakeOp(OpType.ADD_ASSIGN, lhs, ParseExpr()),
-                    TokenType.SUB_ASSIGN => Expr.MakeOp(OpType.SUB_ASSIGN, lhs, ParseExpr()),
-                    TokenType.MUL_ASSIGN => Expr.MakeOp(OpType.MUL_ASSIGN, lhs, ParseExpr()),
-                    TokenType.DIV_ASSIGN => Expr.MakeOp(OpType.DIV_ASSIGN, lhs, ParseExpr()),
-                    TokenType.MOD_ASSIGN => Expr.MakeOp(OpType.MOD_ASSIGN, lhs, ParseExpr()),
-                    TokenType.AND_ASSIGN => Expr.MakeOp(OpType.AND_ASSIGN, lhs, ParseExpr()),
-                    TokenType.OR_ASSIGN => Expr.MakeOp(OpType.OR_ASSIGN, lhs, ParseExpr()),
-                    TokenType.XOR_ASSIGN => Expr.MakeOp(OpType.XOR_ASSIGN, lhs, ParseExpr()),
-                    TokenType.SL_ASSIGN => Expr.MakeOp(OpType.SL_ASSIGN, lhs, ParseExpr()),
-                    TokenType.SR_ASSIGN => Expr.MakeOp(OpType.SR_ASSIGN, lhs, ParseExpr()),
+                    TokenType.ASSIGN => Expr.MakeOp(OpType.ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.ADD_ASSIGN => Expr.MakeOp(OpType.ADD_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.SUB_ASSIGN => Expr.MakeOp(OpType.SUB_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.MUL_ASSIGN => Expr.MakeOp(OpType.MUL_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.DIV_ASSIGN => Expr.MakeOp(OpType.DIV_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.MOD_ASSIGN => Expr.MakeOp(OpType.MOD_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.AND_ASSIGN => Expr.MakeOp(OpType.AND_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.OR_ASSIGN => Expr.MakeOp(OpType.OR_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.XOR_ASSIGN => Expr.MakeOp(OpType.XOR_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.SL_ASSIGN => Expr.MakeOp(OpType.SL_ASSIGN, lhs, ParseExpr(), lhs.Line),
+                    TokenType.SR_ASSIGN => Expr.MakeOp(OpType.SR_ASSIGN, lhs, ParseExpr(), lhs.Line),
                     _ => null,// 不会运行到这
                 };
             }
@@ -89,7 +90,7 @@ namespace XiLang.Syntactic
                 Expr expr2 = ParseExpr();
                 Consume(TokenType.COLON);
                 Expr expr3 = ParseCondtionalExpr();
-                return Expr.MakeOp(OpType.CONDITIONAL, expr1, expr2, expr3);
+                return Expr.MakeOp(OpType.CONDITIONAL, expr1, expr2, expr3, expr1.Line);
             }
             return expr1;
         }
@@ -105,7 +106,7 @@ namespace XiLang.Syntactic
             while (Check(TokenType.LOG_OR))
             {
                 Consume(TokenType.LOG_OR);
-                lhs = Expr.MakeOp(OpType.LOG_OR, lhs, ParseLogicalAndExpr());
+                lhs = Expr.MakeOp(OpType.LOG_OR, lhs, ParseLogicalAndExpr(), lhs.Line);
             }
             return lhs;
         }
@@ -121,7 +122,7 @@ namespace XiLang.Syntactic
             while (Check(TokenType.LOG_AND))
             {
                 Consume(TokenType.LOG_AND);
-                lhs = Expr.MakeOp(OpType.LOG_AND, lhs, ParseBitOrExpr());
+                lhs = Expr.MakeOp(OpType.LOG_AND, lhs, ParseBitOrExpr(), lhs.Line);
             }
             return lhs;
         }
@@ -137,7 +138,7 @@ namespace XiLang.Syntactic
             while (Check(TokenType.BIT_OR))
             {
                 Consume(TokenType.BIT_OR);
-                lhs = Expr.MakeOp(OpType.BIT_OR, lhs, ParseBitXorExpr());
+                lhs = Expr.MakeOp(OpType.BIT_OR, lhs, ParseBitXorExpr(), lhs.Line);
             }
             return lhs;
         }
@@ -153,7 +154,7 @@ namespace XiLang.Syntactic
             while (Check(TokenType.BIT_XOR))
             {
                 Consume(TokenType.BIT_XOR);
-                lhs = Expr.MakeOp(OpType.BIT_XOR, lhs, ParseBitAndExpr());
+                lhs = Expr.MakeOp(OpType.BIT_XOR, lhs, ParseBitAndExpr(), lhs.Line);
             }
             return lhs;
         }
@@ -169,7 +170,7 @@ namespace XiLang.Syntactic
             while (Check(TokenType.BIT_AND))
             {
                 Consume(TokenType.BIT_AND);
-                lhs = Expr.MakeOp(OpType.BIT_AND, lhs, ParseEqExpr());
+                lhs = Expr.MakeOp(OpType.BIT_AND, lhs, ParseEqExpr(), lhs.Line);
             }
             return lhs;
         }
@@ -187,8 +188,8 @@ namespace XiLang.Syntactic
                 Token t = Consume(TokenType.EQ, TokenType.NE);
                 lhs = t.Type switch
                 {
-                    TokenType.EQ => Expr.MakeOp(OpType.EQ, lhs, ParseCompExpr()),
-                    TokenType.NE => Expr.MakeOp(OpType.NE, lhs, ParseCompExpr()),
+                    TokenType.EQ => Expr.MakeOp(OpType.EQ, lhs, ParseCompExpr(), lhs.Line),
+                    TokenType.NE => Expr.MakeOp(OpType.NE, lhs, ParseCompExpr(), lhs.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -208,10 +209,10 @@ namespace XiLang.Syntactic
                 Token t = Consume(TokenType.GT, TokenType.GE, TokenType.LT, TokenType.LE);
                 lhs = t.Type switch
                 {
-                    TokenType.GT => Expr.MakeOp(OpType.GT, lhs, ParseShiftExpr()),
-                    TokenType.GE => Expr.MakeOp(OpType.GE, lhs, ParseShiftExpr()),
-                    TokenType.LT => Expr.MakeOp(OpType.LT, lhs, ParseShiftExpr()),
-                    TokenType.LE => Expr.MakeOp(OpType.LE, lhs, ParseShiftExpr()),
+                    TokenType.GT => Expr.MakeOp(OpType.GT, lhs, ParseShiftExpr(), lhs.Line),
+                    TokenType.GE => Expr.MakeOp(OpType.GE, lhs, ParseShiftExpr(), lhs.Line),
+                    TokenType.LT => Expr.MakeOp(OpType.LT, lhs, ParseShiftExpr(), lhs.Line),
+                    TokenType.LE => Expr.MakeOp(OpType.LE, lhs, ParseShiftExpr(), lhs.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -231,8 +232,8 @@ namespace XiLang.Syntactic
                 Token t = Consume(TokenType.BIT_SL, TokenType.BIT_SR);
                 lhs = t.Type switch
                 {
-                    TokenType.BIT_SL => Expr.MakeOp(OpType.BIT_SL, lhs, ParseAddExpr()),
-                    TokenType.BIT_SR => Expr.MakeOp(OpType.BIT_SR, lhs, ParseAddExpr()),
+                    TokenType.BIT_SL => Expr.MakeOp(OpType.BIT_SL, lhs, ParseAddExpr(), lhs.Line),
+                    TokenType.BIT_SR => Expr.MakeOp(OpType.BIT_SR, lhs, ParseAddExpr(), lhs.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -252,8 +253,8 @@ namespace XiLang.Syntactic
                 Token t = Consume(TokenType.ADD, TokenType.SUB);
                 lhs = t.Type switch
                 {
-                    TokenType.ADD => Expr.MakeOp(OpType.ADD, lhs, ParseMulExpr()),
-                    TokenType.SUB => Expr.MakeOp(OpType.SUB, lhs, ParseMulExpr()),
+                    TokenType.ADD => Expr.MakeOp(OpType.ADD, lhs, ParseMulExpr(), lhs.Line),
+                    TokenType.SUB => Expr.MakeOp(OpType.SUB, lhs, ParseMulExpr(), lhs.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -273,9 +274,9 @@ namespace XiLang.Syntactic
                 Token t = Consume(TokenType.MUL, TokenType.DIV, TokenType.MOD);
                 lhs = t.Type switch
                 {
-                    TokenType.MUL => Expr.MakeOp(OpType.MUL, lhs, ParseCastExpr()),
-                    TokenType.DIV => Expr.MakeOp(OpType.DIV, lhs, ParseCastExpr()),
-                    TokenType.MOD => Expr.MakeOp(OpType.MOD, lhs, ParseCastExpr()),
+                    TokenType.MUL => Expr.MakeOp(OpType.MUL, lhs, ParseCastExpr(), lhs.Line),
+                    TokenType.DIV => Expr.MakeOp(OpType.DIV, lhs, ParseCastExpr(), lhs.Line),
+                    TokenType.MOD => Expr.MakeOp(OpType.MOD, lhs, ParseCastExpr(), lhs.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -297,25 +298,26 @@ namespace XiLang.Syntactic
                 Consume(TokenType.LPAREN);
                 Expr type = ParseTypeExpr();
                 Consume(TokenType.RPAREN);
-                return Expr.MakeOp(OpType.CAST, type, ParseCastExpr());
+                return Expr.MakeOp(OpType.CAST, type, ParseCastExpr(), type.Line);
             }
             return ParseUnaryExpr();
         }
 
         /// <summary>
         /// UnaryExpr
-        ///     (LOG_NOT | SUB) CastExpr | (INC | DEC) UnaryExpr | CallExpr
+        ///     (LOG_NOT | BIT_NOT | SUB) CastExpr | (INC | DEC) UnaryExpr | CallExpr
         /// </summary>
         /// <returns></returns>
         private Expr ParseUnaryExpr()
         {
-            if (Check(TokenType.LOG_NOT, TokenType.SUB))
+            if (Check(TokenType.LOG_NOT, TokenType.BIT_NOT, TokenType.SUB))
             {
-                Token t = Consume(TokenType.LOG_NOT, TokenType.SUB);
+                Token t = Consume(TokenType.LOG_NOT, TokenType.BIT_NOT, TokenType.SUB);
                 return t.Type switch
                 {
-                    TokenType.LOG_NOT => Expr.MakeOp(OpType.LOG_NOT, ParseCastExpr()),
-                    TokenType.SUB => Expr.MakeOp(OpType.NEG, ParseCastExpr()),
+                    TokenType.BIT_NOT => Expr.MakeOp(OpType.BIT_NOT, ParseCastExpr(), t.Line),
+                    TokenType.LOG_NOT => Expr.MakeOp(OpType.LOG_NOT, ParseCastExpr(), t.Line),
+                    TokenType.SUB => Expr.MakeOp(OpType.NEG, ParseCastExpr(), t.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -324,8 +326,8 @@ namespace XiLang.Syntactic
                 Token t = Consume(TokenType.INC, TokenType.DEC);
                 return t.Type switch
                 {
-                    TokenType.INC => Expr.MakeOp(OpType.INC, ParseUnaryExpr()),
-                    TokenType.DEC => Expr.MakeOp(OpType.DEC, ParseUnaryExpr()),
+                    TokenType.INC => Expr.MakeOp(OpType.INC, ParseUnaryExpr(), t.Line),
+                    TokenType.DEC => Expr.MakeOp(OpType.DEC, ParseUnaryExpr(), t.Line),
                     _ => null   // 不会运行到这
                 };
             }
@@ -364,17 +366,17 @@ namespace XiLang.Syntactic
                         }
                     }
                     Consume(TokenType.RPAREN);
-                    lhs = Expr.MakeOp(OpType.CALL, lhs, ps);
+                    lhs = Expr.MakeOp(OpType.CALL, lhs, ps, lhs.Line);
                 }
                 else if (Check(TokenType.DOT))
                 {   // Access
                     Consume(TokenType.DOT);
-                    lhs = Expr.MakeOp(OpType.CLASS_ACCESS, lhs, ParseId());
+                    lhs = Expr.MakeOp(OpType.CLASS_ACCESS, lhs, ParseId(), lhs.Line);
                 }
                 else if (Check(TokenType.LBRACKET))
                 {   // 数组访问
                     Consume(TokenType.LBRACKET);
-                    lhs = Expr.MakeOp(OpType.ARRAY_ACCESS, lhs, ParseExpr());
+                    lhs = Expr.MakeOp(OpType.ARRAY_ACCESS, lhs, ParseExpr(), lhs.Line);
                     Consume(TokenType.RBRACKET);
                 }
                 else
@@ -420,7 +422,8 @@ namespace XiLang.Syntactic
         /// <returns></returns>
         private Expr ParseId()
         {
-            return Expr.MakeId(Consume(TokenType.ID).Literal);
+            Token t = Consume(TokenType.ID);
+            return Expr.MakeId(t.Literal, t.Line);
         }
 
         /// <summary>
@@ -435,19 +438,19 @@ namespace XiLang.Syntactic
             switch (t.Type)
             {
                 case TokenType.NULL:
-                    return Expr.MakeNull();
+                    return Expr.MakeNull(t.Line);
                 case TokenType.TRUE:
-                    return Expr.MakeBool(true);
+                    return Expr.MakeBool(true, t.Line);
                 case TokenType.FALSE:
-                    return Expr.MakeBool(false);
+                    return Expr.MakeBool(false, t.Line);
                 case TokenType.DEC_LITERAL:
-                    return Expr.MakeInt(t.Literal);
+                    return Expr.MakeInt(t.Literal, 10, t.Line);
                 case TokenType.HEX_LITERAL:
-                    return Expr.MakeInt(t.Literal, 16);
+                    return Expr.MakeInt(t.Literal, 16, t.Line);
                 case TokenType.FLOAT_LITERAL:
-                    return Expr.MakeFloat(t.Literal);
+                    return Expr.MakeFloat(t.Literal, t.Line);
                 case TokenType.STR_LITERAL:
-                    return Expr.MakeString(t.Literal);
+                    return Expr.MakeString(t.Literal, t.Line);
                 default:
                     break;
             }

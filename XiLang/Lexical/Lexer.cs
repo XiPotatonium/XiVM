@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using XiLang.Exceptions;
+using XiLang.Errors;
 
 namespace XiLang.Lexical
 {

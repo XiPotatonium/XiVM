@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using XiLang.Exceptions;
+using XiLang.Errors;
 using XiLang.Lexical;
 
 namespace XiLang.Syntactic
