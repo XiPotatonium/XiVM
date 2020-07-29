@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace XiVM.Executor
+﻿namespace XiVM.Executor
 {
     /// <summary>
     /// 运行时堆栈，用于存储Activation Record，使用链表式堆栈
     /// </summary>
-    class RuntimeStack
+    internal class RuntimeStack
     {
         public RuntimeStackFrame Global { private set; get; }
         public RuntimeStackFrame Current { private set; get; }
@@ -37,7 +33,7 @@ namespace XiVM.Executor
         }
     }
 
-    class RuntimeStackFrame
+    internal class RuntimeStackFrame
     {
         public RuntimeStackFrame Previous { private set; get; }
         public int Depth { private set; get; }

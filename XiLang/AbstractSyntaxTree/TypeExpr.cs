@@ -1,5 +1,4 @@
-﻿using System;
-using XiLang.Errors;
+﻿using XiLang.Errors;
 using XiLang.Lexical;
 using XiVM.Xir;
 
