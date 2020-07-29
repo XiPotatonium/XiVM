@@ -6,7 +6,6 @@ namespace XiVM
 {
     internal class Program
     {
-        public static BinaryModule BinaryModule { private set; get; }
 
         private static void Main(string[] args)
         {
@@ -15,9 +14,9 @@ namespace XiVM
             argumentParser.Parse(args);
 
             string fileName = argumentParser.GetValue().StringValue;
-            BinaryModule = BinaryModule.Load(fileName);
+            BinaryModule binaryModule = BinaryModule.Load(fileName);
 
-            VMExecutor executor = new VMExecutor();
+            VMExecutor executor = new VMExecutor(binaryModule);
             executor.Execute();
         }
     }
