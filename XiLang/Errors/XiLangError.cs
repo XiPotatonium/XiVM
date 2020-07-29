@@ -8,7 +8,7 @@ namespace XiLang.Errors
     {
         public int Line { get; }
 
-        public XiLangError(string message, int line) : base(message)
+        public XiLangError(string message, int line = -1) : base(message)
         {
             Line = line;
         }

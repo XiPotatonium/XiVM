@@ -23,8 +23,8 @@ namespace XiLang.AbstractSyntaxTree
                 case TokenType.INT:
                     ret.Type = SyntacticValueType.INT;
                     break;
-                case TokenType.FLOAT:
-                    ret.Type = SyntacticValueType.FLOAT;
+                case TokenType.DOUBLE:
+                    ret.Type = SyntacticValueType.DOUBLE;
                     break;
                 case TokenType.VOID:
                     ret.Type = SyntacticValueType.VOID;
@@ -52,7 +52,7 @@ namespace XiLang.AbstractSyntaxTree
             {
                 SyntacticValueType.BOOL => "bool",
                 SyntacticValueType.INT => "int",
-                SyntacticValueType.FLOAT => "float",
+                SyntacticValueType.DOUBLE => "float",
                 SyntacticValueType.STRING => "string",
                 SyntacticValueType.CLASS => ClassName,
                 SyntacticValueType.VOID => "void",
@@ -71,7 +71,16 @@ namespace XiLang.AbstractSyntaxTree
 
         public XirType ToXirType()
         {
-            throw new NotImplementedException();
+            return Type switch
+            {
+                SyntacticValueType.BOOL => IsArray ? XirType.XirByteType : XirType.XirByteArrayType,
+                SyntacticValueType.INT => IsArray ? XirType.XirInt32Type : XirType.XirInt32ArrayType,
+                SyntacticValueType.DOUBLE => IsArray ? XirType.XirDoubleType : XirType.XirDoubleArrayType,
+                SyntacticValueType.STRING => IsArray ? XirType.XirStringType : XirType.XirStringArrayType,
+                SyntacticValueType.CLASS => XirType.XirClassType(ClassName, IsArray),
+                SyntacticValueType.VOID => XirType.XirVoidType,
+                _ => null
+            };
         }
     }
 }

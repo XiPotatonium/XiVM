@@ -13,31 +13,31 @@ namespace XiLang
         public static readonly XiLangValue TrueValue = new XiLangValue()
         {
             Type = ValueType.BOOL,
-            IntVal = 1
+            IntValue = 1
         };
 
         public static readonly XiLangValue FalseValue = new XiLangValue()
         {
             Type = ValueType.BOOL,
-            IntVal = 0
+            IntValue = 0
         };
 
         private static readonly XiLangValue DefaultInt = new XiLangValue()
         {
             Type = ValueType.INT,
-            IntVal = 0
+            IntValue = 0
         };
 
-        private static readonly XiLangValue DefaultFloat = new XiLangValue()
+        private static readonly XiLangValue DefaultDouble = new XiLangValue()
         {
-            Type = ValueType.FLOAT,
-            FloatVal = 0.0f
+            Type = ValueType.DOUBLE,
+            DoubleValue = 0.0f
         };
 
         private static readonly XiLangValue DefaultString = new XiLangValue()
         {
             Type = ValueType.STRING,
-            StringVal = string.Empty
+            StringValue = string.Empty
         };
 
         public static XiLangValue MakeNull()
@@ -55,16 +55,16 @@ namespace XiLang
             return new XiLangValue()
             {
                 Type = ValueType.INT,
-                IntVal = Convert.ToInt32(literal, fromBase)
+                IntValue = Convert.ToInt32(literal, fromBase)
             };
         }
 
-        public static XiLangValue MakeFloat(string literal)
+        public static XiLangValue MakeDouble(string literal)
         {
             return new XiLangValue()
             {
-                Type = ValueType.FLOAT,
-                FloatVal = (float)Convert.ToDouble(literal)
+                Type = ValueType.DOUBLE,
+                DoubleValue = (float)Convert.ToDouble(literal)
             };
         }
 
@@ -79,7 +79,7 @@ namespace XiLang
             return new XiLangValue()
             {
                 Type = ValueType.STRING,
-                StringVal = literal
+                StringValue = literal
             };
         }
 
@@ -88,7 +88,7 @@ namespace XiLang
             return type switch
             {
                 ValueType.INT => DefaultInt,
-                ValueType.FLOAT => DefaultFloat,
+                ValueType.DOUBLE => DefaultDouble,
                 ValueType.STRING => DefaultString,
                 ValueType.BOOL => FalseValue,
                 ValueType.NULL => NullValue,
@@ -109,27 +109,27 @@ namespace XiLang
             {
                 return value;
             }
-            else if (type == ValueType.FLOAT)
+            else if (type == ValueType.DOUBLE)
             {
                 if (value.Type == ValueType.INT)
                 {
-                    return new XiLangValue() { Type = type, FloatVal = value.IntVal };
+                    return new XiLangValue() { Type = type, DoubleValue = value.IntValue };
                 }
             }
             else if (type == ValueType.INT)
             {
-                if (value.Type == ValueType.FLOAT)
+                if (value.Type == ValueType.DOUBLE)
                 {
-                    return new XiLangValue() { Type = type, IntVal = (int)value.FloatVal };
+                    return new XiLangValue() { Type = type, IntValue = (int)value.DoubleValue };
                 }
             }
             throw new TypeError($"Cannot cast from {value.Type} to {type}", line);
         }
 
         public ValueType Type { set; get; }
-        public string StringVal { set; get; }
-        public int IntVal { set; get; }
-        public float FloatVal { set; get; }
-        public bool BoolVal => this == TrueValue;
+        public string StringValue { set; get; }
+        public int IntValue { set; get; }
+        public float DoubleValue { set; get; }
+        public bool BoolValue => this == TrueValue;
     }
 }

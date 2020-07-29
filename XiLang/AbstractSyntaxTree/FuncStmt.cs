@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using XiLang.Errors;
 using XiLang.Symbol;
+using XiVM;
 using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
@@ -55,6 +58,21 @@ namespace XiLang.AbstractSyntaxTree
             CodeGen(Body.Child);
 
             // TODO 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
+            if (XirGenPass.ModuleConstructor.CurrentBasicBlock.Instructions.Count == 0 ||
+                !Instruction.IsReturn(XirGenPass.ModuleConstructor.CurrentBasicBlock.Instructions[^1]))
+            {
+                // 如果最后一条不是return
+                if (functionType.ReturnType.Tag == XirTypeTag.VOID)
+                {
+                    // 如果函数返回void，自动补上ret
+                    XirGenPass.ModuleConstructor.AddReturnInstruction(null);
+                }
+                else
+                {
+                    // 否则报错
+                    throw new XiLangError($"Function {param.Id} should return a value.");
+                }
+            }
 
             XirGenPass.VariableSymbolTable.Pop();
             return null;

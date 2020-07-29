@@ -9,7 +9,7 @@ namespace XiLang.Lexical
         // 特殊符号
         EOF,
         // 类型
-        BOOL, INT, FLOAT, VOID, STRING,
+        BOOL, INT, DOUBLE, VOID, STRING,
         // 其他关键词
         CLASS, BASE, FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN,
         // 常量
@@ -41,7 +41,7 @@ namespace XiLang.Lexical
         {
             { "bool", TokenType.BOOL },
             { "int", TokenType.INT },
-            { "float", TokenType.FLOAT },
+            { "double", TokenType.DOUBLE },
             { "void", TokenType.VOID },
             { "string", TokenType.STRING },
 
@@ -67,7 +67,7 @@ namespace XiLang.Lexical
         /// </summary>
         public static readonly TokenType[] TypeTokens =
         {
-            TokenType.BOOL, TokenType.INT, TokenType.FLOAT, TokenType.VOID, TokenType.STRING
+            TokenType.BOOL, TokenType.INT, TokenType.DOUBLE, TokenType.VOID, TokenType.STRING
         };
 
         /// <summary>

@@ -42,7 +42,7 @@ namespace XiLang.AbstractSyntaxTree
         {
             return new Expr(ExprType.CONST, line)
             {
-                Value = XiLangValue.MakeFloat(literal)
+                Value = XiLangValue.MakeDouble(literal)
             };
         }
 
@@ -65,7 +65,7 @@ namespace XiLang.AbstractSyntaxTree
             {
                 Value = new XiLangValue()
                 {
-                    StringVal = id
+                    StringValue = id
                 }
             };
         }
@@ -174,15 +174,15 @@ namespace XiLang.AbstractSyntaxTree
                         Value = Expr1.Value;
                         if (Value.Type == ValueType.INT)
                         {
-                            Value.IntVal = -Value.IntVal;
+                            Value.IntValue = -Value.IntValue;
                         }
-                        else if (Value.Type == ValueType.FLOAT)
+                        else if (Value.Type == ValueType.DOUBLE)
                         {
-                            Value.FloatVal = -Value.FloatVal;
+                            Value.DoubleValue = -Value.DoubleValue;
                         }
                         else
                         {
-                            throw TypeError.ExpectType(OpType.ToString(), Value.Type, Line, ValueType.INT, ValueType.FLOAT);
+                            throw TypeError.ExpectType(OpType.ToString(), Value.Type, Line, ValueType.INT, ValueType.DOUBLE);
                         }
                         break;
                     case OpType.ADD:
@@ -190,30 +190,30 @@ namespace XiLang.AbstractSyntaxTree
                     case OpType.MUL:
                     case OpType.DIV:
                     case OpType.MOD:
-                        if (Expr1.Value.Type == ValueType.FLOAT || Expr2.Value.Type == ValueType.FLOAT)
+                        if (Expr1.Value.Type == ValueType.DOUBLE || Expr2.Value.Type == ValueType.DOUBLE)
                         {
-                            Value = XiLangValue.Cast(ValueType.FLOAT, Expr1.Value, Expr1.Line);
-                            Expr2.Value = XiLangValue.Cast(ValueType.FLOAT, Expr2.Value, Expr2.Line);
-                            Value.FloatVal = OpType switch
+                            Value = XiLangValue.Cast(ValueType.DOUBLE, Expr1.Value, Expr1.Line);
+                            Expr2.Value = XiLangValue.Cast(ValueType.DOUBLE, Expr2.Value, Expr2.Line);
+                            Value.DoubleValue = OpType switch
                             {
-                                OpType.ADD => Value.FloatVal + Expr2.Value.FloatVal,
-                                OpType.SUB => Value.FloatVal - Expr2.Value.FloatVal,
-                                OpType.MUL => Value.FloatVal * Expr2.Value.FloatVal,
-                                OpType.DIV => Value.FloatVal / Expr2.Value.FloatVal,
-                                OpType.MOD => Value.FloatVal % Expr2.Value.FloatVal,
+                                OpType.ADD => Value.DoubleValue + Expr2.Value.DoubleValue,
+                                OpType.SUB => Value.DoubleValue - Expr2.Value.DoubleValue,
+                                OpType.MUL => Value.DoubleValue * Expr2.Value.DoubleValue,
+                                OpType.DIV => Value.DoubleValue / Expr2.Value.DoubleValue,
+                                OpType.MOD => Value.DoubleValue % Expr2.Value.DoubleValue,
                                 _ => throw new NotImplementedException(),
                             };
                         }
                         else if (Expr1.Value.Type == ValueType.INT && Expr2.Value.Type == ValueType.INT)
                         {
                             Value = Expr1.Value;
-                            Value.IntVal = OpType switch
+                            Value.IntValue = OpType switch
                             {
-                                OpType.ADD => Value.IntVal + Expr2.Value.IntVal,
-                                OpType.SUB => Value.IntVal - Expr2.Value.IntVal,
-                                OpType.MUL => Value.IntVal * Expr2.Value.IntVal,
-                                OpType.DIV => Value.IntVal / Expr2.Value.IntVal,
-                                OpType.MOD => Value.IntVal % Expr2.Value.IntVal,
+                                OpType.ADD => Value.IntValue + Expr2.Value.IntValue,
+                                OpType.SUB => Value.IntValue - Expr2.Value.IntValue,
+                                OpType.MUL => Value.IntValue * Expr2.Value.IntValue,
+                                OpType.DIV => Value.IntValue / Expr2.Value.IntValue,
+                                OpType.MOD => Value.IntValue % Expr2.Value.IntValue,
                                 _ => throw new NotImplementedException(),
                             };
                         }
@@ -225,7 +225,7 @@ namespace XiLang.AbstractSyntaxTree
                     case OpType.LOG_NOT:
                         if (Expr1.Value.Type == ValueType.BOOL)
                         {
-                            Value = XiLangValue.MakeBool(!Expr1.Value.BoolVal);
+                            Value = XiLangValue.MakeBool(!Expr1.Value.BoolValue);
                         }
                         else
                         {
@@ -238,8 +238,8 @@ namespace XiLang.AbstractSyntaxTree
                         Expr2.AssertValueType(OpType.ToString(), ValueType.BOOL);
                         Value = XiLangValue.MakeBool(OpType switch
                         {
-                            OpType.LOG_AND => Expr1.Value.BoolVal && Expr2.Value.BoolVal,
-                            OpType.LOG_OR => Expr1.Value.BoolVal || Expr2.Value.BoolVal,
+                            OpType.LOG_AND => Expr1.Value.BoolValue && Expr2.Value.BoolValue,
+                            OpType.LOG_OR => Expr1.Value.BoolValue || Expr2.Value.BoolValue,
                             _ => throw new NotImplementedException(),
                         });
                         break;
@@ -253,18 +253,18 @@ namespace XiLang.AbstractSyntaxTree
                         Value = Expr1.Value;
                         if (OpType == OpType.BIT_NOT)
                         {   // 一元~
-                            Value.IntVal = ~Value.IntVal;
+                            Value.IntValue = ~Value.IntValue;
                         }
                         else
                         {   // 二元bit运算
                             Expr2.AssertValueType(OpType.ToString(), ValueType.INT);
-                            Value.IntVal = OpType switch
+                            Value.IntValue = OpType switch
                             {
-                                OpType.BIT_AND => Value.IntVal & Expr2.Value.IntVal,
-                                OpType.BIT_XOR => Value.IntVal & Expr2.Value.IntVal,
-                                OpType.BIT_OR => Value.IntVal | Expr2.Value.IntVal,
-                                OpType.BIT_SL => Value.IntVal << Expr2.Value.IntVal,
-                                OpType.BIT_SR => Value.IntVal >> Expr2.Value.IntVal,
+                                OpType.BIT_AND => Value.IntValue & Expr2.Value.IntValue,
+                                OpType.BIT_XOR => Value.IntValue & Expr2.Value.IntValue,
+                                OpType.BIT_OR => Value.IntValue | Expr2.Value.IntValue,
+                                OpType.BIT_SL => Value.IntValue << Expr2.Value.IntValue,
+                                OpType.BIT_SR => Value.IntValue >> Expr2.Value.IntValue,
                                 _ => throw new NotImplementedException(),
                             };
                         }
@@ -275,18 +275,18 @@ namespace XiLang.AbstractSyntaxTree
                     case OpType.GT:
                     case OpType.LE:
                     case OpType.LT:
-                        if (Expr1.Value.Type == ValueType.FLOAT || Expr2.Value.Type == ValueType.FLOAT)
+                        if (Expr1.Value.Type == ValueType.DOUBLE || Expr2.Value.Type == ValueType.DOUBLE)
                         {
-                            Expr1.Value = XiLangValue.Cast(ValueType.FLOAT, Expr1.Value, Expr1.Line);
-                            Expr2.Value = XiLangValue.Cast(ValueType.FLOAT, Expr2.Value, Expr2.Line);
+                            Expr1.Value = XiLangValue.Cast(ValueType.DOUBLE, Expr1.Value, Expr1.Line);
+                            Expr2.Value = XiLangValue.Cast(ValueType.DOUBLE, Expr2.Value, Expr2.Line);
                             Value = XiLangValue.MakeBool(OpType switch
                             {
-                                OpType.EQ => Expr1.Value.FloatVal == Expr2.Value.FloatVal,
-                                OpType.NE => Expr1.Value.FloatVal != Expr2.Value.FloatVal,
-                                OpType.GE => Expr1.Value.FloatVal >= Expr2.Value.FloatVal,
-                                OpType.GT => Expr1.Value.FloatVal > Expr2.Value.FloatVal,
-                                OpType.LE => Expr1.Value.FloatVal <= Expr2.Value.FloatVal,
-                                OpType.LT => Expr1.Value.FloatVal < Expr2.Value.FloatVal,
+                                OpType.EQ => Expr1.Value.DoubleValue == Expr2.Value.DoubleValue,
+                                OpType.NE => Expr1.Value.DoubleValue != Expr2.Value.DoubleValue,
+                                OpType.GE => Expr1.Value.DoubleValue >= Expr2.Value.DoubleValue,
+                                OpType.GT => Expr1.Value.DoubleValue > Expr2.Value.DoubleValue,
+                                OpType.LE => Expr1.Value.DoubleValue <= Expr2.Value.DoubleValue,
+                                OpType.LT => Expr1.Value.DoubleValue < Expr2.Value.DoubleValue,
                                 _ => throw new NotImplementedException(),
                             });
                         }
@@ -294,18 +294,18 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             Value = XiLangValue.MakeBool(OpType switch
                             {
-                                OpType.EQ => Expr1.Value.IntVal == Expr2.Value.IntVal,
-                                OpType.NE => Expr1.Value.IntVal != Expr2.Value.IntVal,
-                                OpType.GE => Expr1.Value.IntVal >= Expr2.Value.IntVal,
-                                OpType.GT => Expr1.Value.IntVal > Expr2.Value.IntVal,
-                                OpType.LE => Expr1.Value.IntVal <= Expr2.Value.IntVal,
-                                OpType.LT => Expr1.Value.IntVal < Expr2.Value.IntVal,
+                                OpType.EQ => Expr1.Value.IntValue == Expr2.Value.IntValue,
+                                OpType.NE => Expr1.Value.IntValue != Expr2.Value.IntValue,
+                                OpType.GE => Expr1.Value.IntValue >= Expr2.Value.IntValue,
+                                OpType.GT => Expr1.Value.IntValue > Expr2.Value.IntValue,
+                                OpType.LE => Expr1.Value.IntValue <= Expr2.Value.IntValue,
+                                OpType.LT => Expr1.Value.IntValue < Expr2.Value.IntValue,
                                 _ => throw new NotImplementedException(),
                             });
                         }
                         else if (Expr1.Value.Type == ValueType.STRING && Expr2.Value.Type == ValueType.STRING)
                         {
-                            int res = string.Compare(Expr1.Value.StringVal, Expr2.Value.StringVal);
+                            int res = string.Compare(Expr1.Value.StringValue, Expr2.Value.StringValue);
                             Value = XiLangValue.MakeBool(OpType switch
                             {
                                 OpType.EQ => res == 0,
@@ -321,8 +321,8 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             Value = XiLangValue.MakeBool(OpType switch
                             {
-                                OpType.EQ => Expr1.Value.BoolVal == Expr2.Value.BoolVal,
-                                OpType.NE => Expr1.Value.BoolVal != Expr2.Value.BoolVal,
+                                OpType.EQ => Expr1.Value.BoolValue == Expr2.Value.BoolValue,
+                                OpType.NE => Expr1.Value.BoolValue != Expr2.Value.BoolValue,
                                 _ => throw new TypeError($"{OpType} cannot be applied to {Expr1.Value.Type} and {Expr2.Value.Type}", Line),
                             });
                         }
@@ -338,7 +338,7 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             SyntacticValueType.BOOL => ValueType.BOOL,
                             SyntacticValueType.INT => ValueType.INT,
-                            SyntacticValueType.FLOAT => ValueType.FLOAT,
+                            SyntacticValueType.DOUBLE => ValueType.DOUBLE,
                             SyntacticValueType.STRING => ValueType.STRING,
                             _ => throw new NotImplementedException(),
                         }, Expr2.Value, Expr1.Line);
@@ -356,14 +356,14 @@ namespace XiLang.AbstractSyntaxTree
             {
                 ExprType.CONST => Value.Type switch
                 {
-                    ValueType.INT => Value.IntVal.ToString(),
-                    ValueType.FLOAT => Value.FloatVal.ToString(),
-                    ValueType.STRING => $"\\\"{Value.StringVal}\\\"",
-                    ValueType.BOOL => Value.IntVal == 0 ? "false" : "true",
+                    ValueType.INT => Value.IntValue.ToString(),
+                    ValueType.DOUBLE => Value.DoubleValue.ToString(),
+                    ValueType.STRING => $"\\\"{Value.StringValue}\\\"",
+                    ValueType.BOOL => Value.IntValue == 0 ? "false" : "true",
                     ValueType.NULL => "null",
                     _ => "UNK",
                 },
-                ExprType.ID => $"(Id){Value.StringVal}",
+                ExprType.ID => $"(Id){Value.StringValue}",
                 ExprType.OPEXPR => OpType switch
                 {
                     OpType.NEG => "-(neg)",

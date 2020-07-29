@@ -13,6 +13,11 @@ namespace XiVM
     [Serializable]
     public class Instruction
     {
+        public static bool IsReturn(Instruction instruction)
+        {
+            return (instruction.OpCode & 0x88) != 0;
+        }
+
         public byte OpCode { set; get; }
         public byte[] Params { set; get; }
     }

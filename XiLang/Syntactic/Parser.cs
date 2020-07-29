@@ -158,11 +158,11 @@ namespace XiLang.Syntactic
             VarStmt vars;
             if (declarator.ExprType == ExprType.ID)
             {
-                vars = new VarStmt(type, declarator.Value.StringVal, null);
+                vars = new VarStmt(type, declarator.Value.StringValue, null);
             }
             else
             {
-                vars = new VarStmt(type, declarator.Expr1.Value.StringVal, declarator.Expr2);
+                vars = new VarStmt(type, declarator.Expr1.Value.StringValue, declarator.Expr2);
             }
             if (Check(TokenType.COMMA))
             {
@@ -194,11 +194,11 @@ namespace XiLang.Syntactic
             VarStmt vars;
             if (declarator.ExprType == ExprType.ID)
             {
-                vars = new VarStmt(type, declarator.Value.StringVal, null);
+                vars = new VarStmt(type, declarator.Value.StringValue, null);
             }
             else
             {
-                vars = new VarStmt(type, declarator.Expr1.Value.StringVal, declarator.Expr2);
+                vars = new VarStmt(type, declarator.Expr1.Value.StringValue, declarator.Expr2);
             }
             if (Check(TokenType.COMMA))
             {

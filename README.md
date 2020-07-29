@@ -12,7 +12,7 @@
 * 类型
     * 布尔：bool
     * 整数：32位整数int
-    * 浮点：32位浮点数float
+    * 浮点：64位浮点数double
     * 数组
     * 其他：void, string
 * 运算符

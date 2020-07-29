@@ -2,12 +2,12 @@
 {
     public enum SyntacticValueType
     {
-        BOOL, INT, FLOAT, STRING, CLASS, VOID
+        BOOL, INT, DOUBLE, STRING, CLASS, VOID
     }
 
     public enum ValueType
     {
-        INT, FLOAT, STRING, BOOL, NULL
+        INT, DOUBLE, STRING, BOOL, NULL
     }
 
     public enum OpType
