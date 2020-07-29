@@ -1,4 +1,6 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
     public class BlockStmt : Stmt
     {
@@ -17,6 +19,14 @@
         public override string ASTLabel()
         {
             return "(Block)";
+        }
+
+        public override XirValue CodeGen()
+        {
+            XirGenPass.VariableSymbolTable.Push();
+            CodeGen(Child);
+            XirGenPass.VariableSymbolTable.Pop();
+            return null;
         }
     }
 }

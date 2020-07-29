@@ -1,4 +1,6 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
     public class IfStmt : Stmt
     {
@@ -24,6 +26,11 @@
         public override AST[] Children()
         {
             return new AST[] { Cond, Then, Otherwise };
+        }
+
+        public override XirValue CodeGen()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

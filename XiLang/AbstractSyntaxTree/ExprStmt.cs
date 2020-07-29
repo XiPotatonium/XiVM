@@ -1,4 +1,6 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
     public class ExprStmt : Stmt
     {
@@ -17,6 +19,11 @@
         public override AST[] Children()
         {
             return new AST[] { Expr };
+        }
+
+        public override XirValue CodeGen()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

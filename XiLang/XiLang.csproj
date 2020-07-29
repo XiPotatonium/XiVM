@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleArgumentParser\ConsoleArgumentParser.csproj" />
+    <ProjectReference Include="..\XiVM\XiVM.csproj" />
   </ItemGroup>
 
 </Project>

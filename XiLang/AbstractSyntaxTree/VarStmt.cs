@@ -1,6 +1,8 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
-    public class VarStmt : DeclOrDefStmt
+    public class VarStmt : DeclarationStmt
     {
         public Expr Init { private set; get; }
 
@@ -21,6 +23,12 @@
         public override AST[] Children()
         {
             return new AST[] { Type, Init };
+        }
+
+        public override XirValue CodeGen()
+        {
+            XirGenPass.ModuleConstructor.AddVariable(Type.ToXirType(), Init?.CodeGen());
+            return null;
         }
     }
 }

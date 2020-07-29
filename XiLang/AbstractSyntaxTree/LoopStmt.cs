@@ -1,4 +1,6 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
     public enum LoopType
     {
@@ -52,6 +54,11 @@
         public override AST[] Children()
         {
             return new AST[] { Init, Cond, Step, Body };
+        }
+
+        public override XirValue CodeGen()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

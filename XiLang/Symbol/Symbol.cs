@@ -1,4 +1,4 @@
-﻿namespace XiVM.Symbol
+﻿namespace XiLang.Symbol
 {
     internal abstract class Symbol
     {

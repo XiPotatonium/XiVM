@@ -1,5 +1,7 @@
-﻿using XiLang.Errors;
+﻿using System;
+using XiLang.Errors;
 using XiLang.Lexical;
+using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -65,6 +67,11 @@ namespace XiLang.AbstractSyntaxTree
         public override AST[] Children()
         {
             return new AST[0];
+        }
+
+        public XirType ToXirType()
+        {
+            throw new NotImplementedException();
         }
     }
 }

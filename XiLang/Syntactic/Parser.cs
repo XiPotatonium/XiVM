@@ -54,7 +54,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// GlobalStmt
-        ///     ClassStmt | DeclOrDefStmt
+        ///     ClassStmt | DeclarationStmt
         /// </summary>
         /// <returns></returns>
         private AST ParseGlobalStmt()
@@ -71,7 +71,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// ClassStmt
-        ///     CLASS ID LBRACES DeclOrDefStmt* RBRACES
+        ///     CLASS ID LBRACES DeclarationStmt* RBRACES
         /// </summary>
         /// <returns></returns>
         private ClassStmt ParseClassStmt()
@@ -85,7 +85,7 @@ namespace XiLang.Syntactic
             Consume(TokenType.LBRACES);
             while (!Check(TokenType.RBRACES))
             {
-                DeclOrDefStmt stmt = ParseDeclOrDefStmt();
+                DeclarationStmt stmt = ParseDeclOrDefStmt();
                 if (stmt is FuncStmt)
                 {
                     AppendASTLinkedList(ref fs, ref fcur, (FuncStmt)stmt);
@@ -102,14 +102,14 @@ namespace XiLang.Syntactic
         }
 
         /// <summary>
-        /// 这里用了LookAhead 2
+        /// 这里用了LookAhead
         /// 此外不允许不带定义的声明
-        /// DeclOrDefStmt
+        /// DeclarationStmt
         ///     TypeExpr FuncDeclarator BlockStmt
         ///     TypeExpr VarDeclarator SEMICOLON
         /// </summary>
         /// <returns></returns>
-        private DeclOrDefStmt ParseDeclOrDefStmt()
+        private DeclarationStmt ParseDeclOrDefStmt()
         {
             TypeExpr type = ParseTypeExpr();
             if (CheckAt(1, TokenType.LPAREN))
@@ -209,6 +209,7 @@ namespace XiLang.Syntactic
         }
 
         /// <summary>
+        /// Function和Class不属于普通Stmt
         /// Stmt
         ///     LoopStmt | IfStmt | JumpStmt | BlockStmt | VarOrExprStmt
         /// </summary>

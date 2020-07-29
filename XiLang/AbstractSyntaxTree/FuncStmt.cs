@@ -1,6 +1,10 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using System.Collections.Generic;
+using XiLang.Symbol;
+using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
-    public class FuncStmt : DeclOrDefStmt
+    public class FuncStmt : DeclarationStmt
     {
         public BlockStmt Body { set; get; }
         public ParamsAst Params { private set; get; }
@@ -23,6 +27,38 @@
         {
             return new AST[] { Type, Params, Body };
         }
+
+        public override XirValue CodeGen()
+        {
+            XirGenPass.VariableSymbolTable.Push();
+
+            // 参数类型信息以及形参的构建
+            List<XirType> paramsType = new List<XirType>();
+            VarStmt param = Params.Params;
+            while (param != null)
+            {
+                XirType paramType = param.Type.ToXirType();
+                paramsType.Add(paramType);
+                VariableSymbol variableSymbol = new VariableSymbol(param.Id, XirGenPass.ModuleConstructor.AddVariable(paramType));
+                XirGenPass.VariableSymbolTable.Add(param.Id, variableSymbol);
+
+                param = (VarStmt)param.SiblingAST;
+            }
+
+            FunctionType functionType = new FunctionType(Type.ToXirType(), paramsType);
+
+            Function function = XirGenPass.ModuleConstructor.AddFunction(Id, functionType);
+            BasicBlock entryBB = XirGenPass.ModuleConstructor.AddBasicBlock(function);
+            XirGenPass.ModuleConstructor.CurrentBasicBlock = entryBB;
+
+            // 不要直接CodeGen Body，因为那样会新建一个NS
+            CodeGen(Body.Child);
+
+            // TODO 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
+
+            XirGenPass.VariableSymbolTable.Pop();
+            return null;
+        }
     }
 
     public class ParamsAst : AST
@@ -42,6 +78,11 @@
         public override AST[] Children()
         {
             return new AST[] { Params };
+        }
+
+        public override XirValue CodeGen()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

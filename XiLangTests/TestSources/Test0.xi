@@ -1,14 +1,9 @@
 ﻿int a = 10;
 
-class Demo {
-    int id = 0;
-    float val = 10.0;
-    int getId() { 
-        return id; 
-    }
+int foo(int a) {
+    return a + 1;
 }
 
-int main(int argc, string[] argv) { 
-    Demo d; 
-    return 0; 
+void main(string[] argv) {
+    int x = foo(a + 20);
 }

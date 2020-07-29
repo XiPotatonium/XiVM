@@ -48,10 +48,10 @@
 Program
     (GlobalStmt)*
 GlobalStmt
-    ClassStmt | DeclOrDefStmt
+    ClassStmt | DeclarationStmt
 ClassStmt
-    CLASS ID LBRACES DeclOrDefStmt* RBRACES
-DeclOrDefStmt
+    CLASS ID LBRACES DeclarationStmt* RBRACES
+DeclarationStmt
     TypeExpr FuncDeclarator BlockStmt
     TypeExpr VarDeclarator SEMICOLON
 FuncDeclarator

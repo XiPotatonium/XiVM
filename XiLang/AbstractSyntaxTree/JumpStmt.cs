@@ -1,4 +1,6 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using XiVM.Xir;
+
+namespace XiLang.AbstractSyntaxTree
 {
     public enum JumpType
     {
@@ -24,6 +26,23 @@
                 JumpType.RETURN => "return",
                 _ => "UNK",
             };
+        }
+
+        public override XirValue CodeGen()
+        {
+            switch (Type)
+            {
+                case JumpType.CONTINUE:
+                    throw new System.NotImplementedException();
+                case JumpType.BREAK:
+                    throw new System.NotImplementedException();
+                case JumpType.RETURN:
+                    XirGenPass.ModuleConstructor.AddReturnInstruction(ReturnVal?.CodeGen());
+                    break;
+                default:
+                    break;
+            }
+            return null;
         }
     }
 }
