@@ -6,7 +6,7 @@ namespace XiVM.Xir
     {
         public Function Function { get; }
 
-        public List<Instruction> Instructions { get; } = new List<Instruction>();
+        public LinkedList<Instruction> Instructions { get; } = new LinkedList<Instruction>();
         public List<Instruction> Jmps { get; } = new List<Instruction>();
         public List<BasicBlock> JmpTargets { get; } = new List<BasicBlock>();
 

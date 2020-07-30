@@ -11,6 +11,9 @@ namespace XiLang.Syntactic
     {
         protected Queue<Token> TokenBuf { get; } = new Queue<Token>();
         protected Func<Token> NextToken { set; get; } = null;
+        /// <summary>
+        /// 输入代码中的所有class的名字，用于Parse时判断Id是不是一个类型
+        /// </summary>
         protected HashSet<string> Classes { set; get; }
 
         protected AbstractParser() { }

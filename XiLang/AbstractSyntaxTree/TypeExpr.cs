@@ -1,6 +1,8 @@
-﻿using XiLang.Errors;
+﻿using System;
+using XiLang.Errors;
 using XiLang.Lexical;
-using XiVM.Xir;
+using XiVM;
+using XiVM.SystemLib.Classes;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -68,18 +70,33 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[0];
         }
 
-        public XirType ToXirType()
+        public VariableType ToXirType()
         {
-            return Type switch
+            if (IsArray)
             {
-                SyntacticValueType.BOOL => IsArray ? XirType.XirByteType : XirType.XirByteArrayType,
-                SyntacticValueType.INT => IsArray ? XirType.XirInt32Type : XirType.XirInt32ArrayType,
-                SyntacticValueType.DOUBLE => IsArray ? XirType.XirDoubleType : XirType.XirDoubleArrayType,
-                SyntacticValueType.STRING => IsArray ? XirType.XirStringType : XirType.XirStringArrayType,
-                SyntacticValueType.CLASS => XirType.XirClassType(ClassName, IsArray),
-                SyntacticValueType.VOID => XirType.XirVoidType,
-                _ => null
-            };
+                return Type switch
+                {
+                    SyntacticValueType.BOOL => ArrayType.ByteArrayType,
+                    SyntacticValueType.INT => ArrayType.IntArrayType,
+                    SyntacticValueType.DOUBLE => ArrayType.DoubleArrayType,
+                    SyntacticValueType.STRING => XirString.StringArrayType,
+                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else
+            {
+                return Type switch
+                {
+                    SyntacticValueType.BOOL => VariableType.ByteType,
+                    SyntacticValueType.INT => VariableType.IntType,
+                    SyntacticValueType.DOUBLE => VariableType.DoubleType,
+                    SyntacticValueType.STRING => XirString.StringClassType,
+                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    SyntacticValueType.VOID => null,
+                    _ => throw new NotImplementedException(),
+                };
+            }
         }
     }
 }

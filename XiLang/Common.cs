@@ -1,15 +1,25 @@
 ﻿namespace XiLang
 {
+    /// <summary>
+    /// 语法上允许出现的type
+    /// 这些Type会出现在AST中
+    /// </summary>
     public enum SyntacticValueType
     {
         BOOL, INT, DOUBLE, STRING, CLASS, VOID
     }
 
+    /// <summary>
+    /// 这些Type是XiLang中的Value可能的Type
+    /// </summary>
     public enum ValueType
     {
-        INT, DOUBLE, STRING, BOOL, NULL
+        BOOL, INT, DOUBLE, STRING, NULL
     }
 
+    /// <summary>
+    /// 运算符类型
+    /// </summary>
     public enum OpType
     {
         NEG, INC, DEC,

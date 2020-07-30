@@ -1,4 +1,4 @@
-﻿using XiVM.Xir;
+﻿using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -28,7 +28,7 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Cond, Then, Otherwise };
         }
 
-        public override XirValue CodeGen()
+        public override VariableType CodeGen()
         {
             throw new System.NotImplementedException();
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using XiLang.Errors;
-using XiVM.Xir;
+using XiVM;
+using XiVM.Xir.Symbol;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -13,6 +14,8 @@ namespace XiLang.AbstractSyntaxTree
 
     public class Expr : AST
     {
+        #region Static Make
+
         public static Expr MakeNull(int line)
         {
             return new Expr(ExprType.CONST, line)
@@ -99,6 +102,7 @@ namespace XiLang.AbstractSyntaxTree
                 Expr3 = expr3
             };
         }
+        #endregion
 
         public int Line { private set; get; }
         public ExprType ExprType { set; get; }
@@ -416,9 +420,234 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Expr1, Expr2, Expr3 };
         }
 
-        public override XirValue CodeGen()
+        public override VariableType CodeGen()
         {
-            throw new NotImplementedException();
+            VariableType valueType;
+            switch (ExprType)
+            {
+                case ExprType.CONST:
+                    switch (Value.Type)
+                    {
+                        case ValueType.INT:
+                            CodeGenPass.Constructor.AddPushI(Value.IntValue);
+                            return VariableType.IntType;
+                        case ValueType.DOUBLE:
+                            throw new NotImplementedException();
+                        case ValueType.STRING:
+                            throw new NotImplementedException();
+                        case ValueType.BOOL:
+                            throw new NotImplementedException();
+                        case ValueType.NULL:
+                            CodeGenPass.Constructor.AddPushA(0);
+                            return VariableType.NullType;
+                        default:
+                            throw new NotImplementedException();
+                    }
+                case ExprType.ID:
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out uint levelDiff))
+                    {
+                        if (symbol is FunctionSymbol function)
+                        {
+                            CodeGenPass.Constructor.AddPushA(function.Function.Index);
+                            return function.Function.Type;
+                        }
+                        else if (symbol is VariableSymbol variable)
+                        {
+                            CodeGenPass.Constructor.AddGetA(levelDiff, variable.XirVariable.Offset);
+                            CodeGenPass.Constructor.AddLoadT(variable.XirVariable.Type);
+                            return variable.XirVariable.Type;
+                        }
+                        else
+                        {
+                            throw new NotImplementedException();
+                        }
+                    }
+                    else
+                    {
+                        throw new XiLangError($"Variable {Value.StringValue} is not declared when used", Line);
+                    }
+                case ExprType.OPEXPR:
+                    switch (OpType)
+                    {
+                        case OpType.NEG:
+                            throw new NotImplementedException();
+                        case OpType.INC:
+                            throw new NotImplementedException();
+                        case OpType.DEC:
+                            throw new NotImplementedException();
+                        case OpType.ADD:
+                            Expr1.CodeGen();
+                            Expr2.CodeGen();
+                            return CodeGenPass.Constructor.AddAddI();
+                        case OpType.SUB:
+                            throw new NotImplementedException();
+                        case OpType.MUL:
+                            throw new NotImplementedException();
+                        case OpType.DIV:
+                            throw new NotImplementedException();
+                        case OpType.MOD:
+                            throw new NotImplementedException();
+                        case OpType.LOG_NOT:
+                            throw new NotImplementedException();
+                        case OpType.LOG_AND:
+                            throw new NotImplementedException();
+                        case OpType.LOG_OR:
+                            throw new NotImplementedException();
+                        case OpType.BIT_NOT:
+                            throw new NotImplementedException();
+                        case OpType.BIT_AND:
+                            throw new NotImplementedException();
+                        case OpType.BIT_XOR:
+                            throw new NotImplementedException();
+                        case OpType.BIT_OR:
+                            throw new NotImplementedException();
+                        case OpType.BIT_SL:
+                            throw new NotImplementedException();
+                        case OpType.BIT_SR:
+                            throw new NotImplementedException();
+                        case OpType.EQ:
+                            throw new NotImplementedException();
+                        case OpType.NE:
+                            throw new NotImplementedException();
+                        case OpType.GE:
+                            throw new NotImplementedException();
+                        case OpType.GT:
+                            throw new NotImplementedException();
+                        case OpType.LE:
+                            throw new NotImplementedException();
+                        case OpType.LT:
+                            throw new NotImplementedException();
+                        case OpType.ASSIGN:
+                            valueType = Expr2.CodeGen();
+                            CodeGenPass.Constructor.AddDupT(valueType);   // Assign的返回值
+                            Expr1.LeftValueCodeGen();
+                            CodeGenPass.Constructor.AddStoreT(valueType);
+                            return valueType;
+                        case OpType.ADD_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.SUB_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.MUL_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.DIV_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.MOD_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.AND_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.OR_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.XOR_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.SL_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.SR_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.CONDITIONAL:
+                            throw new NotImplementedException();
+                        case OpType.CAST:
+                            throw new NotImplementedException();
+                        case OpType.CALL:
+                            CodeGenParam(Expr2);
+                            valueType = Expr1.CodeGen();
+                            CodeGenPass.Constructor.AddCall();
+                            return ((FunctionType)valueType).ReturnType;
+                        case OpType.CLASS_ACCESS:
+                            throw new NotImplementedException();
+                        case OpType.ARRAY_ACCESS:
+                            throw new NotImplementedException();
+                        default:
+                            throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        /// <summary>
+        /// 因为参数要倒序入栈，所以用后序遍历的方式
+        /// </summary>
+        /// <param name="ps"></param>
+        private void CodeGenParam(Expr ps)
+        {
+            if (ps == null)
+            {
+                return;
+            }
+            CodeGenParam((Expr)ps.SiblingAST);
+            ps.CodeGen();
+        }
+
+        /// <summary>
+        /// 将表达式的结果的左值入栈
+        /// 栈顶是一个Address，所以不需要返回值来区分
+        /// </summary>
+        private void LeftValueCodeGen()
+        {
+            switch (ExprType)
+            {
+                case ExprType.ID:
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out uint levelDiff))
+                    {
+                        if (symbol is FunctionSymbol function)
+                        {
+                            CodeGenPass.Constructor.AddPushA(function.Function.Index);
+                        }
+                        else if (symbol is VariableSymbol variable)
+                        {
+                            CodeGenPass.Constructor.AddGetA(levelDiff, variable.XirVariable.Offset);
+                        }
+                        else
+                        {
+                            throw new NotImplementedException();
+                        }
+                    }
+                    else
+                    {
+                        throw new XiLangError($"Variable {Value.StringValue} is not declared when used", Line);
+                    }
+                    break;
+                case ExprType.OPEXPR:
+                    switch (OpType)
+                    {
+                        case OpType.ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.ADD_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.SUB_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.MUL_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.DIV_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.MOD_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.AND_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.OR_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.XOR_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.SL_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.SR_ASSIGN:
+                            throw new NotImplementedException();
+                        case OpType.CONDITIONAL:
+                            throw new NotImplementedException();
+                        case OpType.CAST:
+                            throw new NotImplementedException();
+                        case OpType.CALL:
+                            throw new NotImplementedException();
+                        case OpType.CLASS_ACCESS:
+                            throw new NotImplementedException();
+                        case OpType.ARRAY_ACCESS:
+                            throw new NotImplementedException();
+                        default:
+                            throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 }

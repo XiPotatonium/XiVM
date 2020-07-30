@@ -1,4 +1,4 @@
-﻿using XiVM.Xir;
+﻿using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -21,11 +21,11 @@ namespace XiLang.AbstractSyntaxTree
             return "(Block)";
         }
 
-        public override XirValue CodeGen()
+        public override VariableType CodeGen()
         {
-            XirGenPass.VariableSymbolTable.Push();
+            CodeGenPass.Constructor.SymbolTable.Push();
             CodeGen(Child);
-            XirGenPass.VariableSymbolTable.Pop();
+            CodeGenPass.Constructor.SymbolTable.Pop();
             return null;
         }
     }

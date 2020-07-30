@@ -1,4 +1,4 @@
-﻿using XiVM.Xir;
+﻿using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -25,9 +25,18 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Type, Init };
         }
 
-        public override XirValue CodeGen()
+        public override VariableType CodeGen()
         {
-            XirGenPass.ModuleConstructor.AddVariable(Type.ToXirType(), Init?.CodeGen());
+            Variable var = CodeGenPass.Constructor.AddVariable(Id, Type.ToXirType());
+
+            // 初始化代码
+            if (Init != null)
+            {
+                Init.CodeGen();                                   // value
+                CodeGenPass.Constructor.AddGetA(0, var.Offset);   // addr
+                CodeGenPass.Constructor.AddStoreT(var.Type);      // store
+            }
+
             return null;
         }
     }

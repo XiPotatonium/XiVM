@@ -68,9 +68,9 @@ namespace XiLang
             }
 
             // pass 5，编译生成ir或字节码
-            XirGenPass.InitSingleton(moduleName);
-            astPasses.Run(XirGenPass.Singleton);
-            XirGenPass.Singleton.Dump(dirName);
+            CodeGenPass.InitSingleton(moduleName);
+            astPasses.Run(CodeGenPass.Singleton);
+            CodeGenPass.Singleton.Dump(dirName);
         }
     }
 }

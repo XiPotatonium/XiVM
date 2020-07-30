@@ -21,7 +21,7 @@ namespace XiVM.Executor
                 byte[] old = Data;
                 Capacity *= 2;
                 Data = new byte[Capacity];
-                Array.Copy(old, Data, Size);
+                System.Array.Copy(old, Data, Size);
             }
             Size += n;
         }
@@ -33,12 +33,12 @@ namespace XiVM.Executor
             {
                 throw new IndexOutOfRangeException();
             }
-            if (Size < 3 * Capacity)
+            if (Size < 4 * Capacity)
             {
                 byte[] old = Data;
                 Capacity /= 2;
                 Data = new byte[Capacity];
-                Array.Copy(old, Data, Size);
+                System.Array.Copy(old, Data, Size);
             }
         }
     }

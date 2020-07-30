@@ -2,21 +2,10 @@
 
 namespace XiVM.Xir
 {
-    [Serializable]
-    internal class BinaryInt
-    {
-        public int Value { set; get; }
-    }
 
     [Serializable]
-    internal class BinaryDouble
+    internal class BinaryConstant
     {
-        public double Value { set; get; }
-    }
-
-    [Serializable]
-    internal class BinaryString
-    {
-        public string Value { set; get; }
+        public byte[] Value { set; get; }
     }
 }

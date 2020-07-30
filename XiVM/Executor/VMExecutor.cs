@@ -9,6 +9,7 @@ namespace XiVM.Executor
         private BinaryFunction CurrentFunction { set; get; }
 
         private RuntimeStack RuntimeStack { get; } = new RuntimeStack();
+        private RuntimeHeap RuntimeHeap { get; } = new RuntimeHeap();
 
         private ComputationStack ComputationStack { get; } = new ComputationStack();
         /// <summary>

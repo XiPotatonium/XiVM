@@ -1,6 +1,6 @@
 # XiVM
 
-## xilang
+## XiLang
 
 * 使用正则表达式实现词法分析
 * 使用TopDown Parser实现语法分析
@@ -36,7 +36,7 @@
 ### TODO
 
 * new
-* const, static
+* ref
 * char字面量以及文本的字面量中的转义字符问题
 * 常量表达式中，加法支持字符串拼接
 
@@ -123,4 +123,4 @@ ConstExpr
     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL
 ```
 
-## xivm
+## XiVM

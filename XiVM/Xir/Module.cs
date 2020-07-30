@@ -24,10 +24,8 @@ namespace XiVM.Xir
             }
         }
 
-        private uint Magic { set; get; }
-        public BinaryInt[] IntConstants { set; get; }
-        public BinaryDouble[] DoubleConstants { set; get; }
-        public BinaryString[] StringConstants { set; get; }
+        private uint Magic { set; get; } = 0x43303A29;
+        public BinaryConstant[] Constants { set; get; }
         public BinaryClass[] Classes { set; get; }
         public BinaryFunction[] Functions { set; get; }
         public BinaryFunction Entry { set; get; }

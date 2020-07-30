@@ -1,4 +1,4 @@
-﻿using XiVM.Xir;
+﻿using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -56,7 +56,7 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Init, Cond, Step, Body };
         }
 
-        public override XirValue CodeGen()
+        public override VariableType CodeGen()
         {
             throw new System.NotImplementedException();
         }
