@@ -8,20 +8,21 @@
         public RuntimeStackFrame Global { private set; get; }
         public RuntimeStackFrame Current { private set; get; }
 
-        public void Push(int size)
+        public void Push(int size, uint ip)
         {
             if (Current == null)
             {
-                Global = Current = new RuntimeStackFrame(null, size);
+                Global = Current = new RuntimeStackFrame(null, size, ip);
             }
             else
             {
-                Current = new RuntimeStackFrame(Current, size);
+                Current = new RuntimeStackFrame(Current, size, ip);
             }
         }
 
-        public void Pop()
+        public uint Pop()
         {
+            uint ip = Current.IP;
             if (Current == Global)
             {
                 Current = Global = null;
@@ -30,6 +31,7 @@
             {
                 Current = Current.Previous;
             }
+            return ip;
         }
     }
 
@@ -38,12 +40,14 @@
         public RuntimeStackFrame Previous { private set; get; }
         public int Depth { private set; get; }
         public byte[] Data { private set; get; }
+        public uint IP { private set; get; }
 
-        public RuntimeStackFrame(RuntimeStackFrame previous, int size)
+        public RuntimeStackFrame(RuntimeStackFrame previous, int size, uint ip)
         {
             Previous = previous;
             Depth = previous == null ? 0 : previous.Depth + 1;
             Data = new byte[size];
+            IP = ip;
         }
     }
 }

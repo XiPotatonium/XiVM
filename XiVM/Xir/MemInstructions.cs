@@ -10,9 +10,9 @@ namespace XiVM.Xir
         {
             Instruction inst = new Instruction()
             {
-                OpCode = InstructionType.GETA
+                OpCode = InstructionType.GETA,
+                Params = new byte[sizeof(uint) + sizeof(int)]
             };
-            inst.Params = new byte[sizeof(uint) + sizeof(int)];
             BitConverter.TryWriteBytes(new Span<byte>(inst.Params, 0, sizeof(uint)), levelDiff);
             BitConverter.TryWriteBytes(new Span<byte>(inst.Params, sizeof(uint), sizeof(int)), offset);
             CurrentBasicBlock.Instructions.AddLast(inst);
