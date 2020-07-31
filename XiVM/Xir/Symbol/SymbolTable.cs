@@ -2,10 +2,7 @@
 
 namespace XiVM.Xir.Symbol
 {
-    /// <summary>
-    /// TODO 符号表和XiVM的内部结构高度耦合，最好还是放到XiVM项目中去
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
+
     public class SymbolTable
     {
         private SymbolTableFrame GlobalFrame { get; } = new SymbolTableFrame();
@@ -13,6 +10,7 @@ namespace XiVM.Xir.Symbol
         /// Stack新来的在第一个
         /// </summary>
         private LinkedList<SymbolTableFrame> SymbolStack { get; } = new LinkedList<SymbolTableFrame>();
+        public int Count => SymbolStack.Count;
 
         public SymbolTable()
         {

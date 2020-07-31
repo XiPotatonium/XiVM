@@ -28,6 +28,5 @@ namespace XiVM.Xir
         public BinaryConstant[] Constants { set; get; }
         public BinaryClass[] Classes { set; get; }
         public BinaryFunction[] Functions { set; get; }
-        public BinaryFunction Entry { set; get; }
     }
 }

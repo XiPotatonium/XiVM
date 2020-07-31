@@ -10,19 +10,20 @@ namespace XiVM.Executor
 
         private RuntimeStack RuntimeStack { get; } = new RuntimeStack();
         private RuntimeHeap RuntimeHeap { get; } = new RuntimeHeap();
-
         private ComputationStack ComputationStack { get; } = new ComputationStack();
-        /// <summary>
-        /// 用于在计算栈中的byte序列转换为value时暂存byte
-        /// 因为最大支持64位的value，所以只开byte[8]
-        /// </summary>
-        private byte[] Buffer { get; } = new byte[8];
+
+        private BinaryFunction[] Functions { set; get; }
+        private BinaryConstant[] Constants { set; get; }
+        private BinaryClass[] Classes { set; get; }
 
         internal VMExecutor(BinaryModule binaryModule)
         {
             IP = 0;
 
             // TODO 将BinaryModule转化成便于执行的模式，比如说建哈希表
+            Functions = binaryModule.Functions;
+            Constants = binaryModule.Constants;
+            Classes = binaryModule.Classes;
         }
 
         public void Execute()

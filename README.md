@@ -246,7 +246,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 ... | fptr(uint) |
 
-执行fptr所指向的函数，fptr是函数在函数总表中的Index + 1，开始执行后的计算栈是
+执行fptr所指向的函数，fptr是函数在函数总表中的Index，开始执行后的计算栈是
 
 ... |
 

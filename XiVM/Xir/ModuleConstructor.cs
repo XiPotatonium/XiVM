@@ -15,13 +15,8 @@ namespace XiVM.Xir
         /// 函数表
         /// </summary>
         private List<Function> Functions { set; get; } = new List<Function>();
+        private Function MainFunction { set; get; }
         public BasicBlock CurrentBasicBlock { set; get; }
-
-        /// <summary>
-        /// 全局代码（以函数形式储存）
-        /// </summary>
-        private Function Global { set; get; }
-        private BasicBlock GlobalBasicBlock { set; get; }
 
         /// <summary>
         /// 常量表
@@ -38,24 +33,34 @@ namespace XiVM.Xir
         {
             Name = name;
 
-            // 在符号栈中找不到Global数所以参数随便填都是安全的
-            Global = new Function(0, null, null);
-            GlobalBasicBlock = CurrentBasicBlock = AddBasicBlock(Global);
+            // 添加全局代码
+            Function global = new Function(0, null, null);
+            Functions.Add(global);
+            CurrentBasicBlock = AddBasicBlock(global);
         }
 
         public void Dump(string dirName)
         {
+            CurrentBasicBlock = Functions[0].BasicBlocks[0];
+            if (MainFunction != null)
+            {
+                AddPushA(0);    // 暂时给main函数传NULL
+                AddPushA(MainFunction.Index);
+                AddCall();
+            }
+            AddRetT(null);      // 为了满足bb的要求，全局也ret一下
+
             if (string.IsNullOrEmpty(dirName))
             {
                 dirName = ".";
             }
+
             using (FileStream fs = new FileStream(Path.Combine(dirName, $"{Name}.xir"), FileMode.Create))
             {
                 BinaryFormatter binaryFormatter = new BinaryFormatter();
                 BinaryModule binaryModule = new BinaryModule
                 {
                     Functions = Functions.Select(f => f.ToBinary()).ToArray(),
-                    Entry = Global.ToBinary(),
                     // TODO Class
                     Constants = Constants.ToArray()
                 };
@@ -73,7 +78,7 @@ namespace XiVM.Xir
         /// <returns></returns>
         public Function AddFunction(string name, FunctionType type)
         {
-            Function function = new Function((uint)Functions.Count + 1, name, type);
+            Function function = new Function((uint)Functions.Count, name, type);
             Functions.Add(function);
 
             // entry
@@ -95,6 +100,12 @@ namespace XiVM.Xir
 
             // 加入符号表
             SymbolTable.Add(name, new FunctionSymbol(name, function));
+
+            if (SymbolTable.Count == 1 && name == "main")
+            {
+                // 是main函数
+                MainFunction = function;
+            }
 
             return function;
         }
@@ -119,17 +130,17 @@ namespace XiVM.Xir
 
         public Variable AddVariable(string id, VariableType type)
         {
-            Function currentFunction = CurrentBasicBlock == null ? Global : CurrentBasicBlock.Function;
             Variable xirVariable;
-            if (currentFunction.Variables.Count == 0)
+            if (CurrentBasicBlock.Function.Variables.Count == 0)
             {
                 xirVariable = new Variable(type, 0);
             }
             else
             {
-                xirVariable = new Variable(type, currentFunction.Variables[^1].Offset + currentFunction.Variables[^1].Type.Size);
+                xirVariable = new Variable(type, 
+                    CurrentBasicBlock.Function.Variables[^1].Offset + CurrentBasicBlock.Function.Variables[^1].Type.Size);
             }
-            currentFunction.Variables.Add(xirVariable);
+            CurrentBasicBlock.Function.Variables.Add(xirVariable);
 
             // 添加到符号表
             SymbolTable.Add(id, new VariableSymbol(id, xirVariable));

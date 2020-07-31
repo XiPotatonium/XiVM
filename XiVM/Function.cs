@@ -65,9 +65,9 @@ namespace XiVM
     public class Function
     {
         /// <summary>
-        /// 函数的在全局函数表中的Index + 1
+        /// 函数的在全局函数表中的Index
         /// Call的时候就是call这个index
-        /// 注意因为要和NULL区分因此Index + 1
+        /// Global的Index是0，可以根据这个进行特殊处理
         /// </summary>
         public uint Index { private set; get; }
         public string Name { set; get; }
