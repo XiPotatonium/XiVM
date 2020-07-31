@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace XiVM
+﻿namespace XiVM
 {
     public class ArrayType : VariableType
     {
@@ -12,7 +8,7 @@ namespace XiVM
 
         public VariableType ElementType { private set; get; }
 
-        public ArrayType(VariableType elementType) 
+        public ArrayType(VariableType elementType)
             : base(VariableTypeTag.ADDRESS)
         {
             ElementType = elementType;

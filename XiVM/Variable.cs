@@ -35,20 +35,14 @@ namespace XiVM
         /// <summary>
         /// 获取这个类型的值的大小
         /// </summary>
-        public int Size
+        public int Size => Tag switch
         {
-            get
-            {
-                return Tag switch
-                {
-                    VariableTypeTag.BYTE => ByteSize,
-                    VariableTypeTag.INT => IntSize,
-                    VariableTypeTag.DOUBLE => DoubleSize,
-                    VariableTypeTag.ADDRESS => AddressSize,
-                    _ => throw new XiVMError($"Unsupported Type {Tag}"),
-                };
-            }
-        }
+            VariableTypeTag.BYTE => ByteSize,
+            VariableTypeTag.INT => IntSize,
+            VariableTypeTag.DOUBLE => DoubleSize,
+            VariableTypeTag.ADDRESS => AddressSize,
+            _ => throw new XiVMError($"Unsupported Type {Tag}"),
+        };
 
         /// <summary>
         /// Equivalent的类型之间允许互相赋值

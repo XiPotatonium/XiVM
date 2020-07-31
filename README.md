@@ -186,7 +186,7 @@ N为大小（单位为字节）。
 
 #### GETA
 
-* GETA diff(uint) offset(int) 0x18
+* GETA diff(int) offset(int) 0x18
 
 原先计算栈顶为
 
@@ -246,17 +246,13 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 ... | fptr(uint) |
 
-执行fptr所指向的函数，fptr是函数在函数总表中的Index，开始执行后的计算栈是
+执行fptr所指向的函数，fptr是函数在函数总表中的Index，VM会负责处理堆栈和IP，开始执行后的计算栈是
 
 ... |
 
-#### RET(T)
+#### RET
 
-* RET 0x88
-* RETB 0x89
-* RETI 0x8A
-* RETD 0x8B
-* RETA 0x8C
+* RET 0x81
 
 不对计算栈做任何修改。虚拟机会执行函数返回的相关工作。
 

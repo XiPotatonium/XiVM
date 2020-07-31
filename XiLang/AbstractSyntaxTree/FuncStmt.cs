@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using XiLang.Errors;
 using XiVM;
-using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -63,17 +62,17 @@ namespace XiLang.AbstractSyntaxTree
 
             // 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
             if (CodeGenPass.Constructor.CurrentBasicBlock.Instructions.Count == 0 ||
-                !Instruction.IsReturn(CodeGenPass.Constructor.CurrentBasicBlock.Instructions.Last?.Value))
+                !(CodeGenPass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.OpCode == InstructionType.RET))
             {
                 // 如果最后一条不是return
                 if (functionType.ReturnType == null)
                 {
                     // 如果函数返回void，自动补上ret
-                    CodeGenPass.Constructor.AddRetT(null);
+                    CodeGenPass.Constructor.AddRet();
                 }
                 else
                 {
-                    // 否则报错
+                    // 说明理论上应该返回值但是代码中没有return，报错
                     throw new XiLangError($"Function {param.Id} should return a value.");
                 }
             }

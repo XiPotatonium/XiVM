@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace XiVM.Xir
+﻿namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
@@ -15,33 +13,12 @@ namespace XiVM.Xir
 
         #region Ret
 
-        public void AddRetT(VariableType retType)
+        public void AddRet()
         {
-            Instruction inst;
-
-            if (retType == null)
+            CurrentBasicBlock.Instructions.AddLast(new Instruction()
             {
-                inst = new Instruction()
-                {
-                    OpCode = InstructionType.RET
-                };
-            }
-            else
-            {
-                inst = new Instruction()
-                {
-                    OpCode = retType.Tag switch
-                    {
-                        VariableTypeTag.BYTE => InstructionType.RETB,
-                        VariableTypeTag.INT => InstructionType.RETI,
-                        VariableTypeTag.DOUBLE => InstructionType.RETD,
-                        VariableTypeTag.ADDRESS => InstructionType.RETA,
-                        _ => throw new NotImplementedException(),
-                    }
-                };
-            }
-
-            CurrentBasicBlock.Instructions.AddLast(inst);
+                OpCode = InstructionType.RET
+            });
         }
 
         #endregion

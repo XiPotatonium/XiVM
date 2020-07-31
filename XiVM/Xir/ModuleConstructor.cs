@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using XiVM.Errors;
 using XiVM.Xir.Symbol;
 
 namespace XiVM.Xir
@@ -48,7 +47,7 @@ namespace XiVM.Xir
                 AddPushA(MainFunction.Index);
                 AddCall();
             }
-            AddRetT(null);      // 为了满足bb的要求，全局也ret一下
+            AddRet();           // 为了满足bb的要求，全局也ret一下
 
             if (string.IsNullOrEmpty(dirName))
             {
@@ -137,7 +136,7 @@ namespace XiVM.Xir
             }
             else
             {
-                xirVariable = new Variable(type, 
+                xirVariable = new Variable(type,
                     CurrentBasicBlock.Function.Variables[^1].Offset + CurrentBasicBlock.Function.Variables[^1].Type.Size);
             }
             CurrentBasicBlock.Function.Variables.Add(xirVariable);

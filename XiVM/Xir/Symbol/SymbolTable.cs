@@ -40,7 +40,7 @@ namespace XiVM.Xir.Symbol
             return false;
         }
 
-        public bool TryGetValue(string name, out Symbol value, out uint levelDiff)
+        public bool TryGetValue(string name, out Symbol value, out int levelDiff)
         {
             levelDiff = 0;
             foreach (SymbolTableFrame frame in SymbolStack)

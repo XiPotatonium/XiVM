@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\XiLang\XiLang.csproj" />
+    <ProjectReference Include="..\XiVM\XiVM.csproj" />
   </ItemGroup>
 
 </Project>

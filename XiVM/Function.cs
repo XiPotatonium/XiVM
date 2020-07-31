@@ -41,7 +41,7 @@ namespace XiVM
                 if ((ReturnType == null && functionType.ReturnType == null) ||
                     ReturnType.Equivalent(functionType.ReturnType) && Params.Count == functionType.Params.Count)
                 {
-                    foreach ((var p1, var p2) in Params.Zip(functionType.Params))
+                    foreach ((VariableType p1, VariableType p2) in Params.Zip(functionType.Params))
                     {
                         if (!p1.Equivalent(p2))
                         {

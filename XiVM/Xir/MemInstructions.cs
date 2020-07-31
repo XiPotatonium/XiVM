@@ -1,20 +1,19 @@
 ﻿using System;
-using System.Diagnostics;
 using XiVM.Errors;
 
 namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddGetA(uint levelDiff, int offset)
+        public void AddGetA(int levelDiff, int offset)
         {
             Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.GETA,
-                Params = new byte[sizeof(uint) + sizeof(int)]
+                Params = new byte[2 * sizeof(int)]
             };
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params, 0, sizeof(uint)), levelDiff);
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params, sizeof(uint), sizeof(int)), offset);
+            BitConverter.TryWriteBytes(new Span<byte>(inst.Params, 0, sizeof(int)), levelDiff);
+            BitConverter.TryWriteBytes(new Span<byte>(inst.Params, sizeof(int), sizeof(int)), offset);
             CurrentBasicBlock.Instructions.AddLast(inst);
         }
 
@@ -105,9 +104,6 @@ namespace XiVM.Xir
 
         private void AddPop4()
         {
-            Debug.Assert(VariableType.IntSize == 4);
-            Debug.Assert(VariableType.AddressSize == 4);
-
             CurrentBasicBlock.Instructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.POP4
@@ -116,8 +112,6 @@ namespace XiVM.Xir
 
         private void AddPop8()
         {
-            Debug.Assert(VariableType.DoubleSize == 8);
-
             CurrentBasicBlock.Instructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.POP8
@@ -159,8 +153,6 @@ namespace XiVM.Xir
 
         private void AddDup4()
         {
-            Debug.Assert(VariableType.IntSize == 4);
-            Debug.Assert(VariableType.AddressSize == 4);
             CurrentBasicBlock.Instructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.DUP4
@@ -169,7 +161,6 @@ namespace XiVM.Xir
 
         private void AddDup8()
         {
-            Debug.Assert(VariableType.DoubleSize == 8);
             CurrentBasicBlock.Instructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.DUP8

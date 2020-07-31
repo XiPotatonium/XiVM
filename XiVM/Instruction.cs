@@ -34,12 +34,7 @@ namespace XiVM
         ADDI = 0x40,
 
         CALL = 0x80,
-
-        RET = 0x88,
-        RETB = 0x89,
-        RETI = 0x8A,
-        RETD = 0x8B,
-        RETA = 0x8C
+        RET = 0x81
     }
 
     [Serializable]
@@ -51,14 +46,6 @@ namespace XiVM
 
     public class Instruction
     {
-        public static bool IsReturn(Instruction instruction)
-        {
-            return instruction != null && (instruction.OpCode == InstructionType.RET ||
-                instruction.OpCode == InstructionType.RETA ||
-                instruction.OpCode == InstructionType.RETD ||
-                instruction.OpCode == InstructionType.RETI);
-        }
-
         public InstructionType OpCode { set; get; }
         public byte[] Params { set; get; }
     }

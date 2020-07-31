@@ -47,11 +47,11 @@ namespace XiLang.AbstractSyntaxTree
                             // TODO 返回值需要类型转换
                             throw new NotImplementedException();
                         }
-                        CodeGenPass.Constructor.AddRetT(returnType);
+                        CodeGenPass.Constructor.AddRet();
                     }
                     else
                     {
-                        CodeGenPass.Constructor.AddRetT(null);
+                        CodeGenPass.Constructor.AddRet();
                     }
                     break;
                 default:

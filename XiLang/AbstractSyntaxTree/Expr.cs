@@ -444,7 +444,7 @@ namespace XiLang.AbstractSyntaxTree
                             throw new NotImplementedException();
                     }
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out uint levelDiff))
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out int levelDiff))
                     {
                         if (symbol is FunctionSymbol function)
                         {
@@ -587,7 +587,7 @@ namespace XiLang.AbstractSyntaxTree
             switch (ExprType)
             {
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out uint levelDiff))
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out int levelDiff))
                     {
                         if (symbol is FunctionSymbol function)
                         {

@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Runtime.Loader;
+using XiVM.Errors;
 using XiVM.Xir;
 
 namespace XiVM.Executor
 {
     public class VMExecutor
     {
-        private uint IP { set; get; }
-        private BinaryFunction CurrentFunction { set; get; }
+        private int IP;                         // 指令在函数中的IP
+        private int FunctionIndex;              // 当前运行的函数的Index
+        private BinaryFunction CurrentFunction => Functions[FunctionIndex];
 
         private RuntimeStack RuntimeStack { get; } = new RuntimeStack();
         private RuntimeHeap RuntimeHeap { get; } = new RuntimeHeap();
@@ -18,9 +21,6 @@ namespace XiVM.Executor
 
         internal VMExecutor(BinaryModule binaryModule)
         {
-            IP = 0;
-
-            // TODO 将BinaryModule转化成便于执行的模式，比如说建哈希表
             Functions = binaryModule.Functions;
             Constants = binaryModule.Constants;
             Classes = binaryModule.Classes;
@@ -28,12 +28,221 @@ namespace XiVM.Executor
 
         public void Execute()
         {
-            throw new NotImplementedException();
+            IP = 0;
+            FunctionIndex = 0;
+            RuntimeStack.Push(CurrentFunction.ARSize, 0, 0);    // 全局的ret ip可以随便填
+
+            while (!RuntimeStack.Empty)
+            {
+                ExecuteSingle();
+            }
         }
 
         private void ExecuteSingle()
         {
-            throw new NotImplementedException();
+            BinaryInstruction inst = CurrentFunction.Instructions[IP++];
+            int branchOffset = 0;
+            uint addr, uValue;
+            int iValue;
+            double dValue;
+            switch ((InstructionType)inst.OpCode)
+            {
+                case InstructionType.NOP:
+                    break;
+                case InstructionType.PUSHB:
+                    ComputationStack.Push(VariableType.ByteSize);
+                    System.Array.Copy(inst.Params, 0, ComputationStack.Data, ComputationStack.Size - VariableType.ByteSize, VariableType.ByteSize);
+                    break;
+                case InstructionType.PUSHI:
+                    ComputationStack.Push(VariableType.IntSize);
+                    System.Array.Copy(inst.Params, 0, ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize);
+                    break;
+                case InstructionType.PUSHD:
+                    ComputationStack.Push(VariableType.DoubleSize);
+                    System.Array.Copy(inst.Params, 0, ComputationStack.Data, ComputationStack.Size - VariableType.DoubleSize, VariableType.DoubleSize);
+                    break;
+                case InstructionType.PUSHA:
+                    ComputationStack.Push(VariableType.AddressSize);
+                    System.Array.Copy(inst.Params, 0, ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize, VariableType.AddressSize);
+                    break;
+                case InstructionType.POP:
+                    ComputationStack.Pop(1);
+                    break;
+                case InstructionType.POP4:
+                    ComputationStack.Pop(4);
+                    break;
+                case InstructionType.POP8:
+                    ComputationStack.Pop(8);
+                    break;
+                case InstructionType.DUP:
+                    ComputationStack.Push(1);
+                    System.Array.Copy(ComputationStack.Data, ComputationStack.Size - 2, ComputationStack.Data, ComputationStack.Size - 1, 1);
+                    break;
+                case InstructionType.DUP4:
+                    ComputationStack.Push(4);
+                    System.Array.Copy(ComputationStack.Data, ComputationStack.Size - 8, ComputationStack.Data, ComputationStack.Size - 4, 4);
+                    break;
+                case InstructionType.DUP8:
+                    ComputationStack.Push(8);
+                    System.Array.Copy(ComputationStack.Data, ComputationStack.Size - 16, ComputationStack.Data, ComputationStack.Size - 8, 8);
+                    break;
+                case InstructionType.GETA:
+                    int diff = BitConverter.ToInt32(inst.Params);
+                    int offset = BitConverter.ToInt32(inst.Params, sizeof(int));
+                    addr = (uint)RuntimeStack.GetIndex(diff, offset);
+                    ComputationStack.Push(VariableType.AddressSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize, VariableType.AddressSize), addr);
+                    break;
+                case InstructionType.LOADB:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        ComputationStack.Push(VariableType.ByteSize);
+                        ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize] = RuntimeStack.Data[addr];
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.LOADI:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        ComputationStack.Push(VariableType.IntSize);
+                        BitConverter.TryWriteBytes(
+                            new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize),
+                            BitConverter.ToInt32(RuntimeStack.Data, (int)addr));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.LOADD:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        ComputationStack.Push(VariableType.DoubleSize);
+                        BitConverter.TryWriteBytes(
+                            new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.DoubleSize, VariableType.DoubleSize),
+                            BitConverter.ToDouble(RuntimeStack.Data, (int)addr));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.LOADA:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        // 栈地址
+                        ComputationStack.Push(VariableType.AddressSize);
+                        BitConverter.TryWriteBytes(
+                            new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize, VariableType.AddressSize),
+                            BitConverter.ToUInt32(RuntimeStack.Data, (int)addr));
+                    }
+                    else
+                    {
+                        // 堆地址
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.STOREB:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        // 栈地址
+                        BitConverter.TryWriteBytes(new Span<byte>(RuntimeStack.Data, (int)addr, VariableType.IntSize), 
+                            ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize]);
+                    }
+                    else
+                    {
+                        // 堆地址
+                        throw new NotImplementedException();
+                    }
+                    ComputationStack.Pop(VariableType.ByteSize);
+                    break;
+                case InstructionType.STOREI:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    iValue = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        // 栈地址
+                        BitConverter.TryWriteBytes(new Span<byte>(RuntimeStack.Data, (int)addr, VariableType.IntSize), iValue);
+                    }
+                    else
+                    {
+                        // 堆地址
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.STORED:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    dValue = BitConverter.ToDouble(ComputationStack.Data, ComputationStack.Size - VariableType.DoubleSize);
+                    ComputationStack.Pop(VariableType.DoubleSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        // 栈地址
+                        BitConverter.TryWriteBytes(new Span<byte>(RuntimeStack.Data, (int)addr, VariableType.DoubleSize), dValue);
+                    }
+                    else
+                    {
+                        // 堆地址
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.STOREA:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    uValue = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if ((addr & 0x10000000) == 0)
+                    {
+                        // 栈地址
+                        BitConverter.TryWriteBytes(new Span<byte>(RuntimeStack.Data, (int)addr, VariableType.AddressSize), uValue);
+                    }
+                    else
+                    {
+                        // 堆地址
+                        throw new NotImplementedException();
+                    }
+                    break;
+                case InstructionType.ADDI:
+                    int lhs = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    int rhs = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhs + rhs);
+                    break;
+                case InstructionType.CALL:
+                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
+                    ComputationStack.Pop(VariableType.AddressSize);
+                    if (addr == 0)
+                    {
+                        throw new XiVMError("Call of NULL function is not allowed");
+                    }
+                    RuntimeStack.Push(CurrentFunction.ARSize, FunctionIndex, IP);
+                    FunctionIndex = (int)addr;
+                    IP = 0;
+                    break;
+                case InstructionType.RET:
+                    RuntimeStack.Pop(out FunctionIndex, out IP);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            IP += branchOffset;
         }
     }
 }

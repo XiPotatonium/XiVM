@@ -3,7 +3,7 @@
 namespace XiLang.Tests
 {
     [TestClass()]
-    public class ProgramTests
+    public class XiLangTests
     {
         [TestMethod()]
         public void MainTest()
