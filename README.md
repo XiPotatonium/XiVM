@@ -156,13 +156,12 @@ N为大小（单位为字节）。
 * PUSHD value(double) 0X03
 * PUSHA value(uint) 0X04
 
-原先计算栈顶为
-
-... |
-
 将参数value push进计算栈
 
+```
+... |
 ... | value(N) |
+```
 
 #### POP(N)
 
@@ -170,13 +169,12 @@ N为大小（单位为字节）。
 * POP4 0X09
 * POP8 0X0A
 
-原先计算栈顶为
-
-... | value(N) |
-
 将计算栈中大小为N的空间Pop出去，POP的N就是1
 
+```
+... | value(N) |
 ... |
+```
 
 #### DUP(N)
 
@@ -184,37 +182,34 @@ N为大小（单位为字节）。
 * DUP4 0X11
 * DUP8 0X12
 
-原先计算栈顶为
-
-... | value(N) |
-
 将计算栈中大小为N的空间复制并Push进计算栈，DUP的N就是1
 
+```
+... | value(N) |
 ... | value(N) | value(N) |
+```
 
 #### LOCALA
 
 * LOCALA offset(int) 0x18
 
-原先计算栈顶为
-
-... |
-
 当前栈帧offset为offset的栈地址Push进计算栈，offset为正数
 
+```
+... |
 ... | addr(uint) |
+```
 
 #### GLOBALA
 
 * GLOBALA offset(int) 0x19
 
-原先计算栈顶为
-
-... |
-
 全局栈帧offset为offset的栈地址Push进计算栈，offset为正数。因此XiVM实际上不支持嵌套函数
 
+```
+... |
 ... | addr(uint) |
+```
 
 #### LOADT
 
@@ -223,13 +218,12 @@ N为大小（单位为字节）。
 * LOADD 0X22
 * LOADA 0X23
 
-原先计算栈顶为
-
-... | addr(uint) |
-
 load会从栈顶的地址位置加载一个T类型的值，Push进计算栈
 
+```
+... | addr(uint) |
 ... | value(T) |
+```
 
 #### STORET
 
@@ -238,97 +232,89 @@ load会从栈顶的地址位置加载一个T类型的值，Push进计算栈
 * STORED 0X2A
 * STOREA 0X2B
 
-原先计算栈顶为
-
-... | value(T) | addr(uint) |
-
 store会从栈顶的地址位置加载uint类型的addr，将T类型的value存储到这个地址
 
+```
+... | value(T) | addr(uint) |
 ... |
+```
 
 #### ADDT
 
 * ADDI 0X30
 
-原先计算栈顶为
-
-... | lhs(T) | rhs(T) |
-
 加法
 
+```
+... | lhs(T) | rhs(T) |
 ... | res(T) |
+```
 
 #### SUBT
 
 * SUBI 0X34
 
-原先计算栈顶为
-
-... | lhs(T) | rhs(T) |
-
 减法
 
+```
+... | lhs(T) | rhs(T) |
 ... | res(T) |
+```
 
 #### MULT
 
 * MULI 0X38
 
-原先计算栈顶为
-
-... | lhs(T) | rhs(T) |
-
 乘法
 
+```
+... | lhs(T) | rhs(T) |
 ... | res(T) |
+```
 
 #### DIVT
 
 * DIVI 0X3C
 
-原先计算栈顶为
-
-... | lhs(T) | rhs(T) |
-
 除法
 
+```
+... | lhs(T) | rhs(T) |
 ... | res(T) |
+```
 
 #### MOD
 
 * MOD 0X40
 
-原先计算栈顶为
-
-... | lhs(int) | rhs(int) |
-
 模运算
 
+```
+... | lhs(int) | rhs(int) |
 ... | res(int) |
+```
 
 #### NEGT
 
 * NEGI 0X44
 
-原先计算栈顶为
-
-... | value(T) |
-
 取反
 
+```
+... | value(T) |
 ... | res(T) |
+```
 
 #### SET(COND)(T)
 
 * SETEQ 0X50
 
-原先计算栈顶为
-
-... | lhs(T) | rhs(T) |
-
 比较。如果cond成立，res为1，否则res为1
 
+```
+... | lhs(T) | rhs(T) |
 ... | res(byte) |
+```
 
 #### TIN2TOUT
 
@@ -336,19 +322,18 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 * D2I 0X61
 * B2I 0X62
 
-原先计算栈顶为
-
-... | value(TIN) |
-
 格式转换
 
+```
+... | value(TIN) |
 ... | res(TOUT) |
+```
 
 #### JMP
 
 * JMP offset(int) 0X70
 
-栈不改变。IP改变offset
+栈不改变。IP+=offset
 
 #### JCOND
 
@@ -358,7 +343,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 ... | cond(byte) |
 
-如果cond为0，IP改变offset1，否则，IP改变offset
+栈不改变。如果cond为0，IP+=offset1，否则，IP+=offset
 
 ... |
 
@@ -366,25 +351,24 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 * CALL addr(uint) 0X80
 
-执行addr所指向的函数，fptr是函数在函数总表中的Index，VM会负责处理堆栈和IP，不改变计算栈
+栈不改变。执行addr所指向的函数，fptr是函数在函数总表中的Index，会Push堆栈以及改变IP
 
 #### RET
 
 * RET 0X84
 
-不对计算栈做任何修改。虚拟机会执行函数返回的相关工作。
+栈不改变。执行函数返回的相关工作，恢复堆栈和IP
 
 #### PRINT(T)
 
 * PRINTI 0XA0
 
-原先计算栈顶为
-
-... | value(T) |
-
 将栈顶的值输出到控制台
 
+```
+... | value(T) |
 ... |
+```
 
 
 ### 函数调用规范
@@ -393,7 +377,9 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 函数Call之前，计算栈如下
 
-... | argN | ... | arg0 | fptr(uint) |
+```
+... | argN | ... | arg0 |
+```
 
 参数应当倒序进入计算栈
 
