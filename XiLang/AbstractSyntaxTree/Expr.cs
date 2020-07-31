@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using XiLang.Errors;
 using XiVM;
 using XiVM.Xir.Symbol;
@@ -584,10 +586,25 @@ namespace XiLang.AbstractSyntaxTree
                             //expr2Type = Expr2.CodeGen();
                             throw new NotImplementedException();
                         case OpType.CALL:
-                            CodeGenParam(Expr2);
-                            valueType = Expr1.CodeGen();
-                            CodeGenPass.Constructor.AddCall();
-                            return ((FunctionType)valueType).ReturnType;
+                            FunctionType functionType = Expr1.FunctionCodeGen(out uint idx);
+
+                            List<Expr> ps = new List<Expr>();
+                            Expr3 = Expr2;  // 借用Expr3作临时变量
+                            while (Expr3 != null)
+                            {
+                                ps.Add(Expr3);
+                                Expr3 = (Expr)Expr3.SiblingAST;
+                            }
+                            Expr3 = null;
+
+                            foreach ((var p, var pType) in ps.Zip(functionType.Params))
+                            {
+                                valueType = p.CodeGen();
+                                TryImplicitCast(pType, valueType);
+                            }
+
+                            CodeGenPass.Constructor.AddCall(idx);
+                            return functionType.ReturnType;
                         case OpType.CLASS_ACCESS:
                             throw new NotImplementedException();
                         case OpType.ARRAY_ACCESS:
@@ -601,22 +618,61 @@ namespace XiLang.AbstractSyntaxTree
         }
 
         /// <summary>
-        /// 因为参数要倒序入栈，所以用后序遍历的方式
-        /// TODO 可能需要隐式类型转换，需要重做参数估值
+        /// 期望获得一个函数
+        /// 将函数地址入栈
+        /// TODO 函数引用
         /// </summary>
-        /// <param name="ps"></param>
-        private void CodeGenParam(Expr ps)
+        /// <param name="index">如果是函数引用，index等于0（0是全局的index，不允许call）</param>
+        /// <returns></returns>
+        private FunctionType FunctionCodeGen(out uint index)
         {
-            if (ps == null)
+            switch (ExprType)
             {
-                return;
+                case ExprType.CONST:
+                    throw new XiLangError($"Constant is not callable", Line);
+                case ExprType.ID:
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out int levelDiff))
+                    {
+                        if (symbol is FunctionSymbol function)
+                        {
+                            index = function.Function.Index;
+                            return function.Function.Type;
+                        }
+                        else if (symbol is VariableSymbol variable)
+                        {
+                            throw new XiLangError($"{Value.StringValue} is not callable", Line);
+                        }
+                        else
+                        {
+                            throw new NotImplementedException();
+                        }
+                    }
+                    else
+                    {
+                        throw new XiLangError($"Function {Value.StringValue} is not declared when called", Line);
+                    }
+                case ExprType.OPEXPR:
+                    switch (OpType)
+                    {
+                        case OpType.CAST:
+                            throw new NotImplementedException();
+                        case OpType.CALL:
+                            throw new NotImplementedException();
+                        case OpType.CLASS_ACCESS:
+                            throw new NotImplementedException();
+                        case OpType.ARRAY_ACCESS:
+                            throw new NotImplementedException();
+                        default:
+                            throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
             }
-            CodeGenParam((Expr)ps.SiblingAST);
-            ps.CodeGen();
         }
 
         /// <summary>
-        /// 将表达式的结果的左值入栈
+        /// 期望获得一个左值
+        /// 将表达式的结果的地址入栈
         /// 栈顶是一个Address，所以不需要返回值来区分
         /// </summary>
         private void LeftValueCodeGen()
@@ -647,34 +703,6 @@ namespace XiLang.AbstractSyntaxTree
                 case ExprType.OPEXPR:
                     switch (OpType)
                     {
-                        case OpType.ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.ADD_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.SUB_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.MUL_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.DIV_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.MOD_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.AND_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.OR_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.XOR_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.SL_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.SR_ASSIGN:
-                            throw new NotImplementedException();
-                        case OpType.CONDITIONAL:
-                            throw new NotImplementedException();
-                        case OpType.CAST:
-                            throw new NotImplementedException();
-                        case OpType.CALL:
-                            throw new NotImplementedException();
                         case OpType.CLASS_ACCESS:
                             throw new NotImplementedException();
                         case OpType.ARRAY_ACCESS:

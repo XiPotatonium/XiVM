@@ -31,12 +31,15 @@ namespace XiVM.Xir
 
         #endregion
 
-        public void AddCall()
+        public void AddCall(uint index)
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.CALL,
-            });
+                Params = new byte[VariableType.AddressSize]
+            };
+            BitConverter.TryWriteBytes(inst.Params, index);
+            CurrentBasicBlock.Instructions.AddLast(inst);
         }
 
         #region Ret

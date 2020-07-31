@@ -306,8 +306,7 @@ namespace XiVM.Executor
                     }
                     break;
                 case InstructionType.CALL:
-                    addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
-                    ComputationStack.Pop(VariableType.AddressSize);
+                    addr = BitConverter.ToUInt32(inst.Params);
                     if (addr == 0)
                     {
                         throw new XiVMError("Call of NULL function is not allowed");

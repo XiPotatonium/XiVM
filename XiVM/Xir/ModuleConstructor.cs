@@ -61,8 +61,7 @@ namespace XiVM.Xir
             if (MainFunction != null)
             {
                 AddPushA(0);    // 暂时给main函数传NULL
-                AddPushA(MainFunction.Index);
-                AddCall();
+                AddCall(MainFunction.Index);
             }
             AddRet();           // 为了满足bb的要求，全局也ret一下
 

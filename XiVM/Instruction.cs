@@ -53,7 +53,7 @@ namespace XiVM
         JCOND = 0x71,
 
         CALL = 0x80,
-        RET = 0x81,
+        RET = 0x84,
 
         PRINTI = 0xA0
     }
