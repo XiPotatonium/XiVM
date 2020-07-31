@@ -27,8 +27,11 @@ namespace XiLang.AbstractSyntaxTree
             while (ast != null)
             {
                 VariableType type = ast.CodeGen();
-                // 表达式的值依然在栈中，要pop出去
-                CodeGenPass.Constructor.AddPopValue(type);
+                if (type != null)
+                {
+                    // 表达式的值依然在栈中，要pop出去
+                    CodeGenPass.Constructor.AddPopValue(type);
+                }
                 ast = ast.SiblingAST;
             }
             return null;

@@ -14,6 +14,7 @@
 *.userprefs
 *.ast.json
 *.xir
+*.xibc
 
 # Build results
 [Dd]ebug/

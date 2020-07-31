@@ -232,12 +232,17 @@ namespace XiVM.Executor
                     {
                         throw new XiVMError("Call of NULL function is not allowed");
                     }
-                    RuntimeStack.Push(CurrentFunction.ARSize, FunctionIndex, IP);
+                    RuntimeStack.Push(Functions[addr].ARSize, FunctionIndex, IP);
                     FunctionIndex = (int)addr;
                     IP = 0;
                     break;
                 case InstructionType.RET:
                     RuntimeStack.Pop(out FunctionIndex, out IP);
+                    break;
+                case InstructionType.PRINTI:
+                    iValue = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    Console.Write(iValue);
                     break;
                 default:
                     throw new NotImplementedException();

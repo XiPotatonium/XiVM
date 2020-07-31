@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -35,10 +36,26 @@ namespace XiVM.Xir
             // 添加全局代码
             Function global = new Function(0, null, null);
             Functions.Add(global);
+
+            ImportSystemFunctions();
+
             CurrentBasicBlock = AddBasicBlock(global);
         }
 
-        public void Dump(string dirName)
+        /// <summary>
+        /// 用比较Dirty的方法设置系统函数，以后有import功能后将系统函数做成一个模块
+        /// </summary>
+        private void ImportSystemFunctions()
+        {
+            Function printi = AddFunction("printi", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
+            CurrentBasicBlock =  AddBasicBlock(printi);
+            AddGetA(0, 0);
+            AddLoadI();
+            AddPrintI();
+            AddRet();
+        }
+
+        public void Dump(string dirName, bool dumpXir = true)
         {
             CurrentBasicBlock = Functions[0].BasicBlocks[0];
             if (MainFunction != null)
@@ -54,17 +71,43 @@ namespace XiVM.Xir
                 dirName = ".";
             }
 
-            using (FileStream fs = new FileStream(Path.Combine(dirName, $"{Name}.xir"), FileMode.Create))
+            BinaryFormatter binaryFormatter = new BinaryFormatter();
+            BinaryModule binaryModule = new BinaryModule
             {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
-                BinaryModule binaryModule = new BinaryModule
-                {
-                    Functions = Functions.Select(f => f.ToBinary()).ToArray(),
-                    // TODO Class
-                    Constants = Constants.ToArray()
-                };
+                Functions = Functions.Select(f => f.ToBinary()).ToArray(),
+                // TODO Class
+                Constants = Constants.ToArray()
+            };
 
+            using (FileStream fs = new FileStream(Path.Combine(dirName, $"{Name}.xibc"), FileMode.Create))
+            {
                 binaryFormatter.Serialize(fs, binaryModule);
+            }
+
+            if (dumpXir)
+            {
+                using (StreamWriter sw = new StreamWriter(Path.Combine(dirName, $"{Name}.xir")))
+                {
+                    sw.WriteLine($"# {Name}");
+
+                    sw.WriteLine($"\n.global:");
+                    foreach (var inst in Functions[0].BasicBlocks[0].Instructions)
+                    {
+                        sw.WriteLine(inst.ToString());
+                    }
+
+                    for (int i = 1; i < Functions.Count; ++i)
+                    {
+                        sw.WriteLine($"\n.f{i}:\t# {Functions[i].Name}");
+                        foreach (var bb in Functions[i].BasicBlocks)
+                        {
+                            foreach (var inst in bb.Instructions)
+                            {
+                                sw.WriteLine(inst.ToString());
+                            }
+                        }
+                    }
+                }
             }
         }
 

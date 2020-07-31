@@ -34,7 +34,9 @@ namespace XiVM
         ADDI = 0x40,
 
         CALL = 0x80,
-        RET = 0x81
+        RET = 0x81,
+
+        PRINTI = 0xA0
     }
 
     [Serializable]
@@ -48,5 +50,37 @@ namespace XiVM
     {
         public InstructionType OpCode { set; get; }
         public byte[] Params { set; get; }
+
+        public override string ToString()
+        {
+            return OpCode switch
+            {
+                InstructionType.NOP => "NOP",
+                InstructionType.PUSHB => $"PUSHB {Params[0]}",
+                InstructionType.PUSHI => $"PUSHI {BitConverter.ToInt32(Params)}",
+                InstructionType.PUSHD => $"PUSHD {BitConverter.ToDouble(Params)}",
+                InstructionType.PUSHA => $"PUSHA {BitConverter.ToUInt32(Params)}",
+                InstructionType.POP => "POP",
+                InstructionType.POP4 => "POP4",
+                InstructionType.POP8 => "POP8",
+                InstructionType.DUP => "DUP",
+                InstructionType.DUP4 => "DUP4",
+                InstructionType.DUP8 => "DUP8",
+                InstructionType.GETA => $"GETA {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
+                InstructionType.LOADB => "LOADB",
+                InstructionType.LOADI => "LOADI",
+                InstructionType.LOADD => "LOADD",
+                InstructionType.LOADA => "LOADA",
+                InstructionType.STOREB => "STOREB",
+                InstructionType.STOREI => "STOREI",
+                InstructionType.STORED => "STORED",
+                InstructionType.STOREA => "STOREA",
+                InstructionType.ADDI => "ADDI",
+                InstructionType.CALL => "CALL",
+                InstructionType.RET => "RET",
+                InstructionType.PRINTI => "PRINTI",
+                _ => throw new NotImplementedException(),
+            };
+        }
     }
 }

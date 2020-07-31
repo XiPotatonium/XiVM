@@ -6,8 +6,10 @@
 * ref 关键字
 * XiLang中char字面量以及文本的字面量中的转义字符问题
 * XiLang常量表达式中，加法支持字符串拼接
-* XiVM可执行
 * XiLang顶层BUG修复
+* XiVM中对于类型的处理（比如Size）还比较混乱
+* 系统库函数，首先支持控制台输出，目前的控制台输出是hack的
+* XiVM中对Array的处理是有问题的
 
 ## XiLang
 
@@ -126,6 +128,9 @@ ConstExpr
 ```
 
 ## XiVM
+
+* 栈式虚拟机
+* 支持生成.xibc字节码和.xir文本中间码
 
 ### 指令集
 

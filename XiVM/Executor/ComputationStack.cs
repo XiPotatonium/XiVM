@@ -10,7 +10,7 @@ namespace XiVM.Executor
 
         public ComputationStack()
         {
-            Capacity = 64;
+            Capacity = 16;
             Data = new byte[Capacity];
         }
 
@@ -33,7 +33,7 @@ namespace XiVM.Executor
             {
                 throw new IndexOutOfRangeException();
             }
-            if (Size < 4 * Capacity)
+            if (Size < 4 * Capacity && Capacity > 16)
             {
                 byte[] old = Data;
                 Capacity /= 2;
