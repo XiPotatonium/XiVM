@@ -98,7 +98,31 @@ namespace XiVM
 
             // 优化：可以检查每个BB最后是不是br
 
-            // TODO: 遍历各个BasicBlock的指令，将带label的指令转换为正确的displacement
+            // 遍历各个BasicBlock的指令，将带label的指令转换为正确的displacement
+            int offset = 0;
+            foreach (var bb in BasicBlocks)
+            {
+                // 计算每个BasicBlock在函数中的offset
+                bb.Offset = offset;
+                offset += bb.Instructions.Count;
+            }
+            foreach (var bb in BasicBlocks)
+            {
+                if (bb.Instructions.Last.Value.OpCode == InstructionType.JMP)
+                {
+                    // offset是目的地的地址减Next IP
+                    BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params, 
+                        bb.JmpTargets[0].Offset - (bb.Offset + bb.Instructions.Count));
+                }
+                else if (bb.Instructions.Last.Value.OpCode == InstructionType.JCOND)
+                {
+                    // offset是目的地的地址减Next IP
+                    BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params,
+                        bb.JmpTargets[0].Offset - (bb.Offset + bb.Instructions.Count));
+                    BitConverter.TryWriteBytes(new Span<byte>(bb.Instructions.Last.Value.Params, sizeof(int), sizeof(int)),
+                        bb.JmpTargets[1].Offset - (bb.Offset + bb.Instructions.Count));
+                }
+            }
 
             // 拼接每个BB的指令生成最终指令
             int instructionCount = BasicBlocks.Sum(b => b.Instructions.Count);

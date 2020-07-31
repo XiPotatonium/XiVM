@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace XiVM.Xir.Symbol
 {
@@ -10,6 +11,8 @@ namespace XiVM.Xir.Symbol
         /// Stack新来的在第一个
         /// </summary>
         private LinkedList<SymbolTableFrame> SymbolStack { get; } = new LinkedList<SymbolTableFrame>();
+        private int AccessLinkValue { set; get; }
+
         public int Count => SymbolStack.Count;
 
         public SymbolTable()
@@ -27,6 +30,31 @@ namespace XiVM.Xir.Symbol
             SymbolStack.RemoveFirst();
         }
 
+        /// <summary>
+        /// Without Local Procedure设计
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        /// <param name="isGlobal">如果找到了符号，是不是在Global找到的</param>
+        /// <returns></returns>
+        public bool TryGetValue(string name, out Symbol value, out bool isGlobal)
+        {
+            isGlobal = false;
+            foreach (SymbolTableFrame frame in SymbolStack)
+            {
+                if (frame.TryGetValue(name, out value))
+                {
+                    if (frame == GlobalFrame)
+                    {
+                        isGlobal = true;
+                    }
+                    return true;
+                }
+            }
+            value = null;
+            return false;
+        }
+
         public bool TryGetValue(string name, out Symbol value)
         {
             foreach (SymbolTableFrame frame in SymbolStack)
@@ -35,21 +63,6 @@ namespace XiVM.Xir.Symbol
                 {
                     return true;
                 }
-            }
-            value = null;
-            return false;
-        }
-
-        public bool TryGetValue(string name, out Symbol value, out int levelDiff)
-        {
-            levelDiff = 0;
-            foreach (SymbolTableFrame frame in SymbolStack)
-            {
-                if (frame.TryGetValue(name, out value))
-                {
-                    return true;
-                }
-                levelDiff++;
             }
             value = null;
             return false;
@@ -73,5 +86,6 @@ namespace XiVM.Xir.Symbol
 
     internal class SymbolTableFrame : Dictionary<string, Symbol>
     {
+
     }
 }

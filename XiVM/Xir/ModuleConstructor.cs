@@ -16,6 +16,7 @@ namespace XiVM.Xir
         /// </summary>
         private List<Function> Functions { set; get; } = new List<Function>();
         private Function MainFunction { set; get; }
+        public Function CurrentFunction => CurrentBasicBlock.Function;
         public BasicBlock CurrentBasicBlock { set; get; }
 
         /// <summary>
@@ -49,7 +50,7 @@ namespace XiVM.Xir
         {
             Function printi = AddFunction("printi", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
             CurrentBasicBlock =  AddBasicBlock(printi);
-            AddGetA(0, 0);
+            AddLocalA(0);
             AddLoadI();
             AddPrintI();
             AddRet();
@@ -134,7 +135,7 @@ namespace XiVM.Xir
                 // 创建传参代码，Call的时候已经把参数值准备好了
                 // 注意参数是倒序进栈的
                 // 不必担心是void，因为Variable的产生排除了void
-                AddGetA(0, offset);
+                AddLocalA(offset);
                 AddStoreT(paramType);
                 offset += paramType.Size;
             }
@@ -172,16 +173,15 @@ namespace XiVM.Xir
         public Variable AddVariable(string id, VariableType type)
         {
             Variable xirVariable;
-            if (CurrentBasicBlock.Function.Variables.Count == 0)
+            if (CurrentFunction.Variables.Count == 0)
             {
                 xirVariable = new Variable(type, 0);
             }
             else
             {
-                xirVariable = new Variable(type,
-                    CurrentBasicBlock.Function.Variables[^1].Offset + CurrentBasicBlock.Function.Variables[^1].Type.Size);
+                xirVariable = new Variable(type, CurrentFunction.Variables[^1].Offset + CurrentFunction.Variables[^1].Type.Size);
             }
-            CurrentBasicBlock.Function.Variables.Add(xirVariable);
+            CurrentFunction.Variables.Add(xirVariable);
 
             // 添加到符号表
             SymbolTable.Add(id, new VariableSymbol(id, xirVariable));

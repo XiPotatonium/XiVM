@@ -32,9 +32,9 @@ namespace XiLang.AbstractSyntaxTree
             // 初始化代码
             if (Init != null)
             {
-                Init.CodeGen();                                   // value
-                CodeGenPass.Constructor.AddGetA(0, var.Offset);   // addr
-                CodeGenPass.Constructor.AddStoreT(var.Type);      // store
+                Init.CodeGen();                                     // value
+                CodeGenPass.Constructor.AddLocalA(var.Offset);      // addr
+                CodeGenPass.Constructor.AddStoreT(var.Type);        // store
             }
 
             return null;

@@ -5,15 +5,25 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddGetA(int levelDiff, int offset)
+        public void AddLocalA(int offset)
         {
             Instruction inst = new Instruction()
             {
-                OpCode = InstructionType.GETA,
+                OpCode = InstructionType.LOCALA,
+                Params = new byte[sizeof(int)]
+            };
+            BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
+            CurrentBasicBlock.Instructions.AddLast(inst);
+        }
+
+        public void AddGlobalA(int offset)
+        {
+            Instruction inst = new Instruction()
+            {
+                OpCode = InstructionType.GLOBALA,
                 Params = new byte[2 * sizeof(int)]
             };
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params, 0, sizeof(int)), levelDiff);
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params, sizeof(int), sizeof(int)), offset);
+            BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
             CurrentBasicBlock.Instructions.AddLast(inst);
         }
 

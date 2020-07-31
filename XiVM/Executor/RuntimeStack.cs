@@ -3,25 +3,23 @@ using XiVM.Errors;
 
 namespace XiVM.Executor
 {
-    /// <summary>
-    /// 堆栈的地址空间为0x00000001-0x7FFFFFFF
-    /// </summary>
     internal class RuntimeStack
     {
         public static readonly int MaxStackSize = 0x100000;
+
         private int BP { set; get; }
         private int SP { set; get; }
         private int Capacity { set; get; }
 
         public byte[] Data { private set; get; }
-        public bool Empty => BP == 0;
+        public bool Empty => BP < 0;
 
         public RuntimeStack()
         {
             Capacity = 1024;
             Data = new byte[Capacity];
-            BP = 0;
-            SP = 1;
+            BP = -1;
+            SP = 0;
         }
 
         public void Push(int size, int index, int ip)
@@ -63,20 +61,14 @@ namespace XiVM.Executor
             return true;
         }
 
-        public int GetIndex(int diff, int offset)
+        public int GetLocalIndex(int offset)
         {
-            int addr = BP;
-            while (diff > 0)
-            {
-                if (addr == 0)
-                {
-                    throw new XiVMError($"Invalid stack address ({diff}, {offset})");
-                }
-                addr = BitConverter.ToInt32(Data, addr);
-                --diff;
-            }
+            return BP + 3 * sizeof(int) + offset;
+        }
 
-            return addr + 3 * sizeof(int) + offset;
+        public int GetGlobalIndex(int offset)
+        {
+            return 3 * sizeof(int) + offset;
         }
     }
 }

@@ -48,7 +48,7 @@ namespace XiVM.Executor
         {
             BinaryInstruction inst = CurrentFunction.Instructions[IP++];
             uint addr, uValue;
-            int iValue, offset, lhsi, rhsi;
+            int iValue, offset, offset1, lhsi, rhsi;
             double dValue;
             byte bValue;
             switch ((InstructionType)inst.OpCode)
@@ -92,10 +92,16 @@ namespace XiVM.Executor
                     ComputationStack.Push(8);
                     System.Array.Copy(ComputationStack.Data, ComputationStack.Size - 16, ComputationStack.Data, ComputationStack.Size - 8, 8);
                     break;
-                case InstructionType.GETA:
-                    int diff = BitConverter.ToInt32(inst.Params);
-                    offset = BitConverter.ToInt32(inst.Params, sizeof(int));
-                    addr = (uint)RuntimeStack.GetIndex(diff, offset);
+                case InstructionType.LOCALA:
+                    offset = BitConverter.ToInt32(inst.Params);
+                    addr = (uint)RuntimeStack.GetLocalIndex(offset);
+                    ComputationStack.Push(VariableType.AddressSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize, VariableType.AddressSize), addr);
+                    break;
+                case InstructionType.GLOBALA:
+                    offset = BitConverter.ToInt32(inst.Params);
+                    addr = (uint)RuntimeStack.GetGlobalIndex(offset);
                     ComputationStack.Push(VariableType.AddressSize);
                     BitConverter.TryWriteBytes(
                         new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize, VariableType.AddressSize), addr);
@@ -298,12 +304,10 @@ namespace XiVM.Executor
                     break;
                 case InstructionType.JCOND:
                     offset = BitConverter.ToInt32(inst.Params);
+                    offset1 = BitConverter.ToInt32(inst.Params, sizeof(int));
                     bValue = ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize];
                     ComputationStack.Pop(VariableType.ByteSize);
-                    if (bValue == 0)
-                    {
-                        IP += offset;
-                    }
+                    IP += bValue == 0 ? offset1 : offset;
                     break;
                 case InstructionType.CALL:
                     addr = BitConverter.ToUInt32(inst.Params);

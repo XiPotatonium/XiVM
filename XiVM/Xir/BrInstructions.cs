@@ -7,40 +7,30 @@ namespace XiVM.Xir
 
         #region JMP
 
-        public void AddJmp(int offset)
+        public void AddJmp(BasicBlock target)
         {
             Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.JMP,
                 Params = new byte[VariableType.IntSize]
             };
-            BitConverter.TryWriteBytes(inst.Params, offset);
             CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentBasicBlock.JmpTargets.Add(target);
         }
 
-        public void AddJCond(int offset)
+        public void AddJCond(BasicBlock target1, BasicBlock target2)
         {
             Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.JCOND,
-                Params = new byte[VariableType.IntSize]
+                Params = new byte[VariableType.IntSize * 2]
             };
-            BitConverter.TryWriteBytes(inst.Params, offset);
             CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentBasicBlock.JmpTargets.Add(target1);
+            CurrentBasicBlock.JmpTargets.Add(target2);
         }
 
         #endregion
-
-        public void AddCall(uint index)
-        {
-            Instruction inst = new Instruction()
-            {
-                OpCode = InstructionType.CALL,
-                Params = new byte[VariableType.AddressSize]
-            };
-            BitConverter.TryWriteBytes(inst.Params, index);
-            CurrentBasicBlock.Instructions.AddLast(inst);
-        }
 
         #region Ret
 

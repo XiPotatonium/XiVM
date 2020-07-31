@@ -448,7 +448,7 @@ namespace XiLang.AbstractSyntaxTree
                             throw new NotImplementedException();
                     }
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out int levelDiff))
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
                     {
                         if (symbol is FunctionSymbol function)
                         {
@@ -457,7 +457,14 @@ namespace XiLang.AbstractSyntaxTree
                         }
                         else if (symbol is VariableSymbol variable)
                         {
-                            CodeGenPass.Constructor.AddGetA(levelDiff, variable.XirVariable.Offset);
+                            if (isGlobal)
+                            {
+                                CodeGenPass.Constructor.AddGlobalA(variable.XirVariable.Offset);
+                            }
+                            else
+                            {
+                                CodeGenPass.Constructor.AddLocalA(variable.XirVariable.Offset);
+                            }
                             CodeGenPass.Constructor.AddLoadT(variable.XirVariable.Type);
                             return variable.XirVariable.Type;
                         }
@@ -597,10 +604,15 @@ namespace XiLang.AbstractSyntaxTree
                             }
                             Expr3 = null;
 
-                            foreach ((var p, var pType) in ps.Zip(functionType.Params))
+                            // 参数倒序进栈
+                            if (ps.Count != functionType.Params.Count)
                             {
-                                valueType = p.CodeGen();
-                                TryImplicitCast(pType, valueType);
+                                throw new XiLangError($"Argument size doesn't match");
+                            }
+                            for (int i = ps.Count - 1; i >= 0; --i)
+                            {
+                                valueType = ps[i].CodeGen();
+                                TryImplicitCast(functionType.Params[i], valueType);
                             }
 
                             CodeGenPass.Constructor.AddCall(idx);
@@ -631,7 +643,7 @@ namespace XiLang.AbstractSyntaxTree
                 case ExprType.CONST:
                     throw new XiLangError($"Constant is not callable", Line);
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out int levelDiff))
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
                     {
                         if (symbol is FunctionSymbol function)
                         {
@@ -680,7 +692,7 @@ namespace XiLang.AbstractSyntaxTree
             switch (ExprType)
             {
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out int levelDiff))
+                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
                     {
                         if (symbol is FunctionSymbol function)
                         {
@@ -688,7 +700,14 @@ namespace XiLang.AbstractSyntaxTree
                         }
                         else if (symbol is VariableSymbol variable)
                         {
-                            CodeGenPass.Constructor.AddGetA(levelDiff, variable.XirVariable.Offset);
+                            if (isGlobal)
+                            {
+                                CodeGenPass.Constructor.AddGlobalA(variable.XirVariable.Offset);
+                            }
+                            else
+                            {
+                                CodeGenPass.Constructor.AddLocalA(variable.XirVariable.Offset);
+                            }
                         }
                         else
                         {

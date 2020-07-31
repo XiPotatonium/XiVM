@@ -6,5 +6,5 @@ int gcd(int a, int b) {
 }
 
 void main(string[] args) {
-    printi(gcd(12, 16));
+    printi(gcd(36, 27));
 }

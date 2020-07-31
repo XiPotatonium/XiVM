@@ -7,10 +7,11 @@
 * XiLang中char字面量以及文本的字面量中的转义字符问题
 * XiLang常量表达式中，加法支持字符串拼接
 * XiLang顶层BUG修复
-* XiVM中对于类型的处理（比如Size）还比较混乱
-* 系统库函数，首先支持控制台输出，目前的控制台输出是hack的
-* XiVM中对Array的处理是有问题的
+* XiVM中对于类型的处理（主要是Size）还比较混乱
+* 系统库函数，首先支持控制台输出，目前的控制台输出是hack的，如何很好地实现多模块以及import
+* XiVM中对Array的处理是有问题的，Array应该像string一样是一个系统库类型
 * 为了支持函数引用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
+* XiVM的浮点数运算以及完善的比较运算
 
 ## XiLang
 
@@ -131,6 +132,7 @@ ConstExpr
 ## XiVM
 
 * 栈式虚拟机
+* Stack Based Runtime Environment without Local Procedure
 * 支持生成.xibc字节码和.xir文本中间码
 
 ### 指令集
@@ -190,15 +192,27 @@ N为大小（单位为字节）。
 
 ... | value(N) | value(N) |
 
-#### GETA
+#### LOCALA
 
-* GETA diff(int) offset(int) 0x18
+* LOCALA offset(int) 0x18
 
 原先计算栈顶为
 
 ... |
 
-将堆栈中向前diff个栈帧，offset为offset的栈地址Push进计算栈，实际上diff和offset均为正数
+当前栈帧offset为offset的栈地址Push进计算栈，offset为正数
+
+... | addr(uint) |
+
+#### GLOBALA
+
+* GLOBALA offset(int) 0x19
+
+原先计算栈顶为
+
+... |
+
+全局栈帧offset为offset的栈地址Push进计算栈，offset为正数。因此XiVM实际上不支持嵌套函数
 
 ... | addr(uint) |
 
@@ -338,13 +352,13 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### JCOND
 
-* JCOND offset(int) 0X71
+* JCOND offset(int) offset1(int) 0X71
 
 原先计算栈顶为
 
 ... | cond(byte) |
 
-如果cond非0，IP改变offset
+如果cond为0，IP改变offset1，否则，IP改变offset
 
 ... |
 

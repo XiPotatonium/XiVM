@@ -19,7 +19,8 @@ namespace XiVM
         DUP4 = 0x11,
         DUP8 = 0x12,
 
-        GETA = 0x18,
+        LOCALA = 0x18,
+        GLOBALA = 0x19,
 
         LOADB = 0x20,
         LOADI = 0x21,
@@ -69,6 +70,10 @@ namespace XiVM
     {
         public InstructionType OpCode { set; get; }
         public byte[] Params { set; get; }
+        public bool IsBranch => OpCode == InstructionType.RET ||
+            OpCode == InstructionType.JMP ||
+            OpCode == InstructionType.JCOND;
+
 
         public override string ToString()
         {
@@ -85,7 +90,8 @@ namespace XiVM
                 InstructionType.DUP => "DUP",
                 InstructionType.DUP4 => "DUP4",
                 InstructionType.DUP8 => "DUP8",
-                InstructionType.GETA => $"GETA {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
+                InstructionType.LOCALA => $"LOCALA {BitConverter.ToInt32(Params)}",
+                InstructionType.GLOBALA => $"GLOBALA {BitConverter.ToInt32(Params)}",
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",
                 InstructionType.LOADD => "LOADD",
@@ -95,7 +101,7 @@ namespace XiVM
                 InstructionType.STORED => "STORED",
                 InstructionType.STOREA => "STOREA",
                 InstructionType.ADDI => "ADDI",
-                InstructionType.CALL => "CALL",
+                InstructionType.CALL => $"CALL {BitConverter.ToUInt32(Params)}",
                 InstructionType.RET => "RET",
                 InstructionType.PRINTI => "PRINTI",
                 InstructionType.SUBI => "SUBI",
@@ -108,7 +114,7 @@ namespace XiVM
                 InstructionType.D2I => "D2I",
                 InstructionType.B2I => "B2I",
                 InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
-                InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)}",
+                InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
                 _ => throw new NotImplementedException(),
             };
         }

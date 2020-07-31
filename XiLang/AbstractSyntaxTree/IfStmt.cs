@@ -1,4 +1,5 @@
 ﻿using XiVM;
+using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -30,7 +31,34 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            throw new System.NotImplementedException();
+            BasicBlock thenBB = CodeGenPass.Constructor.AddBasicBlock(CodeGenPass.Constructor.CurrentFunction);
+            BasicBlock otherwiseBB = CodeGenPass.Constructor.AddBasicBlock(CodeGenPass.Constructor.CurrentFunction);
+            BasicBlock afterBB = CodeGenPass.Constructor.AddBasicBlock(CodeGenPass.Constructor.CurrentFunction);
+
+            // cond
+            Cond.CodeGen();
+            CodeGenPass.Constructor.AddJCond(thenBB, otherwiseBB);
+
+            // then
+            CodeGenPass.Constructor.CurrentBasicBlock = thenBB;
+            Then.CodeGen();
+            if (thenBB.Instructions.Last?.Value.IsBranch != true)
+            {
+                CodeGenPass.Constructor.AddJmp(afterBB);
+            }
+
+            // otherwise
+            CodeGenPass.Constructor.CurrentBasicBlock = otherwiseBB;
+            Otherwise?.CodeGen();
+            if (otherwiseBB.Instructions.Last?.Value.IsBranch != true)
+            {
+                CodeGenPass.Constructor.AddJmp(afterBB);
+            }
+
+            // after
+            CodeGenPass.Constructor.CurrentBasicBlock = afterBB;
+
+            return null;
         }
     }
 }
