@@ -26,12 +26,31 @@ namespace XiVM
         LOADD = 0x22,
         LOADA = 0x23,
 
-        STOREB = 0x30,
-        STOREI = 0x31,
-        STORED = 0x32,
-        STOREA = 0x33,
+        STOREB = 0x28,
+        STOREI = 0x29,
+        STORED = 0x2A,
+        STOREA = 0x2B,
 
-        ADDI = 0x40,
+        ADDI = 0x30,
+
+        SUBI = 0x34,
+
+        MULI = 0x38,
+
+        DIVI = 0x3C,
+
+        MOD = 0x40,
+
+        NEGI = 0x44,
+
+        I2D = 0x50,
+        D2I = 0x51,
+        B2I = 0x52,
+
+        SETEQI = 0x60,
+
+        JMP = 0x70,
+        JCOND = 0x71,
 
         CALL = 0x80,
         RET = 0x81,
@@ -79,6 +98,17 @@ namespace XiVM
                 InstructionType.CALL => "CALL",
                 InstructionType.RET => "RET",
                 InstructionType.PRINTI => "PRINTI",
+                InstructionType.SUBI => "SUBI",
+                InstructionType.MULI => "MULI",
+                InstructionType.DIVI => "DIVI",
+                InstructionType.MOD => "MOD",
+                InstructionType.NEGI => "NEGI",
+                InstructionType.SETEQI => "SETEQI",
+                InstructionType.I2D => "I2D",
+                InstructionType.D2I => "D2I",
+                InstructionType.B2I => "B2I",
+                InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
+                InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)}",
                 _ => throw new NotImplementedException(),
             };
         }

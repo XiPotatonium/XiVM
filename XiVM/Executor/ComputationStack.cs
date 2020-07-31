@@ -7,6 +7,7 @@ namespace XiVM.Executor
         public byte[] Data { private set; get; }
         public int Capacity { private set; get; }
         public int Size { private set; get; } = 0;
+        public bool Empty => Size == 0;
 
         public ComputationStack()
         {

@@ -422,7 +422,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            VariableType valueType;
+            VariableType valueType, expr1Type, expr2Type, expr3Type;
             switch (ExprType)
             {
                 case ExprType.CONST:
@@ -432,11 +432,13 @@ namespace XiLang.AbstractSyntaxTree
                             CodeGenPass.Constructor.AddPushI(Value.IntValue);
                             return VariableType.IntType;
                         case ValueType.DOUBLE:
-                            throw new NotImplementedException();
+                            CodeGenPass.Constructor.AddPushD(Value.DoubleValue);
+                            return VariableType.DoubleType;
                         case ValueType.STRING:
                             throw new NotImplementedException();
                         case ValueType.BOOL:
-                            throw new NotImplementedException();
+                            CodeGenPass.Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
+                            return VariableType.ByteType;
                         case ValueType.NULL:
                             CodeGenPass.Constructor.AddPushA(0);
                             return VariableType.NullType;
@@ -470,23 +472,47 @@ namespace XiLang.AbstractSyntaxTree
                     switch (OpType)
                     {
                         case OpType.NEG:
-                            throw new NotImplementedException();
+                            valueType = Expr1.CodeGen();
+                            if (valueType.Tag == VariableTypeTag.INT)
+                            {
+                                return CodeGenPass.Constructor.AddNegI();
+                            }
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
                         case OpType.INC:
                             throw new NotImplementedException();
                         case OpType.DEC:
                             throw new NotImplementedException();
                         case OpType.ADD:
-                            Expr1.CodeGen();
-                            Expr2.CodeGen();
-                            return CodeGenPass.Constructor.AddAddI();
                         case OpType.SUB:
-                            throw new NotImplementedException();
                         case OpType.MUL:
-                            throw new NotImplementedException();
                         case OpType.DIV:
-                            throw new NotImplementedException();
+                            expr1Type = Expr1.CodeGen();
+                            expr2Type = Expr2.CodeGen();
+                            TryImplicitCast(expr1Type, expr2Type);
+                            if (expr1Type.Tag == VariableTypeTag.INT)
+                            {
+                                return OpType switch
+                                {
+                                    OpType.ADD => CodeGenPass.Constructor.AddAddI(),
+                                    OpType.SUB => CodeGenPass.Constructor.AddSubI(),
+                                    OpType.MUL => CodeGenPass.Constructor.AddMulI(),
+                                    OpType.DIV => CodeGenPass.Constructor.AddDivI(),
+                                    _ => throw new NotImplementedException(),
+                                };
+                            }
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
                         case OpType.MOD:
-                            throw new NotImplementedException();
+                            expr1Type = Expr1.CodeGen();
+                            TryImplicitCast(VariableType.IntType, expr1Type);
+                            expr2Type = Expr2.CodeGen();
+                            TryImplicitCast(VariableType.IntType, expr2Type);
+                            return CodeGenPass.Constructor.AddMod();
                         case OpType.LOG_NOT:
                             throw new NotImplementedException();
                         case OpType.LOG_AND:
@@ -494,28 +520,39 @@ namespace XiLang.AbstractSyntaxTree
                         case OpType.LOG_OR:
                             throw new NotImplementedException();
                         case OpType.BIT_NOT:
-                            throw new NotImplementedException();
                         case OpType.BIT_AND:
-                            throw new NotImplementedException();
                         case OpType.BIT_XOR:
-                            throw new NotImplementedException();
                         case OpType.BIT_OR:
-                            throw new NotImplementedException();
                         case OpType.BIT_SL:
-                            throw new NotImplementedException();
                         case OpType.BIT_SR:
+                            // 位操作不在计划之中
                             throw new NotImplementedException();
                         case OpType.EQ:
-                            throw new NotImplementedException();
                         case OpType.NE:
-                            throw new NotImplementedException();
                         case OpType.GE:
-                            throw new NotImplementedException();
                         case OpType.GT:
-                            throw new NotImplementedException();
                         case OpType.LE:
-                            throw new NotImplementedException();
                         case OpType.LT:
+                            expr1Type = Expr1.CodeGen();
+                            expr2Type = Expr2.CodeGen();
+                            TryImplicitCast(expr1Type, expr2Type);
+                            if (expr1Type.Tag == VariableTypeTag.INT)
+                            {
+                                return OpType switch
+                                {
+                                    OpType.EQ => CodeGenPass.Constructor.AddSetEqI(),
+                                    OpType.NE => throw new NotImplementedException(),
+                                    OpType.GE => throw new NotImplementedException(),
+                                    OpType.GT => throw new NotImplementedException(),
+                                    OpType.LE => throw new NotImplementedException(),
+                                    OpType.LT => throw new NotImplementedException(),
+                                    _ => throw new NotImplementedException(),
+                                };
+                            }
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
                             throw new NotImplementedException();
                         case OpType.ASSIGN:
                             valueType = Expr2.CodeGen();
@@ -534,18 +571,17 @@ namespace XiLang.AbstractSyntaxTree
                         case OpType.MOD_ASSIGN:
                             throw new NotImplementedException();
                         case OpType.AND_ASSIGN:
-                            throw new NotImplementedException();
                         case OpType.OR_ASSIGN:
-                            throw new NotImplementedException();
                         case OpType.XOR_ASSIGN:
-                            throw new NotImplementedException();
                         case OpType.SL_ASSIGN:
-                            throw new NotImplementedException();
                         case OpType.SR_ASSIGN:
+                            // 位操作不在计划之中
                             throw new NotImplementedException();
                         case OpType.CONDITIONAL:
                             throw new NotImplementedException();
                         case OpType.CAST:
+                            //expr1Type = ((TypeExpr)Expr1).ToXirType();
+                            //expr2Type = Expr2.CodeGen();
                             throw new NotImplementedException();
                         case OpType.CALL:
                             CodeGenParam(Expr2);
@@ -566,6 +602,7 @@ namespace XiLang.AbstractSyntaxTree
 
         /// <summary>
         /// 因为参数要倒序入栈，所以用后序遍历的方式
+        /// TODO 可能需要隐式类型转换，需要重做参数估值
         /// </summary>
         /// <param name="ps"></param>
         private void CodeGenParam(Expr ps)

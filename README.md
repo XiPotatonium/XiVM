@@ -142,16 +142,16 @@ N为大小（单位为字节）。
 
 #### NOP
 
-* NOP   0x00
+* NOP   0X00
 
  无任何操作
 
 #### PUSHT
 
-* PUSHB value(byte) 0x01
-* PUSHI value(int) 0x02
-* PUSHD value(double) 0x03
-* PUSHA value(uint) 0x04
+* PUSHB value(byte) 0X01
+* PUSHI value(int) 0X02
+* PUSHD value(double) 0X03
+* PUSHA value(uint) 0X04
 
 原先计算栈顶为
 
@@ -163,9 +163,9 @@ N为大小（单位为字节）。
 
 #### POP(N)
 
-* POP 0x08
-* POP4 0x09
-* POP8 0x0A
+* POP 0X08
+* POP4 0X09
+* POP8 0X0A
 
 原先计算栈顶为
 
@@ -177,9 +177,9 @@ N为大小（单位为字节）。
 
 #### DUP(N)
 
-* DUP 0x10
-* DUP4 0x11
-* DUP8 0x12
+* DUP 0X10
+* DUP4 0X11
+* DUP8 0X12
 
 原先计算栈顶为
 
@@ -197,16 +197,16 @@ N为大小（单位为字节）。
 
 ... |
 
-将堆栈中向前diff个栈帧，offset为offset的栈地址Push进计算栈
+将堆栈中向前diff个栈帧，offset为offset的栈地址Push进计算栈，实际上diff和offset均为正数
 
 ... | addr(uint) |
 
 #### LOADT
 
-* LOADB 0x20
-* LOADI 0x21
-* LOADD 0x22
-* LOADA 0x23
+* LOADB 0X20
+* LOADI 0X21
+* LOADD 0X22
+* LOADA 0X23
 
 原先计算栈顶为
 
@@ -218,10 +218,10 @@ load会从栈顶的地址位置加载一个T类型的值，Push进计算栈
 
 #### STORET
 
-* STOREB 0x30
-* STOREI 0x31
-* STORED 0x32
-* STOREA 0x33
+* STOREB 0X28
+* STOREI 0X29
+* STORED 0X2A
+* STOREA 0X2B
 
 原先计算栈顶为
 
@@ -233,7 +233,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### ADDT
 
-* ADDI 0x40
+* ADDI 0X30
 
 原先计算栈顶为
 
@@ -243,9 +243,113 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 ... | res(T) |
 
+#### SUBT
+
+* SUBI 0X34
+
+原先计算栈顶为
+
+... | lhs(T) | rhs(T) |
+
+减法
+
+... | res(T) |
+
+#### MULT
+
+* MULI 0X38
+
+原先计算栈顶为
+
+... | lhs(T) | rhs(T) |
+
+乘法
+
+... | res(T) |
+
+#### DIVT
+
+* DIVI 0X3C
+
+原先计算栈顶为
+
+... | lhs(T) | rhs(T) |
+
+除法
+
+... | res(T) |
+
+#### MOD
+
+* MOD 0X40
+
+原先计算栈顶为
+
+... | lhs(int) | rhs(int) |
+
+模运算
+
+... | res(int) |
+
+#### NEGT
+
+* NEGI 0X44
+
+原先计算栈顶为
+
+... | value(T) |
+
+取反
+
+... | res(T) |
+
+#### SET(COND)(T)
+
+* SETEQ 0X50
+
+原先计算栈顶为
+
+... | lhs(T) | rhs(T) |
+
+比较。如果cond成立，res为1，否则res为1
+
+... | res(byte) |
+
+#### TIN2TOUT
+
+* I2D 0X60
+* D2I 0X61
+* B2I 0X62
+
+原先计算栈顶为
+
+... | value(TIN) |
+
+格式转换
+
+... | res(TOUT) |
+
+#### JMP
+
+* JMP offset(int) 0X70
+
+栈不改变。IP改变offset
+
+#### JCOND
+
+* JCOND offset(int) 0X71
+
+原先计算栈顶为
+
+... | cond(byte) |
+
+如果cond非0，IP改变offset
+
+... |
+
 #### CALL
 
-* CALL 0x80
+* CALL 0X80
 
 原先计算栈顶为
 
@@ -257,9 +361,22 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### RET
 
-* RET 0x81
+* RET 0X81
 
 不对计算栈做任何修改。虚拟机会执行函数返回的相关工作。
+
+#### PRINT(T)
+
+* PRINTI 0XA0
+
+原先计算栈顶为
+
+... | value(T) |
+
+将栈顶的值输出到控制台
+
+... |
+
 
 ### 函数调用规范
 
@@ -273,4 +390,12 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 Callee开始执行后需要将传入的参数存储到堆栈中。规定函数栈帧的起始空间就是参数且参数顺序排放。
 这样Callee只需要不断执行Get参数地址，Store参数就可以将计算栈中的参数值顺序放置到函数栈帧中。
+
+#### 函数栈帧
+
+```
+... | OldBP(int) | RetFuncIndex(int) | RetIP(int) | ...栈帧内容... |
+    ^                                                              ^
+    BP                                                             SP
+```
 

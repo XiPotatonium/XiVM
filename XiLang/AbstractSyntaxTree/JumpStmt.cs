@@ -42,11 +42,7 @@ namespace XiLang.AbstractSyntaxTree
                     {
                         VariableType actualReturnType = ReturnVal.CodeGen();
                         VariableType returnType = CodeGenPass.Constructor.CurrentBasicBlock.Function.Type.ReturnType;
-                        if (!returnType.Equivalent(actualReturnType))
-                        {
-                            // TODO 返回值需要类型转换
-                            throw new NotImplementedException();
-                        }
+                        TryImplicitCast(returnType, actualReturnType);  // 可能需要隐式类型转换
                         CodeGenPass.Constructor.AddRet();
                     }
                     else

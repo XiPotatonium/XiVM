@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using XiVM.Errors;
 using XiVM.Xir;
@@ -36,15 +37,20 @@ namespace XiVM.Executor
             {
                 ExecuteSingle();
             }
+
+            if (!ComputationStack.Empty)
+            {
+                throw new XiVMError("Computation stack is not empty after execution");
+            }
         }
 
         private void ExecuteSingle()
         {
             BinaryInstruction inst = CurrentFunction.Instructions[IP++];
-            int branchOffset = 0;
             uint addr, uValue;
-            int iValue;
+            int iValue, offset, lhsi, rhsi;
             double dValue;
+            byte bValue;
             switch ((InstructionType)inst.OpCode)
             {
                 case InstructionType.NOP:
@@ -88,7 +94,7 @@ namespace XiVM.Executor
                     break;
                 case InstructionType.GETA:
                     int diff = BitConverter.ToInt32(inst.Params);
-                    int offset = BitConverter.ToInt32(inst.Params, sizeof(int));
+                    offset = BitConverter.ToInt32(inst.Params, sizeof(int));
                     addr = (uint)RuntimeStack.GetIndex(diff, offset);
                     ComputationStack.Push(VariableType.AddressSize);
                     BitConverter.TryWriteBytes(
@@ -219,11 +225,85 @@ namespace XiVM.Executor
                     }
                     break;
                 case InstructionType.ADDI:
-                    int lhs = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
-                    int rhs = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    rhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
                     ComputationStack.Pop(VariableType.IntSize);
                     BitConverter.TryWriteBytes(
-                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhs + rhs);
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhsi + rhsi);
+                    break;
+                case InstructionType.SUBI:
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    rhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhsi - rhsi);
+                    break;
+                case InstructionType.MULI:
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    rhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhsi * rhsi);
+                    break;
+                case InstructionType.DIVI:
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    rhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhsi / rhsi);
+                    break;
+                case InstructionType.MOD:
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    rhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), lhsi % rhsi);
+                    break;
+                case InstructionType.NEGI:
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), -lhsi);
+                    break;
+                case InstructionType.I2D:
+                    iValue = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(VariableType.IntSize);
+                    ComputationStack.Push(VariableType.DoubleSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.DoubleSize, VariableType.DoubleSize), (double)iValue);
+                    break;
+                case InstructionType.D2I:
+                    dValue = BitConverter.ToDouble(ComputationStack.Data, ComputationStack.Size - VariableType.DoubleSize);
+                    ComputationStack.Pop(VariableType.DoubleSize);
+                    ComputationStack.Push(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), (int)dValue);
+                    break;
+                case InstructionType.B2I:
+                    bValue = ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize];
+                    ComputationStack.Pop(VariableType.ByteSize);
+                    ComputationStack.Push(VariableType.IntSize);
+                    BitConverter.TryWriteBytes(
+                        new Span<byte>(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize, VariableType.IntSize), (int)bValue);
+                    break;
+                case InstructionType.SETEQI:
+                    lhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - 2 * VariableType.IntSize);
+                    rhsi = BitConverter.ToInt32(ComputationStack.Data, ComputationStack.Size - VariableType.IntSize);
+                    ComputationStack.Pop(2 * VariableType.IntSize);
+                    ComputationStack.Push(VariableType.ByteSize);
+                    ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize] = lhsi == rhsi ? (byte)1 : (byte)0;
+                    break;
+                case InstructionType.JMP:
+                    offset = BitConverter.ToInt32(inst.Params);
+                    IP += offset;
+                    break;
+                case InstructionType.JCOND:
+                    offset = BitConverter.ToInt32(inst.Params);
+                    bValue = ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize];
+                    ComputationStack.Pop(VariableType.ByteSize);
+                    if (bValue == 0)
+                    {
+                        IP += offset;
+                    }
                     break;
                 case InstructionType.CALL:
                     addr = BitConverter.ToUInt32(ComputationStack.Data, ComputationStack.Size - VariableType.AddressSize);
@@ -247,7 +327,6 @@ namespace XiVM.Executor
                 default:
                     throw new NotImplementedException();
             }
-            IP += branchOffset;
         }
     }
 }
