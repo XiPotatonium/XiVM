@@ -1,12 +1,10 @@
 ﻿using ConsoleArgumentParser;
 using XiVM.Executor;
-using XiVM.Xir;
 
 namespace XiVM
 {
     public class Program
     {
-
         public static void Main(string[] args)
         {
             ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
@@ -17,6 +15,7 @@ namespace XiVM
 
             BinaryModule binaryModule = BinaryModule.Load(fileName);
 
+            Heap.AddModule(binaryModule);
             VMExecutor executor = new VMExecutor(binaryModule);
             executor.Execute();
         }

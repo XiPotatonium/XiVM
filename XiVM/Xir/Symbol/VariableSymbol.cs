@@ -2,11 +2,11 @@
 {
     public class VariableSymbol : Symbol
     {
-        public Variable XirVariable { private set; get; }
+        public Variable Variable { private set; get; }
 
         internal VariableSymbol(string name, Variable xirVariable) : base(name)
         {
-            XirVariable = xirVariable;
+            Variable = xirVariable;
         }
     }
 }

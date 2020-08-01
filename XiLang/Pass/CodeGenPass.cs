@@ -124,7 +124,7 @@ namespace XiLang.Pass
                         throw new NotImplementedException();
                 }
             }
-            Constructor.AddLocalA(var.Offset);      // addr
+            Constructor.AddLocalA(var.StackOffset);      // addr
             Constructor.AddStoreT(var.Type);        // store
         }
     }

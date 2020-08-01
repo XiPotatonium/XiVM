@@ -21,6 +21,8 @@ namespace XiVM
 
         LOCALA = 0x18,
         GLOBALA = 0x19,
+        CONSTA = 0x1A,
+        NEW = 0x1B,
 
         LOADB = 0x20,
         LOADI = 0x21,
@@ -32,35 +34,46 @@ namespace XiVM
         STORED = 0x2A,
         STOREA = 0x2B,
 
-        ADDI = 0x30,
+        ALOADB = 0x30,
+        ALOADI = 0x31,
+        ALOADD = 0x32,
+        ALOADA = 0x33,
 
-        SUBI = 0x34,
+        ASTOREB = 0x38,
+        ASTOREI = 0x39,
+        ASTORED = 0x3A,
+        ASTOREA = 0x3B,
 
-        MULI = 0x38,
+        ADDI = 0x40,
 
-        DIVI = 0x3C,
+        SUBI = 0x44,
 
-        MOD = 0x40,
+        MULI = 0x48,
 
-        NEGI = 0x44,
+        DIVI = 0x4C,
 
-        I2D = 0x50,
-        D2I = 0x51,
-        B2I = 0x52,
+        MOD = 0x50,
 
-        SETEQI = 0x60,
+        NEGI = 0x54,
 
-        JMP = 0x70,
-        JCOND = 0x71,
+        I2D = 0x60,
+        D2I = 0x61,
+        B2I = 0x62,
 
-        CALL = 0x80,
-        RET = 0x84,
-        RETB = 0x85,
-        RETI = 0x86,
-        RETD = 0x87,
-        RETA = 0x88,
+        SETEQI = 0x70,
 
-        PRINTI = 0xA0
+        JMP = 0x80,
+        JCOND = 0x81,
+
+        CALL = 0x90,
+        RET = 0x94,
+        RETB = 0x95,
+        RETI = 0x96,
+        RETD = 0x97,
+        RETA = 0x98,
+
+        PRINTI = 0xA0,
+        PRINTS = 0xA4,
     }
 
     [Serializable]
@@ -128,6 +141,17 @@ namespace XiVM
                 InstructionType.B2I => "B2I",
                 InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
                 InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
+                InstructionType.CONSTA => $"CONSTA {BitConverter.ToInt32(Params)}",
+                InstructionType.NEW => throw new NotImplementedException(),
+                InstructionType.ALOADB => throw new NotImplementedException(),
+                InstructionType.ALOADI => throw new NotImplementedException(),
+                InstructionType.ALOADD => throw new NotImplementedException(),
+                InstructionType.ALOADA => throw new NotImplementedException(),
+                InstructionType.ASTOREB => throw new NotImplementedException(),
+                InstructionType.ASTOREI => throw new NotImplementedException(),
+                InstructionType.ASTORED => throw new NotImplementedException(),
+                InstructionType.ASTOREA => throw new NotImplementedException(),
+                InstructionType.PRINTS => "PRINTS",
                 _ => throw new NotImplementedException(),
             };
         }

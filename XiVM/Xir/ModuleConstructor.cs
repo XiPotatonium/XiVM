@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -14,15 +15,12 @@ namespace XiVM.Xir
         /// <summary>
         /// 函数表
         /// </summary>
-        private List<Function> Functions { set; get; } = new List<Function>();
+        private List<Function> Functions { get; } = new List<Function>();
         public Function MainFunction { set; get; }
         public Function CurrentFunction => CurrentBasicBlock.Function;
         public BasicBlock CurrentBasicBlock { set; get; }
 
-        /// <summary>
-        /// 常量表
-        /// </summary>
-        private List<BinaryConstant> Constants { set; get; } = new List<BinaryConstant>();
+        public ConstantTable<string> StringLiterals { get; } = new ConstantTable<string>();
 
         /// <summary>
         /// 符号栈
@@ -50,10 +48,17 @@ namespace XiVM.Xir
         {
             Function printi = AddFunction("printi", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
             CurrentBasicBlock = AddBasicBlock(printi);
-            AddLocalA(printi.Params[0].Offset);
+            AddLocalA(printi.Params[0].StackOffset);
             AddLoadI();
             AddPrintI();
             AddRet();
+
+            //Function prints = AddFunction("prints", new FunctionType(null, new List<VariableType>() { String.StringClassType }));
+            //CurrentBasicBlock = AddBasicBlock(prints);
+            //AddLocalA(printi.Params[0].StackOffset);
+            //AddLoadA();
+            //AddPrintS();
+            //AddRet();
         }
 
         public void Dump(string dirName, bool dumpXir = true)
@@ -76,7 +81,7 @@ namespace XiVM.Xir
             {
                 Functions = Functions.Select(f => f.ToBinary()).ToArray(),
                 // TODO Class
-                Constants = Constants.ToArray()
+                StringLiterals = StringLiterals.ToArray()
             };
 
             using (FileStream fs = new FileStream(Path.Combine(dirName, $"{Name}.xibc"), FileMode.Create))
@@ -160,11 +165,11 @@ namespace XiVM.Xir
             if (CurrentFunction.Locals.Count == 0)
             {
                 // 第一个局部变量
-                xirVariable = new Variable(type, Stack.MiscDataSize);    
+                xirVariable = new Variable(type, Stack.MiscDataSize);
             }
             else
             {
-                xirVariable = new Variable(type, CurrentFunction.Locals[^1].Offset + CurrentFunction.Locals[^1].Type.Size);
+                xirVariable = new Variable(type, CurrentFunction.Locals[^1].StackOffset + CurrentFunction.Locals[^1].Type.Size);
             }
             CurrentFunction.Locals.Add(xirVariable);
 
@@ -172,6 +177,11 @@ namespace XiVM.Xir
             SymbolTable.Add(id, new VariableSymbol(id, xirVariable));
 
             return xirVariable;
+        }
+
+        public Class AddClass(string name)
+        {
+            throw new NotImplementedException();
         }
     }
 }

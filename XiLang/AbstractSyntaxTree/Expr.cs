@@ -222,6 +222,13 @@ namespace XiLang.AbstractSyntaxTree
                                 _ => throw new NotImplementedException(),
                             };
                         }
+                        else if (Expr1.Value.Type == ValueType.STRING && Expr2.Value.Type == ValueType.STRING &&
+                            OpType == OpType.ADD)
+                        {
+                            // 字符串字面量的拼接
+                            Value = Expr1.Value;
+                            Value.StringValue += Expr2.Value.StringValue;
+                        }
                         else
                         {
                             throw new TypeError($"{OpType} cannot be applied to {Expr1.Value.Type} and {Expr2.Value.Type}", Line);
@@ -436,7 +443,13 @@ namespace XiLang.AbstractSyntaxTree
                             Constructor.AddPushD(Value.DoubleValue);
                             return VariableType.DoubleType;
                         case ValueType.STRING:
-                            throw new NotImplementedException();
+                            int idx;
+                            if (!Constructor.StringLiterals.TryGetIndex(Value.StringValue, out idx))
+                            {
+                                idx = Constructor.StringLiterals.Add(Value.StringValue);
+                            }
+                            Constructor.AddConstA(idx);
+                            return XiVM.SystemLib.Classes.String.StringClassType;
                         case ValueType.BOOL:
                             Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
                             return VariableType.ByteType;
@@ -458,14 +471,14 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             if (isGlobal)
                             {
-                                Constructor.AddGlobalA(variable.XirVariable.Offset);
+                                Constructor.AddGlobalA(variable.Variable.StackOffset);
                             }
                             else
                             {
-                                Constructor.AddLocalA(variable.XirVariable.Offset);
+                                Constructor.AddLocalA(variable.Variable.StackOffset);
                             }
-                            Constructor.AddLoadT(variable.XirVariable.Type);
-                            return variable.XirVariable.Type;
+                            Constructor.AddLoadT(variable.Variable.Type);
+                            return variable.Variable.Type;
                         }
                         else
                         {
@@ -701,11 +714,11 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             if (isGlobal)
                             {
-                                Constructor.AddGlobalA(variable.XirVariable.Offset);
+                                Constructor.AddGlobalA(variable.Variable.StackOffset);
                             }
                             else
                             {
-                                Constructor.AddLocalA(variable.XirVariable.Offset);
+                                Constructor.AddLocalA(variable.Variable.StackOffset);
                             }
                         }
                         else

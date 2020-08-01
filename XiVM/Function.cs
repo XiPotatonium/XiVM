@@ -97,7 +97,7 @@ namespace XiVM
             }
             else
             {
-                binaryFunction.ParamSize = -Params[^1].Offset;
+                binaryFunction.ParamSize = -Params[^1].StackOffset;
             }
 
             // 计算局部变量空间大小
@@ -107,7 +107,7 @@ namespace XiVM
             }
             else
             {
-                binaryFunction.LocalSize = Locals[^1].Offset + Locals[^1].Type.Size;
+                binaryFunction.LocalSize = Locals[^1].StackOffset + Locals[^1].Type.Size;
             }
 
             // 检查每个BB最后是不是br

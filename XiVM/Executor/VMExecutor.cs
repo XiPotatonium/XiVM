@@ -1,6 +1,5 @@
 ﻿using System;
 using XiVM.Errors;
-using XiVM.Xir;
 
 namespace XiVM.Executor
 {
@@ -11,17 +10,15 @@ namespace XiVM.Executor
         private BinaryFunction CurrentFunction => Functions[FunctionIndex];
 
         private Stack Stack { get; } = new Stack();
-        private Heap Heap { get; } = new Heap();
 
-        private BinaryFunction[] Functions { set; get; }
-        private BinaryConstant[] Constants { set; get; }
-        private BinaryClass[] Classes { set; get; }
+        private BinaryModule Module { set; get; }
+        private BinaryFunction[] Functions => Module.Functions;
+        private string[] StringConstants => Module.StringLiterals;
+        private BinaryClass[] Classes => Module.Classes;
 
-        internal VMExecutor(BinaryModule binaryModule)
+        internal VMExecutor(BinaryModule module)
         {
-            Functions = binaryModule.Functions;
-            Constants = binaryModule.Constants;
-            Classes = binaryModule.Classes;
+            Module = module;
         }
 
         public void Execute()
@@ -89,6 +86,8 @@ namespace XiVM.Executor
                     Stack.PushN(VariableType.AddressSize);
                     BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), addr);
                     break;
+                case InstructionType.CONSTA:
+                    throw new NotImplementedException();
                 case InstructionType.LOADB:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
@@ -209,6 +208,7 @@ namespace XiVM.Executor
                         // 堆地址
                         throw new NotImplementedException();
                     }
+                    // TODO 可能会发生GC
                     break;
                 case InstructionType.ADDI:
                     rhsi = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
@@ -326,6 +326,11 @@ namespace XiVM.Executor
                     iValue = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
                     Stack.PopN(VariableType.IntSize);
                     Console.Write(iValue);
+                    break;
+                case InstructionType.PRINTS:
+                    addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
+                    Stack.PopN(VariableType.AddressSize);
+                    Console.Write(StringConstants[(int)addr]);
                     break;
                 default:
                     throw new NotImplementedException();

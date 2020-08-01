@@ -22,5 +22,13 @@ namespace XiVM.Xir
                 OpCode = InstructionType.PRINTI
             });
         }
+
+        public void AddPrintS()
+        {
+            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.PRINTS
+            });
+        }
     }
 }

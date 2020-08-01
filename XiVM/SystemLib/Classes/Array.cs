@@ -1,4 +1,4 @@
-﻿namespace XiVM
+﻿namespace XiVM.SystemLib.Classes
 {
     public class ArrayType : VariableType
     {

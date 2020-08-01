@@ -21,13 +21,13 @@ namespace XiVM.Executor
         private int Capacity { set; get; }
 
         private byte[] Data { set; get; }
-        public bool Empty => FP < 0;
+        public bool Empty => SP <= 0;
 
         public Stack()
         {
             Capacity = MinStackSize;
             Data = new byte[Capacity];
-            FP = -1;
+            FP = 0;
             SP = 0;
         }
 
@@ -44,7 +44,7 @@ namespace XiVM.Executor
             {
                 if (Capacity * 2 > MaxStackSize)
                 {
-                    throw new XiVMError($"Maximum stack size ({MaxStackSize}) exceeded, wants {Capacity * 2}");
+                    throw new XiVMError($"Stack overflow");
                 }
                 byte[] newData = new byte[Capacity * 2];
                 System.Array.Copy(Data, newData, SP);

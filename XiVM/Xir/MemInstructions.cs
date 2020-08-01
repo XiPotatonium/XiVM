@@ -21,9 +21,20 @@ namespace XiVM.Xir
             Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.GLOBALA,
-                Params = new byte[2 * sizeof(int)]
+                Params = new byte[sizeof(int)]
             };
             BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
+            CurrentBasicBlock.Instructions.AddLast(inst);
+        }
+
+        public void AddConstA(int index)
+        {
+            Instruction inst = new Instruction()
+            {
+                OpCode = InstructionType.CONSTA,
+                Params = new byte[sizeof(int)]
+            };
+            BitConverter.TryWriteBytes(new Span<byte>(inst.Params), index);
             CurrentBasicBlock.Instructions.AddLast(inst);
         }
 

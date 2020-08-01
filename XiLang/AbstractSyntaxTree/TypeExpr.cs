@@ -79,7 +79,7 @@ namespace XiLang.AbstractSyntaxTree
                     SyntacticValueType.BOOL => ArrayType.ByteArrayType,
                     SyntacticValueType.INT => ArrayType.IntArrayType,
                     SyntacticValueType.DOUBLE => ArrayType.DoubleArrayType,
-                    SyntacticValueType.STRING => XirString.StringArrayType,
+                    SyntacticValueType.STRING => XiVM.SystemLib.Classes.String.StringArrayType,
                     SyntacticValueType.CLASS => throw new NotImplementedException(),
                     _ => throw new NotImplementedException(),
                 };
@@ -91,7 +91,7 @@ namespace XiLang.AbstractSyntaxTree
                     SyntacticValueType.BOOL => VariableType.ByteType,
                     SyntacticValueType.INT => VariableType.IntType,
                     SyntacticValueType.DOUBLE => VariableType.DoubleType,
-                    SyntacticValueType.STRING => XirString.StringClassType,
+                    SyntacticValueType.STRING => XiVM.SystemLib.Classes.String.StringClassType,
                     SyntacticValueType.CLASS => throw new NotImplementedException(),
                     SyntacticValueType.VOID => null,
                     _ => throw new NotImplementedException(),

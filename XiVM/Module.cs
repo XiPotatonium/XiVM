@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using XiVM.Errors;
 
-namespace XiVM.Xir
+namespace XiVM
 {
     [Serializable]
     internal class BinaryModule
@@ -25,7 +25,7 @@ namespace XiVM.Xir
         }
 
         private uint Magic { set; get; } = 0x43303A29;
-        public BinaryConstant[] Constants { set; get; }
+        public string[] StringLiterals { set; get; }
         public BinaryClass[] Classes { set; get; }
         public BinaryFunction[] Functions { set; get; }
     }

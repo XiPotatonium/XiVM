@@ -4,7 +4,6 @@
 
 * ref 关键字
 * XiLang中char字面量以及文本的字面量中的转义字符问题
-* XiLang常量表达式中，加法支持字符串拼接
 * XiLang以及XiVM中对类的支持
 * XiLang的new 关键字以及XiVM堆空间
 * XiVM中对于类型的处理（主要是Size）还比较混乱
@@ -392,7 +391,7 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
                         BP                            SP
 ```
 
-栈帧的Misc数据用于Ret时恢复堆栈。包括如下内容，OldBP是Call之前的BP，Caller的Index和OldBP用于找到Call指令的下一条指令
+栈帧的Misc数据用于Ret时恢复堆栈。包括如下内容，OldBP是Call之前的BP，Caller的Index和OldIP用于找到Call指令的下一条指令
 
 ```
 | OldBP(int) | CallerIndex(int) | OldIP |
@@ -400,7 +399,7 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
 
 #### 函数运算
 
-栈试虚拟机的计算栈就在堆栈顶，因此临时变量的出现会导致SP不断变化
+栈式虚拟机的计算栈就在堆栈顶，因此临时变量的出现会导致SP不断变化
 
 ```
 ... | argN | ... | arg0 | MiscData | ...Local Vars... | tmp0 | ... |
@@ -426,8 +425,8 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
 4. 返回值重新入栈
 
 ```
-... | value(RETT) |
-                  ^
-                  SP
+... | ... | value(RETT) |
+    ^                   ^
+    BP                  SP
 ```
 

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using XiLang.Errors;
+﻿using XiLang.Errors;
 using XiVM;
 using XiVM.Xir.Symbol;
 
@@ -45,7 +44,7 @@ namespace XiLang.AbstractSyntaxTree
 
             // 将参数加入符号表
             VarStmt param = Params.Params;
-            foreach (var p in function.Params)
+            foreach (Variable p in function.Params)
             {
                 // 将参数加入符号表
                 Constructor.SetFunctionParamName(p, param.Id);
