@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -15,7 +14,7 @@ namespace XiVM.Xir
         /// 函数表
         /// </summary>
         private List<Function> Functions { set; get; } = new List<Function>();
-        private Function MainFunction { set; get; }
+        public Function MainFunction { set; get; }
         public Function CurrentFunction => CurrentBasicBlock.Function;
         public BasicBlock CurrentBasicBlock { set; get; }
 
@@ -49,9 +48,7 @@ namespace XiVM.Xir
         private void ImportSystemFunctions()
         {
             Function printi = AddFunction("printi", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
-            CurrentBasicBlock =  AddBasicBlock(printi);
-            AddLocalA(0);
-            AddLoadI();
+            CurrentBasicBlock = AddBasicBlock(printi);
             AddPrintI();
             AddRet();
         }
@@ -91,7 +88,7 @@ namespace XiVM.Xir
                     sw.WriteLine($"# {Name}");
 
                     sw.WriteLine($"\n.global:");
-                    foreach (var inst in Functions[0].BasicBlocks[0].Instructions)
+                    foreach (Instruction inst in Functions[0].BasicBlocks[0].Instructions)
                     {
                         sw.WriteLine(inst.ToString());
                     }
@@ -99,9 +96,9 @@ namespace XiVM.Xir
                     for (int i = 1; i < Functions.Count; ++i)
                     {
                         sw.WriteLine($"\n.f{i}:\t# {Functions[i].Name}");
-                        foreach (var bb in Functions[i].BasicBlocks)
+                        foreach (BasicBlock bb in Functions[i].BasicBlocks)
                         {
-                            foreach (var inst in bb.Instructions)
+                            foreach (Instruction inst in bb.Instructions)
                             {
                                 sw.WriteLine(inst.ToString());
                             }
@@ -112,8 +109,7 @@ namespace XiVM.Xir
         }
 
         /// <summary>
-        /// 注意会默认生成一个BasicBlock，是函数的entry
-        /// 同时函数的Variable里会生成形参，不需要自行创建
+        /// 函数会被加入符号表
         /// </summary>
         /// <param name="name"></param>
         /// <param name="type"></param>
@@ -123,31 +119,8 @@ namespace XiVM.Xir
             Function function = new Function((uint)Functions.Count, name, type);
             Functions.Add(function);
 
-            // entry
-            CurrentBasicBlock = new BasicBlock(function);
-            function.BasicBlocks.Add(CurrentBasicBlock);
-
-            // 创建形参
-            int offset = 0;
-            foreach (VariableType paramType in type.Params)
-            {
-                function.Variables.Add(new Variable(paramType, offset));
-                // 创建传参代码，Call的时候已经把参数值准备好了
-                // 注意参数是倒序进栈的
-                // 不必担心是void，因为Variable的产生排除了void
-                AddLocalA(offset);
-                AddStoreT(paramType);
-                offset += paramType.Size;
-            }
-
             // 加入符号表
             SymbolTable.Add(name, new FunctionSymbol(name, function));
-
-            if (SymbolTable.Count == 1 && name == "main")
-            {
-                // 是main函数
-                MainFunction = function;
-            }
 
             return function;
         }

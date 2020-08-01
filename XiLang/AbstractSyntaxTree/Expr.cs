@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using XiLang.Errors;
 using XiVM;
 using XiVM.Xir.Symbol;
@@ -431,41 +430,41 @@ namespace XiLang.AbstractSyntaxTree
                     switch (Value.Type)
                     {
                         case ValueType.INT:
-                            CodeGenPass.Constructor.AddPushI(Value.IntValue);
+                            Constructor.AddPushI(Value.IntValue);
                             return VariableType.IntType;
                         case ValueType.DOUBLE:
-                            CodeGenPass.Constructor.AddPushD(Value.DoubleValue);
+                            Constructor.AddPushD(Value.DoubleValue);
                             return VariableType.DoubleType;
                         case ValueType.STRING:
                             throw new NotImplementedException();
                         case ValueType.BOOL:
-                            CodeGenPass.Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
+                            Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
                             return VariableType.ByteType;
                         case ValueType.NULL:
-                            CodeGenPass.Constructor.AddPushA(0);
+                            Constructor.AddPushA(0);
                             return VariableType.NullType;
                         default:
                             throw new NotImplementedException();
                     }
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
+                    if (Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
                     {
                         if (symbol is FunctionSymbol function)
                         {
-                            CodeGenPass.Constructor.AddPushA(function.Function.Index);
+                            Constructor.AddPushA(function.Function.Index);
                             return function.Function.Type;
                         }
                         else if (symbol is VariableSymbol variable)
                         {
                             if (isGlobal)
                             {
-                                CodeGenPass.Constructor.AddGlobalA(variable.XirVariable.Offset);
+                                Constructor.AddGlobalA(variable.XirVariable.Offset);
                             }
                             else
                             {
-                                CodeGenPass.Constructor.AddLocalA(variable.XirVariable.Offset);
+                                Constructor.AddLocalA(variable.XirVariable.Offset);
                             }
-                            CodeGenPass.Constructor.AddLoadT(variable.XirVariable.Type);
+                            Constructor.AddLoadT(variable.XirVariable.Type);
                             return variable.XirVariable.Type;
                         }
                         else
@@ -484,7 +483,7 @@ namespace XiLang.AbstractSyntaxTree
                             valueType = Expr1.CodeGen();
                             if (valueType.Tag == VariableTypeTag.INT)
                             {
-                                return CodeGenPass.Constructor.AddNegI();
+                                return Constructor.AddNegI();
                             }
                             else
                             {
@@ -505,10 +504,10 @@ namespace XiLang.AbstractSyntaxTree
                             {
                                 return OpType switch
                                 {
-                                    OpType.ADD => CodeGenPass.Constructor.AddAddI(),
-                                    OpType.SUB => CodeGenPass.Constructor.AddSubI(),
-                                    OpType.MUL => CodeGenPass.Constructor.AddMulI(),
-                                    OpType.DIV => CodeGenPass.Constructor.AddDivI(),
+                                    OpType.ADD => Constructor.AddAddI(),
+                                    OpType.SUB => Constructor.AddSubI(),
+                                    OpType.MUL => Constructor.AddMulI(),
+                                    OpType.DIV => Constructor.AddDivI(),
                                     _ => throw new NotImplementedException(),
                                 };
                             }
@@ -521,7 +520,7 @@ namespace XiLang.AbstractSyntaxTree
                             TryImplicitCast(VariableType.IntType, expr1Type);
                             expr2Type = Expr2.CodeGen();
                             TryImplicitCast(VariableType.IntType, expr2Type);
-                            return CodeGenPass.Constructor.AddMod();
+                            return Constructor.AddMod();
                         case OpType.LOG_NOT:
                             throw new NotImplementedException();
                         case OpType.LOG_AND:
@@ -549,7 +548,7 @@ namespace XiLang.AbstractSyntaxTree
                             {
                                 return OpType switch
                                 {
-                                    OpType.EQ => CodeGenPass.Constructor.AddSetEqI(),
+                                    OpType.EQ => Constructor.AddSetEqI(),
                                     OpType.NE => throw new NotImplementedException(),
                                     OpType.GE => throw new NotImplementedException(),
                                     OpType.GT => throw new NotImplementedException(),
@@ -565,9 +564,9 @@ namespace XiLang.AbstractSyntaxTree
                             throw new NotImplementedException();
                         case OpType.ASSIGN:
                             valueType = Expr2.CodeGen();
-                            CodeGenPass.Constructor.AddDupT(valueType);   // Assign的返回值
+                            Constructor.AddDupT(valueType);   // Assign的返回值
                             Expr1.LeftValueCodeGen();
-                            CodeGenPass.Constructor.AddStoreT(valueType);
+                            Constructor.AddStoreT(valueType);
                             return valueType;
                         case OpType.ADD_ASSIGN:
                             throw new NotImplementedException();
@@ -615,7 +614,7 @@ namespace XiLang.AbstractSyntaxTree
                                 TryImplicitCast(functionType.Params[i], valueType);
                             }
 
-                            CodeGenPass.Constructor.AddCall(idx);
+                            Constructor.AddCall(idx);
                             return functionType.ReturnType;
                         case OpType.CLASS_ACCESS:
                             throw new NotImplementedException();
@@ -643,7 +642,7 @@ namespace XiLang.AbstractSyntaxTree
                 case ExprType.CONST:
                     throw new XiLangError($"Constant is not callable", Line);
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
+                    if (Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
                     {
                         if (symbol is FunctionSymbol function)
                         {
@@ -692,21 +691,21 @@ namespace XiLang.AbstractSyntaxTree
             switch (ExprType)
             {
                 case ExprType.ID:
-                    if (CodeGenPass.Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
+                    if (Constructor.SymbolTable.TryGetValue(Value.StringValue, out Symbol symbol, out bool isGlobal))
                     {
                         if (symbol is FunctionSymbol function)
                         {
-                            CodeGenPass.Constructor.AddPushA(function.Function.Index);
+                            Constructor.AddPushA(function.Function.Index);
                         }
                         else if (symbol is VariableSymbol variable)
                         {
                             if (isGlobal)
                             {
-                                CodeGenPass.Constructor.AddGlobalA(variable.XirVariable.Offset);
+                                Constructor.AddGlobalA(variable.XirVariable.Offset);
                             }
                             else
                             {
-                                CodeGenPass.Constructor.AddLocalA(variable.XirVariable.Offset);
+                                Constructor.AddLocalA(variable.XirVariable.Offset);
                             }
                         }
                         else

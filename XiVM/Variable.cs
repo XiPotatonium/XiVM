@@ -64,7 +64,7 @@ namespace XiVM
         public VariableType Type { private set; get; }
         public int Offset { private set; get; }
 
-        internal Variable(VariableType type, int offset)
+        public Variable(VariableType type, int offset)
         {
             Type = type;
             Offset = offset;

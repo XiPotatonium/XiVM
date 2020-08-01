@@ -8,7 +8,7 @@ namespace XiVM.Tests
         [TestMethod()]
         public void MainTest()
         {
-            Program.Main(new string[] { "D:/Usr/XiVM/XiLangTests/TestSources/GCD.xibc" });
+            Program.Main(new string[] { "D:/Usr/XiVM/XiLangTests/TestSources/Test0.xibc" });
         }
     }
 }

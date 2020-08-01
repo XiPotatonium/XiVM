@@ -1,10 +1,13 @@
 ﻿using XiLang.Errors;
 using XiVM;
+using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
 {
     public abstract class AST
     {
+        protected static ModuleConstructor Constructor => Program.ModuleConstructor;
+
         /// <summary>
         /// 会同时CodeGen兄弟节点
         /// </summary>
@@ -43,11 +46,11 @@ namespace XiLang.AbstractSyntaxTree
             }
             if (expectType.Tag == VariableTypeTag.DOUBLE && actualType.Tag == VariableTypeTag.INT)
             {
-                CodeGenPass.Constructor.AddI2D();
+                Constructor.AddI2D();
             }
             else if (expectType.Tag == VariableTypeTag.INT && actualType.Tag == VariableTypeTag.BYTE)
             {
-                CodeGenPass.Constructor.AddB2I();
+                Constructor.AddB2I();
             }
 
             throw new XiLangError($"Need Explicit cast to cast from {actualType.Tag} to {expectType.Tag}");

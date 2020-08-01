@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using XiLang.Lexical;
 
-namespace XiLang.PassMgr
+namespace XiLang.Pass
 {
     /// <summary>
     /// 基于Token的PassManager

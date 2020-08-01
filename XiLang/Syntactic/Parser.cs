@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Lexical;
-using XiLang.PassMgr;
+using XiLang.Pass;
 
 namespace XiLang.Syntactic
 {

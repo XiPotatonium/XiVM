@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using XiLang.Errors;
 using XiVM;
+using XiVM.Xir.Symbol;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -30,45 +31,45 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            // 参数类型信息
-            List<VariableType> paramsType = new List<VariableType>();
-            VarStmt param = Params.Params;
-            while (param != null)
-            {
-                VariableType paramType = param.Type.ToXirType();
-                paramsType.Add(paramType);
-                param = (VarStmt)param.SiblingAST;
-            }
-
-            // 构造函数
-            FunctionType functionType = new FunctionType(Type.ToXirType(), paramsType);
-            Function function = CodeGenPass.Constructor.AddFunction(Id, functionType);
+            // 查找函数声明
+            Constructor.SymbolTable.TryGetValue(Id, out Symbol symbol);
+            Function function = ((FunctionSymbol)symbol).Function;
 
             // 函数局部变量栈帧
-            CodeGenPass.Constructor.SymbolTable.Push();
+            Constructor.SymbolTable.Push();
 
-            // 形参
-            param = Params.Params;
-            int i = 0;
-            while (param != null)
+            // 创建形参
+            Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(function);
+            int offset = 0;
+            VarStmt param = Params.Params;
+            foreach (VariableType paramType in function.Type.Params)
             {
-                CodeGenPass.Constructor.SetFunctionParamName(function.Variables[i], param.Id);
+                Variable p = new Variable(paramType, offset);
+                function.Variables.Add(p);
+
+                // 创建传参代码
+                Constructor.AddLocalA(offset);
+                Constructor.AddStoreT(paramType);
+
+                // 将参数加入符号表
+                Constructor.SetFunctionParamName(p, param.Id);
+
+                offset += paramType.Size;
                 param = (VarStmt)param.SiblingAST;
-                ++i;
             }
 
             // 不要直接CodeGen Body，因为那样会新建一个NS
             CodeGen(Body.Child);
 
             // 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
-            if (CodeGenPass.Constructor.CurrentBasicBlock.Instructions.Count == 0 ||
-                !(CodeGenPass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.OpCode == InstructionType.RET))
+            if (Constructor.CurrentBasicBlock.Instructions.Count == 0 ||
+                !(Constructor.CurrentBasicBlock.Instructions.Last?.Value.OpCode == InstructionType.RET))
             {
                 // 如果最后一条不是return
-                if (functionType.ReturnType == null)
+                if (function.Type.ReturnType == null)
                 {
                     // 如果函数返回void，自动补上ret
-                    CodeGenPass.Constructor.AddRet();
+                    Constructor.AddRet();
                 }
                 else
                 {
@@ -77,7 +78,7 @@ namespace XiLang.AbstractSyntaxTree
                 }
             }
 
-            CodeGenPass.Constructor.SymbolTable.Pop();
+            Constructor.SymbolTable.Pop();
             return null;
         }
     }

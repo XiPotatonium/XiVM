@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using XiVM.Errors;
 using XiVM.Xir;
 
 namespace XiVM
@@ -96,22 +97,29 @@ namespace XiVM
                 binaryFunction.ARSize += localVar.Type.Size;
             }
 
-            // 优化：可以检查每个BB最后是不是br
+            // 检查每个BB最后是不是br
+            foreach (BasicBlock basicBlock in BasicBlocks)
+            {
+                if (basicBlock.Instructions.Last?.Value.IsBranch != true)
+                {
+                    throw new XiVMError($"Basic Block of function {Name} is not ended with br");
+                }
+            }
 
             // 遍历各个BasicBlock的指令，将带label的指令转换为正确的displacement
             int offset = 0;
-            foreach (var bb in BasicBlocks)
+            foreach (BasicBlock bb in BasicBlocks)
             {
                 // 计算每个BasicBlock在函数中的offset
                 bb.Offset = offset;
                 offset += bb.Instructions.Count;
             }
-            foreach (var bb in BasicBlocks)
+            foreach (BasicBlock bb in BasicBlocks)
             {
                 if (bb.Instructions.Last.Value.OpCode == InstructionType.JMP)
                 {
                     // offset是目的地的地址减Next IP
-                    BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params, 
+                    BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params,
                         bb.JmpTargets[0].Offset - (bb.Offset + bb.Instructions.Count));
                 }
                 else if (bb.Instructions.Last.Value.OpCode == InstructionType.JCOND)

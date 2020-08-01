@@ -30,7 +30,7 @@ namespace XiLang.AbstractSyntaxTree
                 if (type != null)
                 {
                     // 表达式的值依然在栈中，要pop出去
-                    CodeGenPass.Constructor.AddPopValue(type);
+                    Constructor.AddPopValue(type);
                 }
                 ast = ast.SiblingAST;
             }

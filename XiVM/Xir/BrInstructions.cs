@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace XiVM.Xir
+﻿namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
@@ -43,7 +41,7 @@ namespace XiVM.Xir
         }
 
         #endregion
-    
-    
+
+
     }
 }

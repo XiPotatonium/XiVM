@@ -1,7 +1,7 @@
 ﻿using System;
 using XiLang.Lexical;
 
-namespace XiLang.PassMgr
+namespace XiLang.Pass
 {
     /// <summary>
     /// 有AST之前的pass，处理Token流

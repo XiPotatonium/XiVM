@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.Loader;
 using XiVM.Errors;
 using XiVM.Xir;
 
@@ -172,7 +170,7 @@ namespace XiVM.Executor
                     if ((addr & 0x10000000) == 0)
                     {
                         // 栈地址
-                        BitConverter.TryWriteBytes(new Span<byte>(RuntimeStack.Data, (int)addr, VariableType.IntSize), 
+                        BitConverter.TryWriteBytes(new Span<byte>(RuntimeStack.Data, (int)addr, VariableType.IntSize),
                             ComputationStack.Data[ComputationStack.Size - VariableType.ByteSize]);
                     }
                     else

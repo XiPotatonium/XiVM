@@ -23,9 +23,9 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            CodeGenPass.Constructor.SymbolTable.Push();
+            Constructor.SymbolTable.Push();
             CodeGen(Child);
-            CodeGenPass.Constructor.SymbolTable.Pop();
+            Constructor.SymbolTable.Pop();
             return null;
         }
     }

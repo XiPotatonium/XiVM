@@ -3,13 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using XiLang.AbstractSyntaxTree;
-using XiLang.PassMgr;
+using XiLang.Pass;
 using XiLang.Syntactic;
+using XiVM.Xir;
 
 namespace XiLang
 {
     public class Program
     {
+        public static ModuleConstructor ModuleConstructor { private set; get; }
+
         public static void Main(string[] args)
         {
             ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
@@ -47,30 +50,32 @@ namespace XiLang
 
             TokenPassManager tokenPasses = new TokenPassManager(text);
 
-            // pass 1，获取所有类信息，我们的语法不允许分离类定义和声明
+            // 1，获取所有类信息，我们的语法不允许分离类定义和声明
             HashSet<string> classes = (HashSet<string>)tokenPasses.Run(new ClassPass());
 
-            // pass 2，解析类信息之外的部分并生成AST
+            // 2，解析类信息之外的部分并生成AST
             AST root = (AST)tokenPasses.Run(new Parser(classes));
 
             Console.WriteLine("Parse done!");
 
             ASTPassManager astPasses = new ASTPassManager(root);
 
-            // pass 3，常量表达式直接估值
+            // 3，常量表达式直接估值
             astPasses.Run(new ConstExprPass());
 
-            // pass 4，打印json文件
+            // 4，打印json文件
             if (argumentParser.GetValue("json").IsSet)
             {
                 string json = (string)astPasses.Run(new JsonPass());
                 File.WriteAllText(fileName + ".ast.json", json);
             }
 
-            // pass 5，编译生成ir或字节码
-            CodeGenPass.InitSingleton(moduleName);
+            // 5，编译生成ir与字节码
+            ModuleConstructor = new ModuleConstructor(moduleName);
             astPasses.Run(CodeGenPass.Singleton);
-            CodeGenPass.Singleton.Dump(dirName);
+
+            // 输出生成字节码
+            ModuleConstructor.Dump(dirName);
         }
     }
 }

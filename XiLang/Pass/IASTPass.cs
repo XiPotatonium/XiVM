@@ -1,6 +1,6 @@
 ﻿using XiLang.AbstractSyntaxTree;
 
-namespace XiLang.PassMgr
+namespace XiLang.Pass
 {
     public interface IASTPass
     {
