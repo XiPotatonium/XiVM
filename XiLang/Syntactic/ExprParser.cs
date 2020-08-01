@@ -433,7 +433,7 @@ namespace XiLang.Syntactic
         private Expr ParseConstExpr()
         {
             Token t = Consume(TokenType.TRUE, TokenType.FALSE, TokenType.NULL,
-                            TokenType.DEC_LITERAL, TokenType.HEX_LITERAL, TokenType.FLOAT_LITERAL, 
+                            TokenType.DEC_LITERAL, TokenType.HEX_LITERAL, TokenType.FLOAT_LITERAL,
                             TokenType.STR_LITERAL, TokenType.CHAR_LITERAL);
             switch (t.Type)
             {

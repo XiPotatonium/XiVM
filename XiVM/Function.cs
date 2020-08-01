@@ -113,7 +113,7 @@ namespace XiVM
             // 检查每个BB最后是不是br
             foreach (BasicBlock basicBlock in BasicBlocks)
             {
-                foreach (var inst in basicBlock.Instructions)
+                foreach (Instruction inst in basicBlock.Instructions)
                 {
                     if ((inst.IsBranch && inst != basicBlock.Instructions.Last.Value) ||
                         (!inst.IsBranch && inst == basicBlock.Instructions.Last.Value))
