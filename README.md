@@ -191,7 +191,7 @@ N为大小（单位为字节）。
 
 * LOCALA offset(int) 0x18
 
-当前栈帧offset为offset的栈地址Push进计算栈，offset为正数
+获取当前栈帧的某个栈地址并Push进计算栈。offset的为目标地址与BP的距离
 
 ```
 ... |
@@ -202,7 +202,8 @@ N为大小（单位为字节）。
 
 * GLOBALA offset(int) 0x19
 
-全局栈帧offset为offset的栈地址Push进计算栈，offset为正数。因此XiVM实际上不支持嵌套函数
+获取全局栈帧的某个栈地址并Push进计算栈。offset的为目标地址与全局栈帧BP（就是栈开头）的距离。
+因为只有LocalA和GlobalA两个取栈地址的指令，XiVM实际上不支持local procedure
 
 ```
 ... |
@@ -309,7 +310,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 * D2I 0X61
 * B2I 0X62
 
-格式转换
+类型转换
 
 ```
 ... | value(TIN) |
@@ -342,7 +343,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 * JCOND offset(int) offset1(int) 0X81
 
-栈不改变。如果cond为0，IP+=offset1，否则，IP+=offset
+如果cond为0，IP+=offset1，否则，IP+=offset
 
 ```
 ... | cond(byte) |
