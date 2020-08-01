@@ -263,12 +263,37 @@ namespace XiVM.Executor
                     BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.IntSize), (int)bValue);
                     break;
                 case InstructionType.SETEQI:
+                case InstructionType.SETNEI:
+                case InstructionType.SETLTI:
+                case InstructionType.SETLEI:
+                case InstructionType.SETGTI:
+                case InstructionType.SETGEI:
                     rhsi = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
                     Stack.PopN(VariableType.IntSize);
                     lhsi = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
                     Stack.PopN(VariableType.IntSize);
                     Stack.PushN(VariableType.ByteSize);
-                    Stack.StoreTopByte(lhsi == rhsi ? (byte)1 : (byte)0);
+                    switch ((InstructionType)inst.OpCode)
+                    {
+                        case InstructionType.SETEQI:
+                            Stack.StoreTopByte(lhsi == rhsi ? (byte)1 : (byte)0);
+                            break;
+                        case InstructionType.SETNEI:
+                            Stack.StoreTopByte(lhsi != rhsi ? (byte)1 : (byte)0);
+                            break;
+                        case InstructionType.SETLTI:
+                            Stack.StoreTopByte(lhsi < rhsi ? (byte)1 : (byte)0);
+                            break;
+                        case InstructionType.SETLEI:
+                            Stack.StoreTopByte(lhsi <= rhsi ? (byte)1 : (byte)0);
+                            break;
+                        case InstructionType.SETGTI:
+                            Stack.StoreTopByte(lhsi > rhsi ? (byte)1 : (byte)0);
+                            break;
+                        case InstructionType.SETGEI:
+                            Stack.StoreTopByte(lhsi >= rhsi ? (byte)1 : (byte)0);
+                            break;
+                    }
                     break;
                 case InstructionType.JMP:
                     offset = BitConverter.ToInt32(inst.Params);
@@ -322,15 +347,10 @@ namespace XiVM.Executor
                     Stack.PushN(VariableType.AddressSize);
                     BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), uValue);
                     break;
-                case InstructionType.PRINTI:
+                case InstructionType.PUTC:
                     iValue = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
                     Stack.PopN(VariableType.IntSize);
-                    Console.Write(iValue);
-                    break;
-                case InstructionType.PRINTS:
-                    addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
-                    Stack.PopN(VariableType.AddressSize);
-                    Console.Write(StringConstants[(int)addr]);
+                    Console.Write((char)iValue);
                     break;
                 default:
                     throw new NotImplementedException();

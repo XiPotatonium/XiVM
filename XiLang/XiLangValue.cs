@@ -83,6 +83,20 @@ namespace XiLang
             };
         }
 
+        /// <summary>
+        /// TODO 转义字符
+        /// </summary>
+        /// <param name="literal"></param>
+        /// <returns></returns>
+        public static XiLangValue MakeChar(string literal)
+        {
+            return new XiLangValue()
+            {
+                Type = ValueType.INT,
+                IntValue = literal[1]
+            };
+        }
+
         public static XiLangValue GetDefault(ValueType type)
         {
             return type switch

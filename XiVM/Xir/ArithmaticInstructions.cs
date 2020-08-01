@@ -4,7 +4,7 @@
     {
         public VariableType AddAddI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.ADDI
             });
@@ -13,7 +13,7 @@
 
         public VariableType AddSubI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.SUBI
             });
@@ -22,7 +22,7 @@
 
         public VariableType AddMulI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.MULI
             });
@@ -31,7 +31,7 @@
 
         public VariableType AddDivI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.DIVI
             });
@@ -40,7 +40,7 @@
 
         public VariableType AddMod()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.MOD
             });
@@ -49,7 +49,7 @@
 
         public VariableType AddNegI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.NEGI
             });
@@ -60,9 +60,54 @@
 
         public VariableType AddSetEqI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.SETEQI
+            });
+            return VariableType.ByteType;
+        }
+
+        public VariableType AddSetNeI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.SETNEI
+            });
+            return VariableType.ByteType;
+        }
+
+        public VariableType AddSetLtI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.SETLTI
+            });
+            return VariableType.ByteType;
+        }
+
+        public VariableType AddSetLeI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.SETLEI
+            });
+            return VariableType.ByteType;
+        }
+
+        public VariableType AddSetGtI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.SETGTI
+            });
+            return VariableType.ByteType;
+        }
+
+        public VariableType AddSetGeI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.SETGEI
             });
             return VariableType.ByteType;
         }
@@ -73,7 +118,7 @@
         #region Convert
         public VariableType AddI2D()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.SETEQI
             });
@@ -82,7 +127,7 @@
 
         public VariableType AddD2I()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.D2I
             });
@@ -91,7 +136,7 @@
 
         public VariableType AddB2I()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.B2I
             });

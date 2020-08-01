@@ -281,13 +281,13 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// LoopStmt
-        ///     WHILE LPAREN Expr RPAREN (SELICOLON | Stmt)
-        ///     FOR LPAREN (VarOrExprStmt | SEMICOLON) Expr? SEMICOLON ExprList? RPAREN (SELICOLON | Stmt)
+        ///     WHILE LPAREN Expr RPAREN (SELICOLON | BlockStmt)
+        ///     FOR LPAREN (VarOrExprStmt | SEMICOLON) Expr? SEMICOLON ExprList? RPAREN (SELICOLON | BlockStmt)
         /// </summary>
         /// <returns></returns>
         private LoopStmt ParseLoopStmt()
         {
-            Stmt body = null;
+            BlockStmt body = null;
             Expr cond = null;
             if (Check(TokenType.WHILE))
             {
@@ -301,7 +301,7 @@ namespace XiLang.Syntactic
                 }
                 else
                 {
-                    body = ParseStmt();
+                    body = ParseBlockStmt();
                 }
                 return LoopStmt.MakeWhile(cond, body);
             }
@@ -335,7 +335,7 @@ namespace XiLang.Syntactic
                 }
                 else
                 {
-                    body = ParseStmt();
+                    body = ParseBlockStmt();
                 }
                 return LoopStmt.MakeFor(init, cond, step, body);
             }
@@ -343,7 +343,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// IfStmt
-        ///     IF LPAREN Expr RPAREN Stmt (ELSE Stmt)?
+        ///     IF LPAREN Expr RPAREN BlockStmt (ELSE BlockStmt | IfStmt)?
         /// </summary>
         /// <returns></returns>
         private IfStmt ParseIfStmt()
@@ -352,12 +352,19 @@ namespace XiLang.Syntactic
             Consume(TokenType.LPAREN);
             Expr cond = ParseExpr();
             Consume(TokenType.RPAREN);
-            Stmt then = ParseStmt();
+            BlockStmt then = ParseBlockStmt();
             Stmt otherwise = null;
             if (Check(TokenType.ELSE))
             {
                 Consume(TokenType.ELSE);
-                otherwise = ParseStmt();
+                if (Check(TokenType.LBRACES))
+                {
+                    otherwise = ParseBlockStmt();
+                }
+                else
+                {
+                    otherwise = ParseIfStmt();
+                }
             }
             return IfStmt.MakeIf(cond, then, otherwise);
         }

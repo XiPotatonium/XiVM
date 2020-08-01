@@ -3,7 +3,7 @@
 ## TODO
 
 * ref 关键字
-* XiLang中char字面量以及文本的字面量中的转义字符问题
+* XiLang中char字面量和string字面量中的转义字符问题
 * XiLang以及XiVM中对类的支持
 * XiLang的new 关键字以及XiVM堆空间
 * XiVM中对于类型的处理（主要是Size）还比较混乱
@@ -35,12 +35,12 @@
 * 字面量
     * 整数：十进制，十六进制
     * 浮点数：十进制
-    * 字符串
+    * 字符串，字符
 * 分支
-    * if语句
+    * if语句，then和otherwise必须被花括号包围，otherwise可以是另一个if
 * 循环
-    * while
-    * for：可以在init中定义变量
+    * while，body必须被花括号包围，或者是空
+    * for：可以在init中定义变量，body必须被花括号包围，或者是空
 * 类
     * 成员变量
     * 成员函数
@@ -74,10 +74,10 @@ BlockStmt
 VarOrExprStmt
     VarStmt | ExprStmt
 LoopStmt
-    WHILE LPAREN Expr RPAREN (SELICOLON | Stmt)
-    FOR LPAREN (VarOrExprStmt | SEMICOLON) Expr? SEMICOLON ExprList? RPAREN (SELICOLON | Stmt)
+    WHILE LPAREN Expr RPAREN (SELICOLON | BlockStmt)
+    FOR LPAREN (VarOrExprStmt | SEMICOLON) Expr? SEMICOLON ExprList? RPAREN (SELICOLON | BlockStmt)
 IfStmt
-    IF LPAREN Expr RPAREN Stmt (ELSE Stmt)?
+    IF LPAREN Expr RPAREN BlockStmt (ELSE BlockStmt | IfStmt)?
 JumpStmt
     (CONTINUE | BREAK | RETURN (ListExpr)?) SEMICOLON
 ExprStmt
@@ -240,7 +240,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### ADDT
 
-* ADDI 0X30
+* ADDI 0X40
 
 加法
 
@@ -251,7 +251,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### SUBT
 
-* SUBI 0X34
+* SUBI 0X44
 
 减法
 
@@ -262,7 +262,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### MULT
 
-* MULI 0X38
+* MULI 0X48
 
 乘法
 
@@ -273,7 +273,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### DIVT
 
-* DIVI 0X3C
+* DIVI 0X4C
 
 除法
 
@@ -284,7 +284,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### MOD
 
-* MOD 0X40
+* MOD 0X50
 
 模运算
 
@@ -295,24 +295,13 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### NEGT
 
-* NEGI 0X44
+* NEGI 0X54
 
 取反
 
 ```
 ... | value(T) |
 ... | res(T) |
-```
-
-#### SET(COND)(T)
-
-* SETEQ 0X50
-
-比较。如果cond成立，res为1，否则res为1
-
-```
-... | lhs(T) | rhs(T) |
-... | res(byte) |
 ```
 
 #### TIN2TOUT
@@ -328,15 +317,31 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 ... | res(TOUT) |
 ```
 
+#### SET(COND)(T)
+
+* SETEQI 0X70
+* SETNEI 0X71
+* SETLTI 0X72
+* SETLEI 0X73
+* SETGTI 0X74
+* SETGEI 0X75
+
+比较。如果cond成立，res为1，否则res为1
+
+```
+... | lhs(T) | rhs(T) |
+... | res(byte) |
+```
+
 #### JMP
 
-* JMP offset(int) 0X70
+* JMP offset(int) 0X80
 
 栈不改变。IP+=offset
 
 #### JCOND
 
-* JCOND offset(int) offset1(int) 0X71
+* JCOND offset(int) offset1(int) 0X81
 
 栈不改变。如果cond为0，IP+=offset1，否则，IP+=offset
 
@@ -347,24 +352,28 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### CALL
 
-* CALL addr(uint) 0X80
+* CALL addr(uint) 0X90
 
-栈不改变。执行addr所指向的函数，fptr是函数在函数总表中的Index，会Push堆栈以及改变IP
+行为参考[发起调用](#发起调用)
 
-#### RET
+#### RET(T)
 
-* RET 0X84
+* RET 0X94
+* RETB 0X95
+* RETI 0X96
+* RETD 0X97
+* RETA 0X98
 
-栈不改变。执行函数返回的相关工作，恢复堆栈和IP
+行为参考[函数返回](#函数返回)
 
-#### PRINT(T)
+#### PUTC
 
-* PRINTI 0XA0
+* PUTC 0XA0
 
-将栈顶的值输出到控制台
+将int类型值以字符形式输出到控制台
 
 ```
-... | value(T) |
+... | value(int) |
 ... |
 ```
 

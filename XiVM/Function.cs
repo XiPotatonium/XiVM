@@ -74,7 +74,7 @@ namespace XiVM
         public uint Index { private set; get; }
         public string Name { set; get; }
         public FunctionType Type { set; get; }
-        public List<BasicBlock> BasicBlocks { get; } = new List<BasicBlock>();
+        public LinkedList<BasicBlock> BasicBlocks { get; } = new LinkedList<BasicBlock>();
 
         public List<Variable> Locals { get; } = new List<Variable>();
         public List<Variable> Params { get; } = new List<Variable>();
@@ -113,9 +113,13 @@ namespace XiVM
             // 检查每个BB最后是不是br
             foreach (BasicBlock basicBlock in BasicBlocks)
             {
-                if (basicBlock.Instructions.Last?.Value.IsBranch != true)
+                foreach (var inst in basicBlock.Instructions)
                 {
-                    throw new XiVMError($"Basic Block of function {Name} is not ended with br");
+                    if ((inst.IsBranch && inst != basicBlock.Instructions.Last.Value) ||
+                        (!inst.IsBranch && inst == basicBlock.Instructions.Last.Value))
+                    {
+                        throw new XiVMError($"Basic Block of function {Name} is not ended with br");
+                    }
                 }
             }
 

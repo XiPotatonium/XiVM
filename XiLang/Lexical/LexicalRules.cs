@@ -15,7 +15,7 @@ namespace XiLang.Lexical
         // 常量
         TRUE, FALSE, NULL,
         // 运算子
-        ID, DEC_LITERAL, HEX_LITERAL, FLOAT_LITERAL, STR_LITERAL,
+        ID, DEC_LITERAL, HEX_LITERAL, FLOAT_LITERAL, STR_LITERAL, CHAR_LITERAL,
         // 算数运算符
         ADD, SUB, MUL, DIV, MOD, INC, DEC,
         //关系运算符
@@ -137,7 +137,8 @@ namespace XiLang.Lexical
             { @"\d+\.\d+", (s, l) => { return new Token(TokenType.FLOAT_LITERAL, s, l); } },
             { @"\d+", (s, l) => { return new Token(TokenType.DEC_LITERAL, s, l); } },
             { @"0[xX][a-fA-F\d]+", (s, l) => { return new Token(TokenType.HEX_LITERAL, s, l); } },
-            { "\"(\\.|[^\\\"\\n])*\"", (s, l) => { return new Token(TokenType.STR_LITERAL, s, l); } }
+            { "\"(\\.|[^\\\"\\n])*\"", (s, l) => { return new Token(TokenType.STR_LITERAL, s, l); } },
+            { @"'.*'", (s, l) => { return new Token(TokenType.CHAR_LITERAL, s, l); } }
         };
 
         public static readonly Dictionary<Regex, Func<string, int, Token>> RegexRules = new Dictionary<Regex, Func<string, int, Token>>();

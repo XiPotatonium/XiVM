@@ -17,8 +17,9 @@ namespace XiVM.Xir
         /// </summary>
         private List<Function> Functions { get; } = new List<Function>();
         public Function MainFunction { set; get; }
-        public Function CurrentFunction => CurrentBasicBlock.Function;
-        public BasicBlock CurrentBasicBlock { set; get; }
+        public Function CurrentFunction => CurrentBasicBlock?.Value.Function;
+        public LinkedListNode<BasicBlock> CurrentBasicBlock { set; get; }
+        private LinkedList<Instruction> CurrentInstructions => CurrentBasicBlock?.Value.Instructions;
 
         public ConstantTable<string> StringLiterals { get; } = new ConstantTable<string>();
 
@@ -46,24 +47,17 @@ namespace XiVM.Xir
         /// </summary>
         private void ImportSystemFunctions()
         {
-            Function printi = AddFunction("printi", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
-            CurrentBasicBlock = AddBasicBlock(printi);
-            AddLocalA(printi.Params[0].StackOffset);
+            Function putchar = AddFunction("putchar", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
+            CurrentBasicBlock = AddBasicBlock(putchar);
+            AddLocalA(putchar.Params[0].StackOffset);
             AddLoadI();
-            AddPrintI();
+            AddPutC();
             AddRet();
-
-            //Function prints = AddFunction("prints", new FunctionType(null, new List<VariableType>() { String.StringClassType }));
-            //CurrentBasicBlock = AddBasicBlock(prints);
-            //AddLocalA(printi.Params[0].StackOffset);
-            //AddLoadA();
-            //AddPrintS();
-            //AddRet();
         }
 
         public void Dump(string dirName, bool dumpXir = true)
         {
-            CurrentBasicBlock = Functions[0].BasicBlocks[0];
+            CurrentBasicBlock = Functions[0].BasicBlocks.First;
             if (MainFunction != null)
             {
                 AddPushA(0);    // 暂时给main函数传NULL
@@ -96,7 +90,7 @@ namespace XiVM.Xir
                     sw.WriteLine($"# {Name}");
 
                     sw.WriteLine($"\n.global:");
-                    foreach (Instruction inst in Functions[0].BasicBlocks[0].Instructions)
+                    foreach (Instruction inst in Functions[0].BasicBlocks.First.Value.Instructions)
                     {
                         sw.WriteLine(inst.ToString());
                     }
@@ -152,11 +146,14 @@ namespace XiVM.Xir
             SymbolTable.Add(name, ret);
         }
 
-        public BasicBlock AddBasicBlock(Function function)
+        public LinkedListNode<BasicBlock> AddBasicBlock(Function function)
         {
-            BasicBlock bb = new BasicBlock(function);
-            function.BasicBlocks.Add(bb);
-            return bb;
+            return function.BasicBlocks.AddLast(new BasicBlock(function));
+        }
+
+        public LinkedListNode<BasicBlock> InsertBeforeBasicBlock(LinkedListNode<BasicBlock> basicBlock)
+        {
+            return basicBlock.List.AddBefore(basicBlock, new BasicBlock(basicBlock.Value.Function));
         }
 
         public Variable AddLocalVariable(string id, VariableType type)

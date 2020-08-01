@@ -56,7 +56,7 @@ namespace XiLang.AbstractSyntaxTree
             CodeGen(Body.Child);
 
             // 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
-            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsRet != true)
+            if (Constructor.CurrentBasicBlock.Value.Instructions.Last?.Value.IsRet != true)
             {
                 // 如果最后一条不是return
                 if (function.Type.ReturnType == null)

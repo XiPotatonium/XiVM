@@ -58,6 +58,14 @@ namespace XiLang.AbstractSyntaxTree
             };
         }
 
+        public static Expr MakeChar(string literal, int line)
+        {
+            return new Expr(ExprType.CONST, line)
+            {
+                Value = XiLangValue.MakeChar(literal)
+            };
+        }
+
         /// <summary>
         /// 约定id值放在Value.StrVal里
         /// </summary>
@@ -430,7 +438,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            VariableType valueType, expr1Type, expr2Type, expr3Type;
+            VariableType valueType, expr1Type, expr2Type;
             switch (ExprType)
             {
                 case ExprType.CONST:
@@ -562,11 +570,11 @@ namespace XiLang.AbstractSyntaxTree
                                 return OpType switch
                                 {
                                     OpType.EQ => Constructor.AddSetEqI(),
-                                    OpType.NE => throw new NotImplementedException(),
-                                    OpType.GE => throw new NotImplementedException(),
-                                    OpType.GT => throw new NotImplementedException(),
-                                    OpType.LE => throw new NotImplementedException(),
-                                    OpType.LT => throw new NotImplementedException(),
+                                    OpType.NE => Constructor.AddSetNeI(),
+                                    OpType.GE => Constructor.AddSetGeI(),
+                                    OpType.GT => Constructor.AddSetGtI(),
+                                    OpType.LE => Constructor.AddSetLeI(),
+                                    OpType.LT => Constructor.AddSetLtI(),
                                     _ => throw new NotImplementedException(),
                                 };
                             }

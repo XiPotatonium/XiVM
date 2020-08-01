@@ -10,9 +10,10 @@ namespace XiLang.Pass
     {
         public static CodeGenPass Singleton { get; } = new CodeGenPass();
 
-        public ModuleConstructor Constructor => Program.ModuleConstructor;
-        public Stack<BasicBlock> Breakable { set; get; } = new Stack<BasicBlock>();
-        public Stack<BasicBlock> Continuable { set; get; } = new Stack<BasicBlock>();
+        public static ModuleConstructor Constructor => Program.ModuleConstructor;
+
+        public static Stack<LinkedListNode<BasicBlock>> Breakable { private set; get; } = new Stack<LinkedListNode<BasicBlock>>();
+        public static Stack<LinkedListNode<BasicBlock>> Continuable { private set; get; } = new Stack<LinkedListNode<BasicBlock>>();
 
         private CodeGenPass() { }
 

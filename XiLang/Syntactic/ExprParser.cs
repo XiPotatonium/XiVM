@@ -427,13 +427,14 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// ConstExpr
-        ///     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL
+        ///     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL | CHAR_LITERAL
         /// </summary>
         /// <returns></returns>
         private Expr ParseConstExpr()
         {
             Token t = Consume(TokenType.TRUE, TokenType.FALSE, TokenType.NULL,
-                            TokenType.DEC_LITERAL, TokenType.HEX_LITERAL, TokenType.FLOAT_LITERAL, TokenType.STR_LITERAL);
+                            TokenType.DEC_LITERAL, TokenType.HEX_LITERAL, TokenType.FLOAT_LITERAL, 
+                            TokenType.STR_LITERAL, TokenType.CHAR_LITERAL);
             switch (t.Type)
             {
                 case TokenType.NULL:
@@ -450,6 +451,8 @@ namespace XiLang.Syntactic
                     return Expr.MakeFloat(t.Literal, t.Line);
                 case TokenType.STR_LITERAL:
                     return Expr.MakeString(t.Literal, t.Line);
+                case TokenType.CHAR_LITERAL:
+                    return Expr.MakeChar(t.Literal, t.Line);
                 default:
                     break;
             }

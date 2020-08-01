@@ -61,6 +61,11 @@ namespace XiVM
         B2I = 0x62,
 
         SETEQI = 0x70,
+        SETNEI = 0x71,
+        SETLTI = 0x72,
+        SETLEI = 0x73,
+        SETGTI = 0x74,
+        SETGEI = 0x75,
 
         JMP = 0x80,
         JCOND = 0x81,
@@ -72,8 +77,7 @@ namespace XiVM
         RETD = 0x97,
         RETA = 0x98,
 
-        PRINTI = 0xA0,
-        PRINTS = 0xA4,
+        PUTC = 0xA0,
     }
 
     [Serializable]
@@ -129,13 +133,18 @@ namespace XiVM
                 InstructionType.RETI => "RETI",
                 InstructionType.RETD => "RETD",
                 InstructionType.RETA => "RETA",
-                InstructionType.PRINTI => "PRINTI",
+                InstructionType.PUTC => "PUTC",
                 InstructionType.SUBI => "SUBI",
                 InstructionType.MULI => "MULI",
                 InstructionType.DIVI => "DIVI",
                 InstructionType.MOD => "MOD",
                 InstructionType.NEGI => "NEGI",
                 InstructionType.SETEQI => "SETEQI",
+                InstructionType.SETNEI => "SETNEI",
+                InstructionType.SETLTI => "SETLTI",
+                InstructionType.SETLEI => "SETLEI",
+                InstructionType.SETGTI => "SETGTI",
+                InstructionType.SETGEI => "SETGEI",
                 InstructionType.I2D => "I2D",
                 InstructionType.D2I => "D2I",
                 InstructionType.B2I => "B2I",
@@ -151,7 +160,6 @@ namespace XiVM
                 InstructionType.ASTOREI => throw new NotImplementedException(),
                 InstructionType.ASTORED => throw new NotImplementedException(),
                 InstructionType.ASTOREA => throw new NotImplementedException(),
-                InstructionType.PRINTS => "PRINTS",
                 _ => throw new NotImplementedException(),
             };
         }

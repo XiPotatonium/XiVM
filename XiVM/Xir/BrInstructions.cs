@@ -12,8 +12,8 @@
                 OpCode = InstructionType.JMP,
                 Params = new byte[VariableType.IntSize]
             };
-            CurrentBasicBlock.Instructions.AddLast(inst);
-            CurrentBasicBlock.JmpTargets.Add(target);
+            CurrentInstructions.AddLast(inst);
+            CurrentBasicBlock.Value.JmpTargets.Add(target);
         }
 
         public void AddJCond(BasicBlock target1, BasicBlock target2)
@@ -23,9 +23,9 @@
                 OpCode = InstructionType.JCOND,
                 Params = new byte[VariableType.IntSize * 2]
             };
-            CurrentBasicBlock.Instructions.AddLast(inst);
-            CurrentBasicBlock.JmpTargets.Add(target1);
-            CurrentBasicBlock.JmpTargets.Add(target2);
+            CurrentInstructions.AddLast(inst);
+            CurrentBasicBlock.Value.JmpTargets.Add(target1);
+            CurrentBasicBlock.Value.JmpTargets.Add(target2);
         }
 
         #endregion
@@ -34,7 +34,7 @@
 
         public void AddRet()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.RET
             });
@@ -42,7 +42,7 @@
 
         public void AddRetB()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.RETB
             });
@@ -50,7 +50,7 @@
 
         public void AddRetI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.RETI
             });
@@ -58,7 +58,7 @@
 
         public void AddRetD()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.RETD
             });
@@ -66,7 +66,7 @@
 
         public void AddRetA()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.RETA
             });

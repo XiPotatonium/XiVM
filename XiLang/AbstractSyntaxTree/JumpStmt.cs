@@ -1,4 +1,5 @@
 ﻿using System;
+using XiLang.Pass;
 using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
@@ -34,9 +35,11 @@ namespace XiLang.AbstractSyntaxTree
             switch (Type)
             {
                 case JumpType.CONTINUE:
-                    throw new NotImplementedException();
+                    Constructor.AddJmp(CodeGenPass.Continuable.Peek().Value);
+                    break;
                 case JumpType.BREAK:
-                    throw new NotImplementedException();
+                    Constructor.AddJmp(CodeGenPass.Breakable.Peek().Value);
+                    break;
                 case JumpType.RETURN:
                     if (ReturnVal != null)
                     {

@@ -12,22 +12,14 @@ namespace XiVM.Xir
                 Params = new byte[VariableType.AddressSize]
             };
             BitConverter.TryWriteBytes(inst.Params, index);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
-        public void AddPrintI()
+        public void AddPutC()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.PRINTI
-            });
-        }
-
-        public void AddPrintS()
-        {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.PRINTS
+                OpCode = InstructionType.PUTC
             });
         }
     }

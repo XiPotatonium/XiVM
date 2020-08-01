@@ -13,7 +13,7 @@ namespace XiVM.Xir
                 Params = new byte[sizeof(int)]
             };
             BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
         public void AddGlobalA(int offset)
@@ -24,7 +24,7 @@ namespace XiVM.Xir
                 Params = new byte[sizeof(int)]
             };
             BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
         public void AddConstA(int index)
@@ -35,7 +35,7 @@ namespace XiVM.Xir
                 Params = new byte[sizeof(int)]
             };
             BitConverter.TryWriteBytes(new Span<byte>(inst.Params), index);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
         #region Push
@@ -48,7 +48,7 @@ namespace XiVM.Xir
                 Params = new byte[VariableType.ByteSize]
             };
             inst.Params[0] = value;
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
         public void AddPushI(int value)
@@ -59,7 +59,7 @@ namespace XiVM.Xir
                 Params = new byte[VariableType.IntSize]
             };
             BitConverter.TryWriteBytes(inst.Params, value);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
         public void AddPushD(double value)
@@ -70,7 +70,7 @@ namespace XiVM.Xir
                 Params = new byte[VariableType.DoubleSize]
             };
             BitConverter.TryWriteBytes(inst.Params, value);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace XiVM.Xir
                 Params = new byte[VariableType.AddressSize]
             };
             BitConverter.TryWriteBytes(inst.Params, value);
-            CurrentBasicBlock.Instructions.AddLast(inst);
+            CurrentInstructions.AddLast(inst);
 
         }
 
@@ -117,7 +117,7 @@ namespace XiVM.Xir
 
         private void AddPop()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.POP
             });
@@ -125,7 +125,7 @@ namespace XiVM.Xir
 
         private void AddPop4()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.POP4
             });
@@ -133,7 +133,7 @@ namespace XiVM.Xir
 
         private void AddPop8()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.POP8
             });
@@ -166,7 +166,7 @@ namespace XiVM.Xir
 
         private void AddDup()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.DUP
             });
@@ -174,7 +174,7 @@ namespace XiVM.Xir
 
         private void AddDup4()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.DUP4
             });
@@ -182,7 +182,7 @@ namespace XiVM.Xir
 
         private void AddDup8()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.DUP8
             });
@@ -215,7 +215,7 @@ namespace XiVM.Xir
 
         private void AddLoadB()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.LOADB
             });
@@ -223,7 +223,7 @@ namespace XiVM.Xir
 
         private void AddLoadI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.LOADI
             });
@@ -232,7 +232,7 @@ namespace XiVM.Xir
 
         private void AddLoadD()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.LOADD
             });
@@ -240,7 +240,7 @@ namespace XiVM.Xir
 
         private void AddLoadA()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.LOADA
             });
@@ -273,7 +273,7 @@ namespace XiVM.Xir
 
         private void AddStoreB()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.STOREB
             });
@@ -281,7 +281,7 @@ namespace XiVM.Xir
 
         private void AddStoreI()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.STOREI
             });
@@ -290,7 +290,7 @@ namespace XiVM.Xir
 
         private void AddStoreD()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.STORED
             });
@@ -298,7 +298,7 @@ namespace XiVM.Xir
 
         private void AddStoreA()
         {
-            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.STOREA
             });
