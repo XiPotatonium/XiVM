@@ -55,6 +55,10 @@ namespace XiVM
 
         CALL = 0x80,
         RET = 0x84,
+        RETB = 0x85,
+        RETI = 0x86,
+        RETD = 0x87,
+        RETA = 0x88,
 
         PRINTI = 0xA0
     }
@@ -70,9 +74,14 @@ namespace XiVM
     {
         public InstructionType OpCode { set; get; }
         public byte[] Params { set; get; }
-        public bool IsBranch => OpCode == InstructionType.RET ||
+        public bool IsBranch => IsRet ||
             OpCode == InstructionType.JMP ||
             OpCode == InstructionType.JCOND;
+        public bool IsRet => OpCode == InstructionType.RET ||
+            OpCode == InstructionType.RETB ||
+            OpCode == InstructionType.RETI ||
+            OpCode == InstructionType.RETD ||
+            OpCode == InstructionType.RETA;
 
 
         public override string ToString()
@@ -103,6 +112,10 @@ namespace XiVM
                 InstructionType.ADDI => "ADDI",
                 InstructionType.CALL => $"CALL {BitConverter.ToUInt32(Params)}",
                 InstructionType.RET => "RET",
+                InstructionType.RETB => "RETB",
+                InstructionType.RETI => "RETI",
+                InstructionType.RETD => "RETD",
+                InstructionType.RETA => "RETA",
                 InstructionType.PRINTI => "PRINTI",
                 InstructionType.SUBI => "SUBI",
                 InstructionType.MULI => "MULI",

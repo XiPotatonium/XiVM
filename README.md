@@ -374,22 +374,60 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 #### 参数传递
 
-函数Call之前，计算栈如下
+函数Call之前，计算栈如下, 参数应当倒序进入计算栈
 
 ```
-... | argN | ... | arg0 |
+... | ... | argN | ... | arg0 |
+    ^                         ^
+    BP                        SP
 ```
 
-参数应当倒序进入计算栈
+#### 发起调用
 
-Callee开始执行后需要将传入的参数存储到堆栈中。规定函数栈帧的起始空间就是参数且参数顺序排放。
-这样Callee只需要不断执行Get参数地址，Store参数就可以将计算栈中的参数值顺序放置到函数栈帧中。
-
-#### 函数栈帧
+Call执行之后，会创建函数栈帧，修改BP和SP。
 
 ```
-... | OldBP(int) | RetFuncIndex(int) | RetIP(int) | ...栈帧内容... |
-    ^                                                              ^
-    BP                                                             SP
+... | argN | ... | arg0 | MiscData | ...Local Vars... |
+                        ^                             ^
+                        BP                            SP
+```
+
+栈帧的Misc数据用于Ret时恢复堆栈。包括如下内容，OldBP是Call之前的BP，Caller的Index和OldBP用于找到Call指令的下一条指令
+
+```
+| OldBP(int) | CallerIndex(int) | OldIP |
+```
+
+#### 函数运算
+
+栈试虚拟机的计算栈就在堆栈顶，因此临时变量的出现会导致SP不断变化
+
+```
+... | argN | ... | arg0 | MiscData | ...Local Vars... | tmp0 | ... |
+                        ^                                          ^
+                        BP                                         SP
+```
+
+#### 返回值
+
+函数返回前，临时变量空间（计算栈）必须只能有返回值（如果无返回值，计算栈为空）
+
+```
+... | argN | ... | arg0 | MiscData | ...Local Vars... | value(RETT) |
+                        ^                                           ^
+                        BP                                          SP
+```
+
+#### 函数返回
+
+1. 返回值出栈
+2. 依据MiscData恢复调用前的状态
+3. 依据Callee的函数，可以知道参数的大小，清空参数部分，堆栈恢复到参数未被eval之前的状态
+4. 返回值重新入栈
+
+```
+... | value(RETT) |
+                  ^
+                  SP
 ```
 

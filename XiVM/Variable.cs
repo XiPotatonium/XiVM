@@ -64,7 +64,12 @@ namespace XiVM
         public VariableType Type { private set; get; }
         public int Offset { private set; get; }
 
-        public Variable(VariableType type, int offset)
+        /// <summary>
+        /// offset是VM相关的，因此不允许外部项目创建Variable
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="offset"></param>
+        internal Variable(VariableType type, int offset)
         {
             Type = type;
             Offset = offset;

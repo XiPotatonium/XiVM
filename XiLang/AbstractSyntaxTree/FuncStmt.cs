@@ -35,35 +35,29 @@ namespace XiLang.AbstractSyntaxTree
             Constructor.SymbolTable.TryGetValue(Id, out Symbol symbol);
             Function function = ((FunctionSymbol)symbol).Function;
 
+            if (function.BasicBlocks.Count != 0)
+            {
+                throw new XiLangError($"Redefinition of function {function.Name}");
+            }
+
             // 函数局部变量栈帧
             Constructor.SymbolTable.Push();
 
-            // 创建形参
-            Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(function);
-            int offset = 0;
+            // 将参数加入符号表
             VarStmt param = Params.Params;
-            foreach (VariableType paramType in function.Type.Params)
+            foreach (var p in function.Params)
             {
-                Variable p = new Variable(paramType, offset);
-                function.Variables.Add(p);
-
-                // 创建传参代码
-                Constructor.AddLocalA(offset);
-                Constructor.AddStoreT(paramType);
-
                 // 将参数加入符号表
                 Constructor.SetFunctionParamName(p, param.Id);
-
-                offset += paramType.Size;
                 param = (VarStmt)param.SiblingAST;
             }
 
+            Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(function);
             // 不要直接CodeGen Body，因为那样会新建一个NS
             CodeGen(Body.Child);
 
             // 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
-            if (Constructor.CurrentBasicBlock.Instructions.Count == 0 ||
-                !(Constructor.CurrentBasicBlock.Instructions.Last?.Value.OpCode == InstructionType.RET))
+            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsRet != true)
             {
                 // 如果最后一条不是return
                 if (function.Type.ReturnType == null)

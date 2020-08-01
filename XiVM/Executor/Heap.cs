@@ -2,17 +2,17 @@
 
 namespace XiVM.Executor
 {
-    internal class RuntimeHeap
+    internal class Heap
     {
-        private LinkedList<RuntimeHeapData> RuntimeHeapData { set; get; } = new LinkedList<RuntimeHeapData>();
+        private LinkedList<HeapData> RuntimeHeapData { set; get; } = new LinkedList<HeapData>();
     }
 
-    internal class RuntimeHeapData
+    internal class HeapData
     {
         public uint ReferenceCount { set; get; } = 1;
         public byte[] Data { private set; get; }
 
-        public RuntimeHeapData(uint size)
+        public HeapData(uint size)
         {
             Data = new byte[size];
         }

@@ -9,7 +9,8 @@ namespace XiVM
     [Serializable]
     internal class BinaryFunction
     {
-        public int ARSize { set; get; } = 0;
+        public int LocalSize { set; get; } = 0;
+        public int ParamSize { set; get; } = 0;
         public BinaryInstruction[] Instructions { set; get; }
     }
 
@@ -74,10 +75,9 @@ namespace XiVM
         public string Name { set; get; }
         public FunctionType Type { set; get; }
         public List<BasicBlock> BasicBlocks { get; } = new List<BasicBlock>();
-        /// <summary>
-        /// 局部变量表
-        /// </summary>
-        public List<Variable> Variables { get; } = new List<Variable>();
+
+        public List<Variable> Locals { get; } = new List<Variable>();
+        public List<Variable> Params { get; } = new List<Variable>();
 
         internal Function(uint index, string name, FunctionType type)
         {
@@ -90,11 +90,24 @@ namespace XiVM
         {
             BinaryFunction binaryFunction = new BinaryFunction();
 
-            // 根据局部变量信息计算AR大小
-            foreach (Variable localVar in Variables)
+            // 计算参数大小
+            if (Params.Count == 0)
             {
-                // 不必担心是void，因为Variable的产生排除了void
-                binaryFunction.ARSize += localVar.Type.Size;
+                binaryFunction.ParamSize = 0;
+            }
+            else
+            {
+                binaryFunction.ParamSize = -Params[^1].Offset;
+            }
+
+            // 计算局部变量空间大小
+            if (Locals.Count == 0)
+            {
+                binaryFunction.LocalSize = 0;
+            }
+            else
+            {
+                binaryFunction.LocalSize = Locals[^1].Offset + Locals[^1].Type.Size;
             }
 
             // 检查每个BB最后是不是br

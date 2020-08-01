@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using XiVM.Executor;
 using XiVM.Xir.Symbol;
 
 namespace XiVM.Xir
@@ -49,6 +50,8 @@ namespace XiVM.Xir
         {
             Function printi = AddFunction("printi", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
             CurrentBasicBlock = AddBasicBlock(printi);
+            AddLocalA(printi.Params[0].Offset);
+            AddLoadI();
             AddPrintI();
             AddRet();
         }
@@ -119,6 +122,14 @@ namespace XiVM.Xir
             Function function = new Function((uint)Functions.Count, name, type);
             Functions.Add(function);
 
+            // 添加参数
+            int offset = 0;
+            foreach (VariableType paramType in function.Type.Params)
+            {
+                offset -= paramType.Size;
+                function.Params.Add(new Variable(paramType, offset));
+            }
+
             // 加入符号表
             SymbolTable.Add(name, new FunctionSymbol(name, function));
 
@@ -143,18 +154,19 @@ namespace XiVM.Xir
             return bb;
         }
 
-        public Variable AddVariable(string id, VariableType type)
+        public Variable AddLocalVariable(string id, VariableType type)
         {
             Variable xirVariable;
-            if (CurrentFunction.Variables.Count == 0)
+            if (CurrentFunction.Locals.Count == 0)
             {
-                xirVariable = new Variable(type, 0);
+                // 第一个局部变量
+                xirVariable = new Variable(type, Stack.MiscDataSize);    
             }
             else
             {
-                xirVariable = new Variable(type, CurrentFunction.Variables[^1].Offset + CurrentFunction.Variables[^1].Type.Size);
+                xirVariable = new Variable(type, CurrentFunction.Locals[^1].Offset + CurrentFunction.Locals[^1].Type.Size);
             }
-            CurrentFunction.Variables.Add(xirVariable);
+            CurrentFunction.Locals.Add(xirVariable);
 
             // 添加到符号表
             SymbolTable.Add(id, new VariableSymbol(id, xirVariable));

@@ -40,6 +40,38 @@
             });
         }
 
+        public void AddRetB()
+        {
+            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.RETB
+            });
+        }
+
+        public void AddRetI()
+        {
+            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.RETI
+            });
+        }
+
+        public void AddRetD()
+        {
+            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.RETD
+            });
+        }
+
+        public void AddRetA()
+        {
+            CurrentBasicBlock.Instructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.RETA
+            });
+        }
+
         #endregion
 
 

@@ -43,7 +43,23 @@ namespace XiLang.AbstractSyntaxTree
                         VariableType actualReturnType = ReturnVal.CodeGen();
                         VariableType returnType = Constructor.CurrentFunction.Type.ReturnType;
                         TryImplicitCast(returnType, actualReturnType);  // 可能需要隐式类型转换
-                        Constructor.AddRet();
+                        switch (returnType.Tag)
+                        {
+                            case VariableTypeTag.BYTE:
+                                Constructor.AddRetB();
+                                break;
+                            case VariableTypeTag.INT:
+                                Constructor.AddRetI();
+                                break;
+                            case VariableTypeTag.DOUBLE:
+                                Constructor.AddRetD();
+                                break;
+                            case VariableTypeTag.ADDRESS:
+                                Constructor.AddRetA();
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
                     }
                     else
                     {

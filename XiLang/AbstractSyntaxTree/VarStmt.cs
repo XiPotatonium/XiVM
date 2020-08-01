@@ -27,7 +27,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            Variable var = Constructor.AddVariable(Id, Type.ToXirType());
+            Variable var = Constructor.AddLocalVariable(Id, Type.ToXirType());
 
             // 初始化代码
             if (Init != null)

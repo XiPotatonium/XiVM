@@ -98,7 +98,7 @@ namespace XiLang.Pass
 
         private void GlobalCodeGenVariable(VarStmt varStmt)
         {
-            Variable var = Constructor.AddVariable(varStmt.Id, varStmt.Type.ToXirType());
+            Variable var = Constructor.AddLocalVariable(varStmt.Id, varStmt.Type.ToXirType());
 
             if (varStmt.Init != null)
             {   // 初始化代码
