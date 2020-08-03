@@ -26,7 +26,7 @@ namespace XiVM
 
         private uint Magic { set; get; } = 0x43303A29;
         public string[] StringLiterals { set; get; }
-        public BinaryClass[] Classes { set; get; }
+        public BinaryClassType[] Classes { set; get; }
         public BinaryFunction[] Functions { set; get; }
     }
 }

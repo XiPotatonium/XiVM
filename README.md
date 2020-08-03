@@ -2,14 +2,14 @@
 
 ## TODO
 
-* ref 关键字
+* ref和new
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiLang以及XiVM中对类的支持
-* XiLang的new 关键字以及XiVM堆空间
 * XiVM的浮点数运算
 * XiVM中对于类型的处理（主要是Size）还比较混乱
 * 系统库函数，首先支持控制台输出，目前的控制台输出是hack的，如何很好地实现多模块以及import
 * 为了支持函数引用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
+* 为了支持GC，堆栈可能需要记录数据的tag（即是不是address）
 
 ## XiLang
 

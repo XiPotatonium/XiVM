@@ -1,21 +1,14 @@
 ﻿namespace XiVM.SystemLib.Classes
 {
-    public class ArrayType : VariableType
+    public class ArrayType : ClassType
     {
-        public static readonly VariableType ByteArrayType = new ArrayType(ByteType);
-        public static readonly VariableType IntArrayType = new ArrayType(IntType);
-        public static readonly VariableType DoubleArrayType = new ArrayType(DoubleType);
-
         public VariableType ElementType { private set; get; }
 
         public ArrayType(VariableType elementType)
-            : base(VariableTypeTag.ADDRESS)
+            : base($"Array<{elementType.Tag}>")
         {
             ElementType = elementType;
+            AddVariable(VariableType.IntType);  // Array.Length
         }
-    }
-
-    public class Array
-    {
     }
 }

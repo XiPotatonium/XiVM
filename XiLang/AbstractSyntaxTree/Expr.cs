@@ -479,11 +479,11 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             if (isGlobal)
                             {
-                                Constructor.AddGlobalA(variable.Variable.StackOffset);
+                                Constructor.AddGlobalA(variable.Variable.Offset);
                             }
                             else
                             {
-                                Constructor.AddLocalA(variable.Variable.StackOffset);
+                                Constructor.AddLocalA(variable.Variable.Offset);
                             }
                             Constructor.AddLoadT(variable.Variable.Type);
                             return variable.Variable.Type;
@@ -722,11 +722,11 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             if (isGlobal)
                             {
-                                Constructor.AddGlobalA(variable.Variable.StackOffset);
+                                Constructor.AddGlobalA(variable.Variable.Offset);
                             }
                             else
                             {
-                                Constructor.AddLocalA(variable.Variable.StackOffset);
+                                Constructor.AddLocalA(variable.Variable.Offset);
                             }
                         }
                         else

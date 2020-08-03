@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -20,6 +19,7 @@ namespace XiVM.Xir
         public Function CurrentFunction => CurrentBasicBlock?.Value.Function;
         public LinkedListNode<BasicBlock> CurrentBasicBlock { set; get; }
         private LinkedList<Instruction> CurrentInstructions => CurrentBasicBlock?.Value.Instructions;
+        public Dictionary<string, ClassType> Classes { private set; get; }
 
         public ConstantTable<string> StringLiterals { get; } = new ConstantTable<string>();
 
@@ -49,7 +49,7 @@ namespace XiVM.Xir
         {
             Function putchar = AddFunction("putchar", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
             CurrentBasicBlock = AddBasicBlock(putchar);
-            AddLocalA(putchar.Params[0].StackOffset);
+            AddLocalA(putchar.Params[0].Offset);
             AddLoadI();
             AddPutC();
             AddRet();
@@ -166,7 +166,7 @@ namespace XiVM.Xir
             }
             else
             {
-                xirVariable = new Variable(type, CurrentFunction.Locals[^1].StackOffset + CurrentFunction.Locals[^1].Type.Size);
+                xirVariable = new Variable(type, CurrentFunction.Locals[^1].Offset + CurrentFunction.Locals[^1].Type.Size);
             }
             CurrentFunction.Locals.Add(xirVariable);
 
@@ -174,11 +174,6 @@ namespace XiVM.Xir
             SymbolTable.Add(id, new VariableSymbol(id, xirVariable));
 
             return xirVariable;
-        }
-
-        public Class AddClass(string name)
-        {
-            throw new NotImplementedException();
         }
     }
 }

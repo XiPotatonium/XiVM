@@ -33,7 +33,7 @@ namespace XiLang.AbstractSyntaxTree
             if (Init != null)
             {
                 Init.CodeGen();                         // value
-                Constructor.AddLocalA(var.StackOffset);      // addr
+                Constructor.AddLocalA(var.Offset);      // addr
                 Constructor.AddStoreT(var.Type);        // store
             }
 

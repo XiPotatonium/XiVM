@@ -14,7 +14,7 @@ namespace XiVM.Executor
         private BinaryModule Module { set; get; }
         private BinaryFunction[] Functions => Module.Functions;
         private string[] StringConstants => Module.StringLiterals;
-        private BinaryClass[] Classes => Module.Classes;
+        private BinaryClassType[] Classes => Module.Classes;
 
         internal VMExecutor(BinaryModule module)
         {

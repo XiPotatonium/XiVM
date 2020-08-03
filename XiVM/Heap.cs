@@ -25,13 +25,18 @@ namespace XiVM
         }
     }
 
-    internal class HeapData
+    internal struct HeapData
     {
-        public uint ReferenceCount { set; get; } = 1;
+        /// <summary>
+        /// 头部的类信息(类的Index)
+        /// </summary>
+        public static readonly int MiscDataSize = sizeof(int);
+
         public byte[] Data { private set; get; }
 
         public HeapData(uint size)
         {
+
             Data = new byte[size];
         }
     }
