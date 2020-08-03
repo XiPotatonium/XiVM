@@ -74,7 +74,15 @@ namespace XiLang.AbstractSyntaxTree
         {
             if (IsArray)
             {
-                throw new NotImplementedException();
+                return Type switch
+                {
+                    SyntacticValueType.BOOL => throw new NotImplementedException(),
+                    SyntacticValueType.INT => throw new NotImplementedException(),
+                    SyntacticValueType.DOUBLE => throw new NotImplementedException(),
+                    SyntacticValueType.STRING => XiVM.SystemLib.Classes.String.StringArrayType,
+                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    _ => throw new NotImplementedException(),
+                };
             }
             else
             {
