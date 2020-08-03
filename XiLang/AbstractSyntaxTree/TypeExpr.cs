@@ -74,15 +74,7 @@ namespace XiLang.AbstractSyntaxTree
         {
             if (IsArray)
             {
-                return Type switch
-                {
-                    SyntacticValueType.BOOL => ArrayType.ByteArrayType,
-                    SyntacticValueType.INT => ArrayType.IntArrayType,
-                    SyntacticValueType.DOUBLE => ArrayType.DoubleArrayType,
-                    SyntacticValueType.STRING => XiVM.SystemLib.Classes.String.StringArrayType,
-                    SyntacticValueType.CLASS => throw new NotImplementedException(),
-                    _ => throw new NotImplementedException(),
-                };
+                throw new NotImplementedException();
             }
             else
             {
