@@ -12,8 +12,8 @@ namespace XiLang.Pass
 
         public static ModuleConstructor Constructor => Program.ModuleConstructor;
 
-        public static Stack<LinkedListNode<BasicBlock>> Breakable { private set; get; } = new Stack<LinkedListNode<BasicBlock>>();
-        public static Stack<LinkedListNode<BasicBlock>> Continuable { private set; get; } = new Stack<LinkedListNode<BasicBlock>>();
+        public static Stack<BasicBlock> Breakable { private set; get; } = new Stack<BasicBlock>();
+        public static Stack<BasicBlock> Continuable { private set; get; } = new Stack<BasicBlock>();
 
         private CodeGenPass() { }
 

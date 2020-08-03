@@ -22,7 +22,11 @@ namespace XiVM
         public static readonly VariableType IntType = new VariableType(VariableTypeTag.INT);
         public static readonly VariableType DoubleType = new VariableType(VariableTypeTag.DOUBLE);
 
-        public static readonly VariableType NullType = new VariableType(VariableTypeTag.ADDRESS);
+        /// <summary>
+        /// 不要用这个Type来表示class，因为他仅带有size信息无任何关于class的信息
+        /// 只用于null等特殊用途
+        /// </summary>
+        public static readonly VariableType AddressType = new VariableType(VariableTypeTag.ADDRESS);
 
 
         public VariableTypeTag Tag { private set; get; }

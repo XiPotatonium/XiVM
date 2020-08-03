@@ -213,7 +213,7 @@ namespace XiVM.Xir
             }
         }
 
-        private void AddLoadB()
+        internal void AddLoadB()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -221,7 +221,7 @@ namespace XiVM.Xir
             });
         }
 
-        private void AddLoadI()
+        internal void AddLoadI()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -230,7 +230,7 @@ namespace XiVM.Xir
 
         }
 
-        private void AddLoadD()
+        internal void AddLoadD()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -238,7 +238,7 @@ namespace XiVM.Xir
             });
         }
 
-        private void AddLoadA()
+        internal void AddLoadA()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -271,7 +271,7 @@ namespace XiVM.Xir
             }
         }
 
-        private void AddStoreB()
+        internal void AddStoreB()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -279,7 +279,7 @@ namespace XiVM.Xir
             });
         }
 
-        private void AddStoreI()
+        internal void AddStoreI()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -288,7 +288,7 @@ namespace XiVM.Xir
 
         }
 
-        private void AddStoreD()
+        internal void AddStoreD()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
@@ -296,7 +296,7 @@ namespace XiVM.Xir
             });
         }
 
-        private void AddStoreA()
+        internal void AddStoreA()
         {
             CurrentInstructions.AddLast(new Instruction()
             {

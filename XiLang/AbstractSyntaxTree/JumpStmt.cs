@@ -35,10 +35,10 @@ namespace XiLang.AbstractSyntaxTree
             switch (Type)
             {
                 case JumpType.CONTINUE:
-                    Constructor.AddJmp(CodeGenPass.Continuable.Peek().Value);
+                    Constructor.AddJmp(CodeGenPass.Continuable.Peek());
                     break;
                 case JumpType.BREAK:
-                    Constructor.AddJmp(CodeGenPass.Breakable.Peek().Value);
+                    Constructor.AddJmp(CodeGenPass.Breakable.Peek());
                     break;
                 case JumpType.RETURN:
                     if (ReturnVal != null)

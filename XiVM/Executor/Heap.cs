@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 
-namespace XiVM
+namespace XiVM.Executor
 {
+    /// <summary>
+    /// 这个堆是整个VM独一份的
+    /// </summary>
     internal static class Heap
     {
         private static LinkedList<BinaryModule> Modules { get; } = new LinkedList<BinaryModule>();

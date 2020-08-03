@@ -79,30 +79,30 @@ namespace XiLang.AbstractSyntaxTree
         private void ForCodeGen()
         {
             Constructor.SymbolTable.Push();
-            LinkedListNode<BasicBlock> condBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> bodyBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> stepBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock stepBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
 
             CodeGenPass.Breakable.Push(afterBB);
             CodeGenPass.Continuable.Push(stepBB);
 
             // pre head
             Init?.CodeGen();
-            Constructor.AddJmp(condBB.Value);
+            Constructor.AddJmp(condBB);
 
             // cond
             Constructor.CurrentBasicBlock = condBB;
             if (Cond == null)
             {
-                Constructor.AddJmp(bodyBB.Value);
+                Constructor.AddJmp(bodyBB);
             }
             else
             {
                 Cond.CodeGen();
-                if (Constructor.CurrentBasicBlock.Value.Instructions.Last?.Value.IsBranch != true)
+                if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
                 {
-                    Constructor.AddJCond(bodyBB.Value, afterBB.Value);
+                    Constructor.AddJCond(bodyBB, afterBB);
                 }
             }
 
@@ -113,12 +113,12 @@ namespace XiLang.AbstractSyntaxTree
                 // 不要直接CodeGen Body，因为那样会新建一个NS
                 CodeGen(Body.Child);
             }
-            Constructor.AddJmp(stepBB.Value);
+            Constructor.AddJmp(stepBB);
 
             // step
             Constructor.CurrentBasicBlock = stepBB;
             CodeGen(Step);      // Step可能有好几个expr形成一个list
-            Constructor.AddJmp(condBB.Value);
+            Constructor.AddJmp(condBB);
 
             // after
             Constructor.CurrentBasicBlock = afterBB;
@@ -128,27 +128,27 @@ namespace XiLang.AbstractSyntaxTree
 
         private void WhileCodeGen()
         {
-            LinkedListNode<BasicBlock> condBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> bodyBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
 
             CodeGenPass.Breakable.Push(afterBB);
             CodeGenPass.Continuable.Push(condBB);
 
             // pre head
-            Constructor.AddJmp(condBB.Value);
+            Constructor.AddJmp(condBB);
 
             // cond
             Constructor.CurrentBasicBlock = condBB;
             Cond.CodeGen();
-            Constructor.AddJCond(bodyBB.Value, afterBB.Value);
+            Constructor.AddJCond(bodyBB, afterBB);
 
             // body
             Constructor.CurrentBasicBlock = bodyBB;
             Body?.CodeGen();
-            if (Constructor.CurrentBasicBlock.Value.Instructions.Last?.Value.IsBranch != true)
+            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
             {
-                Constructor.AddJmp(afterBB.Value);
+                Constructor.AddJmp(afterBB);
             }
 
             // after

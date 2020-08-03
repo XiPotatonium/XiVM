@@ -32,28 +32,28 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            LinkedListNode<BasicBlock> thenBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> otherwiseBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            LinkedListNode<BasicBlock> afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock thenBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock otherwiseBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
 
             // cond
             Cond.CodeGen();
-            Constructor.AddJCond(thenBB.Value, otherwiseBB.Value);
+            Constructor.AddJCond(thenBB, otherwiseBB);
 
             // then
             Constructor.CurrentBasicBlock = thenBB;
             Then.CodeGen();
-            if (Constructor.CurrentBasicBlock.Value.Instructions.Last?.Value.IsBranch != true)
+            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
             {
-                Constructor.AddJmp(afterBB.Value);
+                Constructor.AddJmp(afterBB);
             }
 
             // otherwise
             Constructor.CurrentBasicBlock = otherwiseBB;
             Otherwise?.CodeGen();
-            if (Constructor.CurrentBasicBlock.Value.Instructions.Last?.Value.IsBranch != true)
+            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
             {
-                Constructor.AddJmp(afterBB.Value);
+                Constructor.AddJmp(afterBB);
             }
 
             // after

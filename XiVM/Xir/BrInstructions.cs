@@ -13,7 +13,7 @@
                 Params = new byte[VariableType.IntSize]
             };
             CurrentInstructions.AddLast(inst);
-            CurrentBasicBlock.Value.JmpTargets.Add(target);
+            CurrentBasicBlock.JmpTargets.Add(target);
         }
 
         public void AddJCond(BasicBlock target1, BasicBlock target2)
@@ -24,8 +24,8 @@
                 Params = new byte[VariableType.IntSize * 2]
             };
             CurrentInstructions.AddLast(inst);
-            CurrentBasicBlock.Value.JmpTargets.Add(target1);
-            CurrentBasicBlock.Value.JmpTargets.Add(target2);
+            CurrentBasicBlock.JmpTargets.Add(target1);
+            CurrentBasicBlock.JmpTargets.Add(target2);
         }
 
         #endregion

@@ -2,7 +2,6 @@
 using XiLang.Errors;
 using XiLang.Lexical;
 using XiVM;
-using XiVM.SystemLib.Classes;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -76,11 +75,11 @@ namespace XiLang.AbstractSyntaxTree
             {
                 return Type switch
                 {
-                    SyntacticValueType.BOOL => throw new NotImplementedException(),
+                    SyntacticValueType.BOOL => Constructor.ByteArrayType,
                     SyntacticValueType.INT => throw new NotImplementedException(),
                     SyntacticValueType.DOUBLE => throw new NotImplementedException(),
-                    SyntacticValueType.STRING => XiVM.SystemLib.Classes.String.StringArrayType,
-                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    SyntacticValueType.STRING => Constructor.AddressArrayType,
+                    SyntacticValueType.CLASS => Constructor.AddressArrayType,
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -91,7 +90,7 @@ namespace XiLang.AbstractSyntaxTree
                     SyntacticValueType.BOOL => VariableType.ByteType,
                     SyntacticValueType.INT => VariableType.IntType,
                     SyntacticValueType.DOUBLE => VariableType.DoubleType,
-                    SyntacticValueType.STRING => XiVM.SystemLib.Classes.String.StringClassType,
+                    SyntacticValueType.STRING => Constructor.StringType,
                     SyntacticValueType.CLASS => throw new NotImplementedException(),
                     SyntacticValueType.VOID => null,
                     _ => throw new NotImplementedException(),

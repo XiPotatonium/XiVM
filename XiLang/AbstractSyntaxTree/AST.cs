@@ -19,7 +19,7 @@ namespace XiLang.AbstractSyntaxTree
             while (ast != null)
             {
                 ret = ast.CodeGen();
-                if (Constructor.CurrentBasicBlock.Value.Instructions.Last?.Value.IsBranch == true)
+                if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch == true)
                 {
                     break;
                 }

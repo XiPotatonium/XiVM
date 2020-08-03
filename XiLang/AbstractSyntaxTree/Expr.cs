@@ -457,13 +457,13 @@ namespace XiLang.AbstractSyntaxTree
                                 idx = Constructor.StringLiterals.Add(Value.StringValue);
                             }
                             Constructor.AddConstA(idx);
-                            return XiVM.SystemLib.Classes.String.StringClassType;
+                            return Constructor.StringType;
                         case ValueType.BOOL:
                             Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
                             return VariableType.ByteType;
                         case ValueType.NULL:
                             Constructor.AddPushA(0);
-                            return VariableType.NullType;
+                            return VariableType.AddressType;
                         default:
                             throw new NotImplementedException();
                     }

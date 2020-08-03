@@ -16,9 +16,9 @@ namespace XiVM.Xir
         /// </summary>
         private List<Function> Functions { get; } = new List<Function>();
         public Function MainFunction { set; get; }
-        public Function CurrentFunction => CurrentBasicBlock?.Value.Function;
-        public LinkedListNode<BasicBlock> CurrentBasicBlock { set; get; }
-        private LinkedList<Instruction> CurrentInstructions => CurrentBasicBlock?.Value.Instructions;
+        public Function CurrentFunction => CurrentBasicBlock?.Function;
+        public BasicBlock CurrentBasicBlock { set; get; }
+        private LinkedList<Instruction> CurrentInstructions => CurrentBasicBlock?.Instructions;
         public Dictionary<string, ClassType> Classes { private set; get; }
 
         public ConstantTable<string> StringLiterals { get; } = new ConstantTable<string>();
@@ -36,28 +36,14 @@ namespace XiVM.Xir
             // 添加全局代码
             Function global = new Function(0, null, null);
             Functions.Add(global);
-
-            ImportSystemFunctions();
-
             CurrentBasicBlock = AddBasicBlock(global);
-        }
 
-        /// <summary>
-        /// 用比较Dirty的方法设置系统函数，以后有import功能后将系统函数做成一个模块
-        /// </summary>
-        private void ImportSystemFunctions()
-        {
-            Function putchar = AddFunction("putchar", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
-            CurrentBasicBlock = AddBasicBlock(putchar);
-            AddLocalA(putchar.Params[0].Offset);
-            AddLoadI();
-            AddPutC();
-            AddRet();
+            ConsturctBuiltIn();
         }
 
         public void Dump(string dirName, bool dumpXir = true)
         {
-            CurrentBasicBlock = Functions[0].BasicBlocks.First;
+            CurrentBasicBlock = Functions[0].BasicBlocks.First.Value;
             if (MainFunction != null)
             {
                 AddPushA(0);    // 暂时给main函数传NULL
@@ -146,14 +132,19 @@ namespace XiVM.Xir
             SymbolTable.Add(name, ret);
         }
 
-        public LinkedListNode<BasicBlock> AddBasicBlock(Function function)
+        public BasicBlock AddBasicBlock(Function function)
         {
-            return function.BasicBlocks.AddLast(new BasicBlock(function));
+            BasicBlock ret = new BasicBlock(function);
+            function.BasicBlocks.AddLast(ret);
+            return ret;
         }
 
-        public LinkedListNode<BasicBlock> InsertBeforeBasicBlock(LinkedListNode<BasicBlock> basicBlock)
+        public BasicBlock InsertBeforeBasicBlock(BasicBlock basicBlock)
         {
-            return basicBlock.List.AddBefore(basicBlock, new BasicBlock(basicBlock.Value.Function));
+            LinkedListNode<BasicBlock> node = basicBlock.Function.BasicBlocks.Find(basicBlock);
+            BasicBlock ret = new BasicBlock(basicBlock.Function);
+            basicBlock.Function.BasicBlocks.AddBefore(node, ret);
+            return ret;
         }
 
         public Variable AddLocalVariable(string id, VariableType type)
@@ -174,6 +165,13 @@ namespace XiVM.Xir
             SymbolTable.Add(id, new VariableSymbol(id, xirVariable));
 
             return xirVariable;
+        }
+
+        public ClassType AddClass(string name)
+        {
+            ClassType ret = new ClassType(name);
+            Classes.Add(name, ret);
+            return ret;
         }
     }
 }
