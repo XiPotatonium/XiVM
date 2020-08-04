@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using XiVM.Errors;
+using XiVM.Executor;
 
 namespace XiVM
 {
+    /// <summary>
+    /// 字节码中的Module
+    /// </summary>
     [Serializable]
     internal class BinaryModule
     {
@@ -26,6 +31,16 @@ namespace XiVM
 
         private uint Magic { set; get; } = 0x43303A29;
         public string[] StringLiterals { set; get; }
+        public BinaryClassType[] Classes { set; get; }
+        public BinaryFunction[] Functions { set; get; }
+    }
+
+    /// <summary>
+    /// BinaryModule加载之后，已经进行了Link
+    /// </summary>
+    internal class Module
+    {
+        public LinkedListNode<HeapData>[] StringLiterals { set; get; }
         public BinaryClassType[] Classes { set; get; }
         public BinaryFunction[] Functions { set; get; }
     }

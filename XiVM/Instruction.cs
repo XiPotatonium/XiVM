@@ -78,6 +78,7 @@ namespace XiVM
         RETA = 0x98,
 
         PUTC = 0xA0,
+        PUTS = 0xA1,
     }
 
     [Serializable]
@@ -118,6 +119,7 @@ namespace XiVM
                 InstructionType.DUP8 => "DUP8",
                 InstructionType.LOCALA => $"LOCALA {BitConverter.ToInt32(Params)}",
                 InstructionType.GLOBALA => $"GLOBALA {BitConverter.ToInt32(Params)}",
+                InstructionType.CONSTA => $"CONSTA {BitConverter.ToInt32(Params)}",
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",
                 InstructionType.LOADD => "LOADD",
@@ -133,7 +135,6 @@ namespace XiVM
                 InstructionType.RETI => "RETI",
                 InstructionType.RETD => "RETD",
                 InstructionType.RETA => "RETA",
-                InstructionType.PUTC => "PUTC",
                 InstructionType.SUBI => "SUBI",
                 InstructionType.MULI => "MULI",
                 InstructionType.DIVI => "DIVI",
@@ -150,7 +151,6 @@ namespace XiVM
                 InstructionType.B2I => "B2I",
                 InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
                 InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
-                InstructionType.CONSTA => $"CONSTA {BitConverter.ToInt32(Params)}",
                 InstructionType.NEW => throw new NotImplementedException(),
                 InstructionType.ALOADB => throw new NotImplementedException(),
                 InstructionType.ALOADI => throw new NotImplementedException(),
@@ -160,6 +160,8 @@ namespace XiVM
                 InstructionType.ASTOREI => throw new NotImplementedException(),
                 InstructionType.ASTORED => throw new NotImplementedException(),
                 InstructionType.ASTOREA => throw new NotImplementedException(),
+                InstructionType.PUTC => "PUTC",
+                InstructionType.PUTS => "PUTS",
                 _ => throw new NotImplementedException(),
             };
         }

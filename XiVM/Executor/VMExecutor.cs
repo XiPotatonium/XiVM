@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using XiVM.Errors;
 
 namespace XiVM.Executor
@@ -11,12 +12,12 @@ namespace XiVM.Executor
 
         private Stack Stack { get; } = new Stack();
 
-        private BinaryModule Module { set; get; }
+        private Module Module { set; get; }
         private BinaryFunction[] Functions => Module.Functions;
-        private string[] StringConstants => Module.StringLiterals;
+        private LinkedListNode<HeapData>[] StringConstants => Module.StringLiterals;
         private BinaryClassType[] Classes => Module.Classes;
 
-        internal VMExecutor(BinaryModule module)
+        internal VMExecutor(Module module)
         {
             Module = module;
         }
@@ -87,62 +88,63 @@ namespace XiVM.Executor
                     BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), addr);
                     break;
                 case InstructionType.CONSTA:
-                    throw new NotImplementedException();
+                    addr = StringConstants[BitConverter.ToUInt32(inst.Params)].Value.Offset;
+                    Stack.PushN(VariableType.AddressSize);
+                    BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), addr);
+                    break;
                 case InstructionType.LOADB:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        Stack.PushN(VariableType.ByteSize);
-                        Stack.StoreTopByte(Stack.LoadByte((int)addr));
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            Stack.PushN(VariableType.ByteSize);
+                            Stack.StoreTopByte(Stack.LoadByte((int)addr));
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.LOADI:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        Stack.PushN(VariableType.IntSize);
-                        BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.IntSize),
-                            BitConverter.ToInt32(Stack.GetSpan((int)addr, VariableType.IntSize)));
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            Stack.PushN(VariableType.IntSize);
+                            BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.IntSize),
+                                BitConverter.ToInt32(Stack.GetSpan((int)addr, VariableType.IntSize)));
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.LOADD:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        Stack.PushN(VariableType.DoubleSize);
-                        BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.DoubleSize),
-                            BitConverter.ToDouble(Stack.GetSpan((int)addr, VariableType.DoubleSize)));
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            Stack.PushN(VariableType.DoubleSize);
+                            BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.DoubleSize),
+                                BitConverter.ToDouble(Stack.GetSpan((int)addr, VariableType.DoubleSize)));
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.LOADA:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        // 栈地址
-                        Stack.PushN(VariableType.AddressSize);
-                        BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize),
-                            BitConverter.ToUInt32(Stack.GetSpan((int)addr, VariableType.AddressSize)));
-                    }
-                    else
-                    {
-                        // 堆地址
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            Stack.PushN(VariableType.AddressSize);
+                            BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize),
+                                BitConverter.ToUInt32(Stack.GetSpan((int)addr, VariableType.AddressSize)));
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.STOREB:
@@ -150,15 +152,13 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     bValue = Stack.LoadTopByte();
                     Stack.PopN(VariableType.ByteSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        // 栈地址
-                        Stack.StoreByte((int)addr, bValue);
-                    }
-                    else
-                    {
-                        // 堆地址
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            Stack.StoreByte((int)addr, bValue);
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.STOREI:
@@ -166,15 +166,13 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     iValue = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
                     Stack.PopN(VariableType.IntSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        // 栈地址
-                        BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.IntSize), iValue);
-                    }
-                    else
-                    {
-                        // 堆地址
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.IntSize), iValue);
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.STORED:
@@ -182,15 +180,13 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     dValue = BitConverter.ToDouble(Stack.GetTopSpan(VariableType.DoubleSize));
                     Stack.PopN(VariableType.DoubleSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        // 栈地址
-                        BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.DoubleSize), dValue);
-                    }
-                    else
-                    {
-                        // 堆地址
-                        throw new NotImplementedException();
+                        case MemTag.STACK:
+                            BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.DoubleSize), dValue);
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
                     break;
                 case InstructionType.STOREA:
@@ -198,17 +194,14 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     uValue = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    if ((addr & 0x10000000) == 0)
+                    switch (MemMap.Map(addr, out addr))
                     {
-                        // 栈地址
-                        BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.AddressSize), uValue);
+                        case MemTag.STACK:
+                            BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.AddressSize), uValue);
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
-                    else
-                    {
-                        // 堆地址
-                        throw new NotImplementedException();
-                    }
-                    // TODO 可能会发生GC
                     break;
                 case InstructionType.ADDI:
                     rhsi = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
@@ -352,6 +345,10 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.IntSize);
                     Console.Write((char)iValue);
                     break;
+                case InstructionType.PUTS:
+                    uValue = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
+                    Stack.PopN(VariableType.AddressSize);
+                    throw new NotImplementedException();
                 default:
                     throw new NotImplementedException();
             }

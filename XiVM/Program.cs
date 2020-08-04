@@ -14,9 +14,9 @@ namespace XiVM
             string fileName = argumentParser.GetValue().StringValue;
 
             BinaryModule binaryModule = BinaryModule.Load(fileName);
-
-            Heap.AddModule(binaryModule);
-            VMExecutor executor = new VMExecutor(binaryModule);
+            
+            Module module = Heap.AddModule(binaryModule);
+            VMExecutor executor = new VMExecutor(module);
             executor.Execute();
         }
     }
