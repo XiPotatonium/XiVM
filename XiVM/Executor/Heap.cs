@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace XiVM.Executor
@@ -38,6 +39,33 @@ namespace XiVM.Executor
 
             return module;
         }
+
+        /// <summary>
+        /// 暂时用比较笨的办法，线性搜索
+        /// 如果以后要改造Heap，例如使用byte[]，这个方法就要换掉了
+        /// </summary>
+        /// <param name="addr"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        public static LinkedListNode<HeapData> GetHeapData(uint addr, out int offset)
+        {
+            LinkedListNode<HeapData> cur = HeapData.First;
+            while (cur != null)
+            {
+                if (addr < cur.Value.Offset)
+                {
+                    break;
+                }
+                else if (addr < cur.Value.Offset + cur.Value.Data.Length)
+                {
+                    offset = (int)(addr - cur.Value.Offset);
+                    return cur;
+                }
+                cur = cur.Next;
+            }
+            offset = 0;
+            return null;
+        }
     }
 
     internal struct HeapData
@@ -57,10 +85,17 @@ namespace XiVM.Executor
             Data = new byte[MiscDataSize + size];
         }
 
+        /// <summary>
+        /// 创建常量池String的Heap data,格式与StringType相同
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="literal"></param>
         public HeapData(uint offset, string literal)
         {
             Offset = offset;
-            Data = Encoding.ASCII.GetBytes(literal);
+            Data = new byte[MiscDataSize + sizeof(int) + literal.Length];
+            BitConverter.TryWriteBytes(new Span<byte>(Data, MiscDataSize, sizeof(int)), literal.Length);            // String.Length
+            Encoding.ASCII.GetBytes(literal, new Span<byte>(Data, MiscDataSize + sizeof(int), literal.Length));     // Array.Data
         }
     }
 

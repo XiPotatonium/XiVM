@@ -3,3 +3,6 @@
 
 ../../XiLang/bin/Debug/netcoreapp3.1/XiLang.exe GCD -json
 ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe GCD.xibc
+
+../../XiLang/bin/Debug/netcoreapp3.1/XiLang.exe HelloWorld -json
+../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe HelloWorld.xibc

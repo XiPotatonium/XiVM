@@ -17,7 +17,8 @@ namespace XiVM.Xir
             // 备份
             BasicBlock tmp = CurrentBasicBlock;
 
-            ConstructPutChar();
+            ConstructPutc();
+            ConstructPuts();
 
             ConstructArrayType(ByteArrayType, VariableType.ByteType);
             ConstructArrayType(IntArrayType, VariableType.IntType);
@@ -32,13 +33,23 @@ namespace XiVM.Xir
         /// <summary>
         /// 预计会放到系统库中
         /// </summary>
-        private void ConstructPutChar()
+        private void ConstructPutc()
         {
-            Function putchar = AddFunction("putchar", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
-            CurrentBasicBlock = AddBasicBlock(putchar);
-            AddLocalA(putchar.Params[0].Offset);
+            Function putc = AddFunction("putc", new FunctionType(null, new List<VariableType>() { VariableType.IntType }));
+            CurrentBasicBlock = AddBasicBlock(putc);
+            AddLocalA(putc.Params[0].Offset);
             AddLoadI();
             AddPutC();
+            AddRet();
+        }
+
+        private void ConstructPuts()
+        {
+            Function puts = AddFunction("puts", new FunctionType(null, new List<VariableType>() { StringType }));
+            CurrentBasicBlock = AddBasicBlock(puts);
+            AddLocalA(puts.Params[0].Offset);
+            AddLoadA();
+            AddPutS();
             AddRet();
         }
 
@@ -50,7 +61,6 @@ namespace XiVM.Xir
         private void ConstructStringType()
         {
             StringType.AddVariable(VariableType.IntType);       // String.Length
-            StringType.AddVariable(ByteArrayType);              // 数据
 
             // TODO 构造函数
         }

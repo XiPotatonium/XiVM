@@ -22,5 +22,13 @@ namespace XiVM.Xir
                 OpCode = InstructionType.PUTC
             });
         }
+
+        public void AddPutS()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.PUTS
+            });
+        }
     }
 }

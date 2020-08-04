@@ -2,18 +2,18 @@
 void dispNumber(int n) {
 	if (n < 0) {
 		n = -n;
-		putchar('-');
+		putc('-');
 	} else if (n == 0) {
 		return;
 	}
 	
 	dispNumber(n / 10);
-	putchar(n % 10 + '0');
+	putc(n % 10 + '0');
 }
 
 void main(string[] args) {
     dispNumber(gcd(36, 27));
-	putchar(10);	// »»ÐÐ
+	putc(10);	// »»ÐÐ
 }
 
 int gcd(int a, int b) {

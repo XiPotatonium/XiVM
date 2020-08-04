@@ -7,20 +7,20 @@ void main(string[] argv) {
             break;
         }
         dispNumber(x + i);
-        putchar(' ');
+        putc(' ');
         i = i + 1;
     }
-	putchar(10);
+	putc(10);
 }
 
 void dispNumber(int n) {
 	if (n < 0) {
 		n = -n;
-		putchar('-');
+		putc('-');
 	} else if (n == 0) {
 		return;
 	}
 	
 	dispNumber(n / 10);
-	putchar(n % 10 + '0');
+	putc(n % 10 + '0');
 }

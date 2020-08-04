@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using XiVM.Errors;
 
 namespace XiVM.Executor
@@ -88,14 +89,14 @@ namespace XiVM.Executor
                     BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), addr);
                     break;
                 case InstructionType.CONSTA:
-                    addr = StringConstants[BitConverter.ToUInt32(inst.Params)].Value.Offset;
+                    addr = StringConstants[BitConverter.ToInt32(inst.Params)].Value.Offset;
                     Stack.PushN(VariableType.AddressSize);
-                    BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), addr);
+                    BitConverter.TryWriteBytes(Stack.GetTopSpan(VariableType.AddressSize), MemMap.MapTo(addr, MemTag.HEAP));
                     break;
                 case InstructionType.LOADB:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             Stack.PushN(VariableType.ByteSize);
@@ -108,7 +109,7 @@ namespace XiVM.Executor
                 case InstructionType.LOADI:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             Stack.PushN(VariableType.IntSize);
@@ -122,7 +123,7 @@ namespace XiVM.Executor
                 case InstructionType.LOADD:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             Stack.PushN(VariableType.DoubleSize);
@@ -136,7 +137,7 @@ namespace XiVM.Executor
                 case InstructionType.LOADA:
                     addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             Stack.PushN(VariableType.AddressSize);
@@ -152,7 +153,7 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     bValue = Stack.LoadTopByte();
                     Stack.PopN(VariableType.ByteSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             Stack.StoreByte((int)addr, bValue);
@@ -166,7 +167,7 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     iValue = BitConverter.ToInt32(Stack.GetTopSpan(VariableType.IntSize));
                     Stack.PopN(VariableType.IntSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.IntSize), iValue);
@@ -180,7 +181,7 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     dValue = BitConverter.ToDouble(Stack.GetTopSpan(VariableType.DoubleSize));
                     Stack.PopN(VariableType.DoubleSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.DoubleSize), dValue);
@@ -194,7 +195,7 @@ namespace XiVM.Executor
                     Stack.PopN(VariableType.AddressSize);
                     uValue = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    switch (MemMap.Map(addr, out addr))
+                    switch (MemMap.MapFrom(addr, out addr))
                     {
                         case MemTag.STACK:
                             BitConverter.TryWriteBytes(Stack.GetSpan((int)addr, VariableType.AddressSize), uValue);
@@ -346,9 +347,25 @@ namespace XiVM.Executor
                     Console.Write((char)iValue);
                     break;
                 case InstructionType.PUTS:
-                    uValue = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
+                    // 这个地址应该指向一个StringType
+                    addr = BitConverter.ToUInt32(Stack.GetTopSpan(VariableType.AddressSize));
                     Stack.PopN(VariableType.AddressSize);
-                    throw new NotImplementedException();
+                    switch (MemMap.MapFrom(addr, out addr))
+                    {
+                        case MemTag.STACK:
+                            throw new XiVMError("String should located on the heap");
+                        case MemTag.HEAP:
+                            LinkedListNode<HeapData> data = Heap.GetHeapData(addr, out offset);
+                            // TODO 检查MiscData是不是StringType
+                            iValue = BitConverter.ToInt32(new Span<byte>(
+                                data.Value.Data, offset + HeapData.MiscDataSize, sizeof(int)));     // String.Length
+                            Console.Write(Encoding.ASCII.GetString(
+                                data.Value.Data, offset + HeapData.MiscDataSize + sizeof(int), iValue));
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
                 default:
                     throw new NotImplementedException();
             }

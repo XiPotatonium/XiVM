@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using XiVM.Errors;
 
 namespace XiVM.Executor
 {
@@ -20,7 +19,7 @@ namespace XiVM.Executor
         /// <param name="addr"></param>
         /// <param name="res"></param>
         /// <returns></returns>
-        public static MemTag Map(uint addr, out uint res)
+        public static MemTag MapFrom(uint addr, out uint res)
         {
             if (addr < Stack.MaxStackSize)
             {
@@ -43,6 +42,25 @@ namespace XiVM.Executor
         }
 
 
-
+        public static uint MapTo(uint addr, MemTag to)
+        {
+            switch (to)
+            {
+                case MemTag.STACK:
+                    if (addr >= Stack.MaxStackSize)
+                    {
+                        throw new XiVMError("Cannot map be stack space, exceeds stack max size");
+                    }
+                    return addr;
+                case MemTag.HEAP:
+                    if (addr >= Heap.MaxHeapSize)
+                    {
+                        throw new XiVMError("Cannot map be heap space, exceeds heap max size");
+                    }
+                    return (uint)(addr + Stack.MaxStackSize);
+                default:
+                    throw new NotImplementedException();
+            }
+        }
     }
 }
