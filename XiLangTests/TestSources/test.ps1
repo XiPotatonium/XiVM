@@ -1,8 +1,18 @@
-../../XiLang/bin/Debug/netcoreapp3.1/XiLang.exe Test0 -json
-../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe Test0.xibc
+function Build-Module {
+    param ($moduleName)
+    ../../XiLang/bin/Debug/netcoreapp3.1/XiLang.exe $moduleName -verbose
+}
 
-../../XiLang/bin/Debug/netcoreapp3.1/XiLang.exe GCD -json
-../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe GCD.xibc
+function Invoke-Module {
+    param ($path)
+    ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe $path
+}
 
-../../XiLang/bin/Debug/netcoreapp3.1/XiLang.exe HelloWorld -json
-../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe HelloWorld.xibc
+Build-Module Test0
+Invoke-Module Test0.xibc
+
+Build-Module GCD
+Invoke-Module GCD.xibc
+
+Build-Module HelloWorld
+Invoke-Module HelloWorld.xibc

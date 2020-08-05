@@ -1,54 +1,33 @@
 ﻿using System;
+using System.Text;
 using XiLang.Errors;
 using XiLang.Lexical;
 using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
+    public enum TypeModifier
+    {
+        STATIC = 0x1
+    }
+
     public class TypeExpr : Expr
     {
-        /// <summary>
-        /// 注意void不是Type
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        public static TypeExpr FromToken(Token t)
-        {
-            TypeExpr ret = new TypeExpr();
-            switch (t.Type)
-            {
-                case TokenType.BOOL:
-                    ret.Type = SyntacticValueType.BOOL;
-                    break;
-                case TokenType.INT:
-                    ret.Type = SyntacticValueType.INT;
-                    break;
-                case TokenType.DOUBLE:
-                    ret.Type = SyntacticValueType.DOUBLE;
-                    break;
-                case TokenType.VOID:
-                    ret.Type = SyntacticValueType.VOID;
-                    break;
-                case TokenType.STRING:
-                    ret.Type = SyntacticValueType.STRING;
-                    break;
-                case TokenType.ID:
-                    ret.Type = SyntacticValueType.CLASS;
-                    ret.ClassName = t.Literal;
-                    break;
-                default:
-                    throw new SyntaxError("Unknown type", t);
-            }
-            return ret;
-        }
-
-        public SyntacticValueType Type { private set; get; }
+        public SyntacticValueType Type { set; get; }
         public bool IsArray { set; get; }
-        public string ClassName { private set; get; }
+        public uint Modifier { set; get; } = 0;
+        public string ClassName { set; get; }
 
         public override string ASTLabel()
         {
-            return "<" + Type switch
+            StringBuilder stringBuilder = new StringBuilder("<");
+
+            if ((Modifier & (uint)TypeModifier.STATIC) != 0)
+            {
+                stringBuilder.Append("static ");
+            }
+
+            stringBuilder.Append(Type switch
             {
                 SyntacticValueType.BOOL => "bool",
                 SyntacticValueType.INT => "int",
@@ -56,8 +35,12 @@ namespace XiLang.AbstractSyntaxTree
                 SyntacticValueType.STRING => "string",
                 SyntacticValueType.CLASS => ClassName,
                 SyntacticValueType.VOID => "void",
-                _ => "UNK",
-            } + (IsArray ? "[]>" : ">");
+                _ => throw new NotImplementedException(),
+            });
+
+            stringBuilder.Append(IsArray ? "[]>" : ">");
+
+            return stringBuilder.ToString();
         }
 
         /// <summary>

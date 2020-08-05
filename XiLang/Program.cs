@@ -17,7 +17,7 @@ namespace XiLang
         {
             ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
             argumentParser.AddArgument(new ConsoleArgument("d", ArgumentValueType.STRING));
-            argumentParser.AddArgument(new ConsoleArgument("json"));
+            argumentParser.AddArgument(new ConsoleArgument("verbose"));
 
             argumentParser.Parse(args);
 
@@ -64,7 +64,7 @@ namespace XiLang
             astPasses.Run(new ConstExprPass());
 
             // 4，打印json文件
-            if (argumentParser.GetValue("json").IsSet)
+            if (argumentParser.GetValue("verbose").IsSet)
             {
                 string json = (string)astPasses.Run(new JsonPass());
                 File.WriteAllText(fileName + ".ast.json", json);
@@ -75,7 +75,7 @@ namespace XiLang
             astPasses.Run(CodeGenPass.Singleton);
 
             // 输出生成字节码
-            ModuleConstructor.Dump(dirName);
+            ModuleConstructor.Dump(dirName, argumentParser.GetValue("verbose").IsSet);
         }
     }
 }

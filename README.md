@@ -9,6 +9,7 @@
 * 系统库函数，以及如何很好地实现多模块以及import
 * 为了支持动态绑定的函数调用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
 * RET(T)指令取消，只留下RET，VM可以通过函数类型自行判断返回类型（这样可以支持多返回值）
+* 符号栈好像没什么用，可以删掉了
 
 ## XiLang
 
@@ -82,7 +83,7 @@ ExprStmt
 
 ```
 TypeExpr
-    ANY_TYPE_SPEC* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+    ANY_TYPE_MODIFIER* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
 ListExpr
     Expr [COMMA Expr]*
 Expr

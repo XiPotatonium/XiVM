@@ -10,8 +10,10 @@ namespace XiLang.Lexical
         EOF,
         // 类型
         BOOL, INT, DOUBLE, VOID, STRING,
+        // OO关键词
+        CLASS, BASE, STATIC,
         // 其他关键词
-        CLASS, BASE, FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN,
+        FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN,
         // 常量
         TRUE, FALSE, NULL,
         // 运算子
@@ -47,6 +49,8 @@ namespace XiLang.Lexical
 
             { "class", TokenType.CLASS },
             { "base", TokenType.BASE },
+            { "static", TokenType.STATIC },
+
             { "for", TokenType.FOR },
             { "while", TokenType.WHILE },
             { "if", TokenType.IF },
@@ -61,13 +65,21 @@ namespace XiLang.Lexical
         };
 
         /// <summary>
-        /// 所有可能出现在Type中的Token
-        /// 未来会包括更多的基础类型以及const之类的修饰符
+        /// 所有可能出现在Type中的原始类型Token
         /// 这个东西会在Parser中用于Check与预判
         /// </summary>
         public static readonly TokenType[] TypeTokens =
         {
             TokenType.BOOL, TokenType.INT, TokenType.DOUBLE, TokenType.VOID, TokenType.STRING
+        };
+
+        /// <summary>
+        /// 所有可能出现在Type中的Atribute
+        /// 这个东西会在Parser中用于Check与预判
+        /// </summary>
+        public static readonly TokenType[] TypeModifierTokens =
+        {
+            TokenType.STATIC
         };
 
         /// <summary>

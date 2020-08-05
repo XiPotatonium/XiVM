@@ -10,7 +10,6 @@ namespace XiVM.Xir.Symbol
         /// Stack新来的在第一个
         /// </summary>
         private LinkedList<SymbolTableFrame> SymbolStack { get; } = new LinkedList<SymbolTableFrame>();
-        private int AccessLinkValue { set; get; }
 
         public int Count => SymbolStack.Count;
 

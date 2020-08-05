@@ -1,4 +1,12 @@
-﻿int a = 9;
+﻿class Demo {
+	static string arr;
+
+	static int foo(int a, int b) {
+		return a + b;
+	}
+}
+
+int a = 9;
 
 void main(string[] argv) {
     int x = a + 1;

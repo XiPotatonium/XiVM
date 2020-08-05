@@ -1,5 +1,6 @@
 ﻿using System;
 using XiLang.AbstractSyntaxTree;
+using XiLang.Errors;
 using XiLang.Lexical;
 
 namespace XiLang.Syntactic
@@ -8,13 +9,54 @@ namespace XiLang.Syntactic
     {
         /// <summary>
         /// TypeExpr
-        ///     ANY_TYPE_SPEC* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+        ///     ANY_TYPE_MODIFIER* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
         /// </summary>
         /// <returns></returns>
         private TypeExpr ParseTypeExpr()
         {
-            // TODO 使用Type Spec
-            TypeExpr ret = TypeExpr.FromToken(Consume());
+            TypeExpr ret = new TypeExpr();
+            Token typeToken;
+
+            while (!Check(LexicalRules.TypeTokens) && !Check(TokenType.ID))
+            {
+                // 解析Attribute
+                if (Check(TokenType.STATIC))
+                {
+                    typeToken = Consume(TokenType.STATIC);
+                    if ((ret.Modifier & (uint)TypeModifier.STATIC) != 0)
+                    {
+                        throw new SyntaxError("Duplicated static modifier", typeToken);
+                    }
+                    ret.Modifier |= (uint)TypeModifier.STATIC;
+                }
+            }
+
+            typeToken = Consume();
+            switch (typeToken.Type)
+            {
+                case TokenType.BOOL:
+                    ret.Type = SyntacticValueType.BOOL;
+                    break;
+                case TokenType.INT:
+                    ret.Type = SyntacticValueType.INT;
+                    break;
+                case TokenType.DOUBLE:
+                    ret.Type = SyntacticValueType.DOUBLE;
+                    break;
+                case TokenType.VOID:
+                    ret.Type = SyntacticValueType.VOID;
+                    break;
+                case TokenType.STRING:
+                    ret.Type = SyntacticValueType.STRING;
+                    break;
+                case TokenType.ID:
+                    ret.Type = SyntacticValueType.CLASS;
+                    ret.ClassName = typeToken.Literal;
+                    break;
+                default:
+                    throw new SyntaxError("Unknown type", typeToken);
+            }
+
             if (Check(TokenType.LBRACKET))
             {
                 Consume(TokenType.LBRACKET);
