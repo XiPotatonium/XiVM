@@ -47,7 +47,7 @@ namespace XiVM
 
         public Variable AddVariable(VariableType type)
         {
-            Variable v = new Variable(type, Variables.Count == 0 ? 0 : Variables[^1].Offset + Variables[^1].Type.Size);
+            Variable v = new Variable(type, Variables.Count == 0 ? 0 : Variables[^1].Offset + Variables[^1].Type.SlotSize);
             Variables.Add(v);
             return v;
         }

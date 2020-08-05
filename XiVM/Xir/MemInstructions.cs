@@ -7,135 +7,85 @@ namespace XiVM.Xir
     {
         public void AddLocalA(int offset)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.LOCALA,
-                Params = new byte[sizeof(int)]
-            };
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
-            CurrentInstructions.AddLast(inst);
+                Params = BitConverter.GetBytes(offset)
+            });
         }
 
         public void AddGlobalA(int offset)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.GLOBALA,
-                Params = new byte[sizeof(int)]
-            };
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params), offset);
-            CurrentInstructions.AddLast(inst);
+                Params = BitConverter.GetBytes(offset)
+            });
         }
 
-        public void AddConstA(int index)
+        public void AddConstA(uint index)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.CONSTA,
-                Params = new byte[sizeof(int)]
-            };
-            BitConverter.TryWriteBytes(new Span<byte>(inst.Params), index);
-            CurrentInstructions.AddLast(inst);
+                Params = BitConverter.GetBytes(index)
+            });
         }
 
         #region Push
 
         public void AddPushB(byte value)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.PUSHB,
-                Params = new byte[VariableType.ByteSize]
-            };
-            inst.Params[0] = value;
-            CurrentInstructions.AddLast(inst);
+                Params = new byte[1] { value }
+            });
         }
 
         public void AddPushI(int value)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.PUSHI,
-                Params = new byte[VariableType.IntSize]
-            };
-            BitConverter.TryWriteBytes(inst.Params, value);
-            CurrentInstructions.AddLast(inst);
+                Params = BitConverter.GetBytes(value)
+            });
         }
 
         public void AddPushD(double value)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.PUSHD,
-                Params = new byte[VariableType.DoubleSize]
-            };
-            BitConverter.TryWriteBytes(inst.Params, value);
-            CurrentInstructions.AddLast(inst);
+                Params = BitConverter.GetBytes(value)
+            });
         }
 
-        /// <summary>
-        /// 之应该用于Call的Index或者NULL
-        /// </summary>
-        /// <param name="value"></param>
         public void AddPushA(uint value)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.PUSHA,
-                Params = new byte[VariableType.AddressSize]
-            };
-            BitConverter.TryWriteBytes(inst.Params, value);
-            CurrentInstructions.AddLast(inst);
-
+                Params = BitConverter.GetBytes(value)
+            });
         }
 
         #endregion
 
         #region Pop
 
-        public void AddPopValue(VariableType valueType)
-        {
-            int size = valueType.Size;
-            while (size >= 8)
-            {
-                AddPop8();
-                size -= 8;
-            }
-
-            while (size >= 4)
-            {
-                AddPop4();
-                size -= 4;
-            }
-
-            while (size >= 1)
-            {
-                AddPop();
-                size -= 1;
-            }
-        }
-
-        private void AddPop()
+        public void AddPop(VariableType type)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.POP
-            });
-        }
-
-        private void AddPop4()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.POP4
-            });
-        }
-
-        private void AddPop8()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.POP8
+                OpCode = type.Tag switch
+                {
+                    VariableTypeTag.BYTE => InstructionType.POPB,
+                    VariableTypeTag.INT => InstructionType.POPI,
+                    VariableTypeTag.DOUBLE => InstructionType.POPD,
+                    VariableTypeTag.ADDRESS => InstructionType.POPA,
+                    _ => throw new NotImplementedException(),
+                }
             });
         }
 
@@ -143,24 +93,19 @@ namespace XiVM.Xir
 
         #region Dup
 
-        public void AddDupT(VariableType type)
+        public void AddDup(VariableType type)
         {
-            switch (type.Tag)
+            if (type.SlotSize == 2)
             {
-                case VariableTypeTag.BYTE:
-                    AddDup();
-                    break;
-                case VariableTypeTag.INT:
-                    AddDup4();
-                    break;
-                case VariableTypeTag.DOUBLE:
-                    AddDup8();
-                    break;
-                case VariableTypeTag.ADDRESS:
-                    AddDup4();
-                    break;
-                default:
-                    throw new XiVMError($"Unknown type {type.Tag} for TLoad");
+                AddDup2();
+            }
+            else if (type.SlotSize == 1)
+            {
+                AddDup();
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
         }
 
@@ -172,19 +117,11 @@ namespace XiVM.Xir
             });
         }
 
-        private void AddDup4()
+        private void AddDup2()
         {
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.DUP4
-            });
-        }
-
-        private void AddDup8()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.DUP8
+                OpCode = InstructionType.DUP2
             });
         }
 

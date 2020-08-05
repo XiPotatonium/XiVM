@@ -1,10 +1,14 @@
 ﻿using XiVM.Errors;
+using XiVM.Executor;
 
 namespace XiVM
 {
     public enum VariableTypeTag
     {
-        BYTE, INT, DOUBLE, ADDRESS
+        BYTE = 0x00, 
+        INT = 0x01, 
+        DOUBLE = 0x02, 
+        ADDRESS = 0x03
     }
 
     /// <summary>
@@ -13,11 +17,6 @@ namespace XiVM
     /// </summary>
     public class VariableType
     {
-        public static readonly int ByteSize = sizeof(byte);
-        public static readonly int IntSize = sizeof(int);
-        public static readonly int DoubleSize = sizeof(double);
-        public static readonly int AddressSize = sizeof(uint);
-
         public static readonly VariableType ByteType = new VariableType(VariableTypeTag.BYTE);
         public static readonly VariableType IntType = new VariableType(VariableTypeTag.INT);
         public static readonly VariableType DoubleType = new VariableType(VariableTypeTag.DOUBLE);
@@ -37,14 +36,14 @@ namespace XiVM
         }
 
         /// <summary>
-        /// 获取这个类型的值的大小
+        /// 获取这个类型占几个Slot
         /// </summary>
-        public int Size => Tag switch
+        public int SlotSize => Tag switch
         {
-            VariableTypeTag.BYTE => ByteSize,
-            VariableTypeTag.INT => IntSize,
-            VariableTypeTag.DOUBLE => DoubleSize,
-            VariableTypeTag.ADDRESS => AddressSize,
+            VariableTypeTag.BYTE => MemMap.ByteSize,
+            VariableTypeTag.INT => MemMap.IntSize,
+            VariableTypeTag.DOUBLE => MemMap.DoubleSize,
+            VariableTypeTag.ADDRESS => MemMap.AddressSize,
             _ => throw new XiVMError($"Unsupported Type {Tag}"),
         };
 
@@ -61,11 +60,23 @@ namespace XiVM
             }
             return Tag == b.Tag;
         }
+
+        /// <summary>
+        /// TODO ref等可以放在这里
+        /// </summary>
+        /// <returns></returns>
+        public byte ToBinary()
+        {
+            return (byte)Tag;
+        }
     }
 
     public class Variable
     {
         public VariableType Type { private set; get; }
+        /// <summary>
+        /// 单位为slot
+        /// </summary>
         public int Offset { private set; get; }
 
         /// <summary>

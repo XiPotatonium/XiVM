@@ -6,13 +6,11 @@ namespace XiVM.Xir
     {
         public void AddCall(uint index)
         {
-            Instruction inst = new Instruction()
+            CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.CALL,
-                Params = new byte[VariableType.AddressSize]
-            };
-            BitConverter.TryWriteBytes(inst.Params, index);
-            CurrentInstructions.AddLast(inst);
+                Params = BitConverter.GetBytes(index)
+            });
         }
 
         public void AddPutC()

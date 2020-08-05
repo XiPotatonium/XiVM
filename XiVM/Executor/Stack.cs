@@ -5,9 +5,18 @@ namespace XiVM.Executor
 {
     internal class Stack
     {
+        /// <summary>
+        /// 最大1M个slot
+        /// </summary>
         public static readonly int MaxStackSize = 0x100000;
+        /// <summary>
+        /// 最小1K个slot
+        /// </summary>
         public static readonly int MinStackSize = 0x400;
-        public static readonly int MiscDataSize = 3 * sizeof(int);
+        /// <summary>
+        /// 函数栈中用于储存调用返回信息的MiscData是FP后的3个Slot
+        /// </summary>
+        public static readonly int MiscDataSize = 3;
 
         /// <summary>
         /// Frame Pointer，依据这个寻找局部变量
@@ -20,44 +29,39 @@ namespace XiVM.Executor
 
         private int Capacity { set; get; }
 
-        private byte[] Data { set; get; }
+        private Slot[] Slots { set; get; }
         public bool Empty => SP <= 0;
 
         public Stack()
         {
             Capacity = MinStackSize;
-            Data = new byte[Capacity];
+            Slots = new Slot[Capacity];
             FP = 0;
             SP = 0;
         }
 
+        #region Stack Size Modification
+
         /// <summary>
         /// 压入函数栈帧
         /// </summary>
-        /// <param name="localSize">函数局部变量大小，会预分配这些空间</param>
         /// <param name="index">Caller函数地址</param>
         /// <param name="ip">Caller IP</param>
-        public void PushFrame(int localSize, int index, int ip)
+        public void PushFrame(int index, int ip)
         {
-            int newSP = SP + localSize + 3 * sizeof(int);
-            if (newSP > Capacity)
-            {
-                if (Capacity * 2 > MaxStackSize)
-                {
-                    throw new XiVMError($"Stack overflow");
-                }
-                byte[] newData = new byte[Capacity * 2];
-                System.Array.Copy(Data, newData, SP);
-                Data = newData;
-            }
-            BitConverter.TryWriteBytes(new Span<byte>(Data, SP, sizeof(int)), FP);
-            BitConverter.TryWriteBytes(new Span<byte>(Data, SP + sizeof(int), sizeof(int)), index);
-            BitConverter.TryWriteBytes(new Span<byte>(Data, SP + 2 * sizeof(int), sizeof(int)), ip);
-            FP = SP;
-            SP = newSP;
+            int oldSP = SP;
+            PushInt(FP);
+            PushInt(index);
+            PushInt(ip);
+            FP = oldSP;
         }
 
-        public void PopFrame(int paramSize, out int index, out int ip)
+        /// <summary>
+        /// 弹出函数栈
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="ip"></param>
+        public void PopFrame(out int index, out int ip)
         {
             if (Empty)
             {
@@ -65,95 +69,293 @@ namespace XiVM.Executor
             }
 
             // 恢复寄存器
-            int oldBP = BitConverter.ToInt32(Data, FP);
-            index = BitConverter.ToInt32(Data, FP + sizeof(int));
-            ip = BitConverter.ToInt32(Data, FP + 2 * sizeof(int));
+            int oldBP = Slots[FP].Data;
+            index = Slots[FP + 1].Data;
+            ip = Slots[FP + 2].Data;
             SP = FP;
             FP = oldBP;
-
-            PopN(paramSize);
         }
 
-        public void PushN(int n)
+        /// <summary>
+        /// 新slots的tag会默认设置为OTHER
+        /// </summary>
+        /// <param name="slots">新增的slots</param>
+        private void PushN(int slots)
         {
-            if (SP + n > Capacity)
+            if (SP + slots > Capacity)
             {
-                byte[] old = Data;
-                Capacity *= 2;
-                Data = new byte[Capacity];
-                System.Array.Copy(old, Data, SP);
+                Slot[] old = Slots;
+                while (Capacity < SP + slots)
+                {
+                    Capacity *= 2;
+                }
+                if (Capacity > MaxStackSize)
+                {
+                    throw new XiVMError("Stack overflow");
+                }
+                Slots = new Slot[Capacity];
+                System.Array.Copy(old, Slots, SP);
+
             }
-            SP += n;
+
+            // 默认tag为other
+            for (int i = 0; i < slots; ++i)
+            {
+                Slots[SP + i].DataTag = SlotDataTag.OTHER;
+            }
+            SP += slots;
         }
 
-        public void PopN(int n)
+        /// <summary>
+        /// 回收多余的空间
+        /// </summary>
+        private void Shrink()
+        {
+            if (SP < 4 * Capacity && Capacity > MinStackSize)
+            {
+                Slot[] old = Slots;
+                while (SP < 4 * Capacity && Capacity > MinStackSize)
+                {
+                    Capacity /= 2;
+                }
+                Slots = new Slot[Capacity];
+                System.Array.Copy(old, Slots, SP);
+            }
+        }
+
+        /// <summary>
+        /// 出栈，不会进行Shrink
+        /// </summary>
+        /// <param name="n">单位为slot</param>
+        private void PopN(int n)
         {
             SP -= n;
             if (SP < FP)
             {
                 throw new XiVMError("Stack frame size cannot be negative");
             }
-
-            // Shrink
-            if (SP < 4 * Capacity && Capacity > MinStackSize)
-            {
-                byte[] old = Data;
-                Capacity /= 2;
-                Data = new byte[Capacity];
-                System.Array.Copy(old, Data, SP);
-            }
         }
 
         /// <summary>
-        /// Push N个byte并初始化
-        /// </summary>
-        /// <param name="n"></param>
-        /// <param name="source"></param>
-        /// <param name="sourceIndex"></param>
-        public void PushN(int n, System.Array source, int sourceIndex)
-        {
-            PushN(n);
-            System.Array.Copy(source, sourceIndex, Data, SP - n, n);
-        }
-
-        /// <summary>
-        /// 复制粘贴栈顶N个byte
+        /// 复制粘贴栈顶N个slot
         /// </summary>
         /// <param name="n"></param>
         public void DupN(int n)
         {
             PushN(n);
-            System.Array.Copy(Data, SP - 2 * n, Data, SP - n, n);
+            System.Array.Copy(Slots, SP - 2 * n, Slots, SP - n, n);
         }
 
-        public Span<byte> GetTopSpan(int size)
+        public void PushByte(byte value = 0)
         {
-            return new Span<byte>(Data, SP - size, size);
+            PushN(1);
+            TopByte = value;
         }
 
-        public Span<byte> GetSpan(int addr, int size)
+        public byte PopByte()
         {
-            return new Span<byte>(Data, addr, size);
+            byte ret = TopByte;
+            PopN(MemMap.ByteSize);
+            return ret;
         }
 
-        public byte LoadByte(int addr)
+        public void PushInt(int value = 0)
         {
-            return Data[addr];
+            PushN(1);
+            TopInt = value;
         }
 
-        public byte LoadTopByte()
+        public int PopInt()
         {
-            return Data[SP - 1];
+            int ret = TopInt;
+            PopN(MemMap.IntSize);
+            return ret;
         }
 
-        public void StoreByte(int addr, byte value)
+        public void PushDouble(double value = 0.0)
         {
-            Data[addr] = value;
+            PushN(2);
+            TopDouble = value;
         }
 
-        public void StoreTopByte(byte value)
+        public double PopDouble()
         {
-            Data[SP - 1] = value;
+            double ret = TopDouble;
+            PopN(MemMap.DoubleSize);
+            return ret;
         }
+
+        public void PushAddress(uint value = 0)
+        {
+            PushN(1);
+            Slots[SP - 1].DataTag = SlotDataTag.ADDRESS;
+            TopUInt = value;
+        }
+
+        public uint PopAddress()
+        {
+            uint ret = TopUInt;
+            PopN(MemMap.AddressSize);
+            return ret;
+        }
+
+        #endregion
+
+        #region Stack Data Modification
+
+
+        public byte TopByte
+        {
+            get
+            {
+                return (byte)Slots[SP - 1].Data;
+            }
+
+            set
+            {
+                Slots[SP - 1].Data = value;
+            }
+        }
+
+        public int TopInt
+        {
+            get
+            {
+                return Slots[SP - 1].Data;
+            }
+
+            set
+            {
+                Slots[SP - 1].Data = value;
+            }
+        }
+
+        public uint TopUInt
+        {
+            get
+            {
+                return (uint)Slots[SP - 1].Data;
+            }
+
+            set
+            {
+                Slots[SP - 1].Data = (int)value;
+            }
+        }
+
+        /// <summary>
+        /// 低位在低地址
+        /// </summary>
+        public long TopLong
+        {
+            get
+            {
+                return (((long)Slots[SP - 1].Data) << 32) | ((long)Slots[SP - 2].Data & 0x0ffffffffL);
+            }
+
+            set
+            {
+                Slots[SP - 2].Data = (int)value;
+                Slots[SP - 1].Data = (int)(value >> 32);
+            }
+        }
+
+        public double TopDouble
+        {
+            get
+            {
+                return BitConverter.Int64BitsToDouble(TopLong);
+            }
+
+            set
+            {
+                TopLong = BitConverter.DoubleToInt64Bits(value);
+            }
+        }
+
+        public void SetValue(uint addr, byte value)
+        {
+            if (addr >= SP)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            Slots[addr].Data = value;
+        }
+
+        public void SetValue(uint addr, int value)
+        {
+            if (addr >= SP)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            Slots[addr].Data = value;
+        }
+
+        public void SetValue(uint addr, long value)
+        {
+            if (addr >= SP - 1)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            Slots[addr].Data = (int)value;
+            Slots[addr + 1].Data = (int)(value >> 32);
+        }
+
+        public void SetValue(uint addr, double value)
+        {
+            SetValue(addr, BitConverter.DoubleToInt64Bits(value));
+        }
+
+        public void SetValue(uint addr, uint value)
+        {
+            if (addr >= SP)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            Slots[addr].Data = (int)value;
+        }
+
+        public byte GetByte(uint addr)
+        {
+            if (addr >= SP)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            return (byte)Slots[addr].Data;
+        }
+
+        public int GetInt(uint addr)
+        {
+            if (addr >= SP)
+            {
+                throw new XiVMError("Invalid stack address"); 
+            }
+            return Slots[addr].Data;
+        }
+
+        public long GetLong(uint addr)
+        {
+            if (addr >= SP - 1)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            return (((long)Slots[addr + 1].Data) << 32) | ((long)Slots[addr].Data & 0x0ffffffffL);
+        }
+
+        public double GetDouble(uint addr)
+        {
+            return BitConverter.Int64BitsToDouble(GetLong(addr));
+        }
+
+        public uint GetAddress(uint addr)
+        {
+            if (addr >= SP)
+            {
+                throw new XiVMError("Invalid stack address");
+            }
+            return (uint)Slots[addr].Data;
+        }
+
+        #endregion
     }
 }

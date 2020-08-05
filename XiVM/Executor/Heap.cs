@@ -11,13 +11,14 @@ namespace XiVM.Executor
     {
         public static readonly int MaxHeapSize = 0x100000;  // 64MB
 
-        private static List<Module> Modules { get; } = new List<Module>();
+        private static List<VMModule> Modules { get; } = new List<VMModule>();
         private static LinkedList<HeapData> HeapData { get; } = new LinkedList<HeapData>();
+
         private static Dictionary<string, LinkedListNode<HeapData>> StringConstantPool { get; } = new Dictionary<string, LinkedListNode<HeapData>>();
 
-        public static Module AddModule(BinaryModule binaryModule)
+        public static VMModule AddModule(BinaryModule binaryModule)
         {
-            Module module = new Module()
+            VMModule module = new VMModule()
             {
                 StringLiterals = new LinkedListNode<HeapData>[binaryModule.StringLiterals.Length],
                 Functions = binaryModule.Functions,

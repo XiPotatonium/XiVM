@@ -41,6 +41,7 @@ namespace XiLang.AbstractSyntaxTree
 
         /// <summary>
         /// 基本类型的隐式类型提升
+        /// 这个是不是应该放到XiVM里面?
         /// </summary>
         public void TryImplicitCast(VariableType expectType, VariableType actualType)
         {
@@ -53,8 +54,8 @@ namespace XiLang.AbstractSyntaxTree
                 Constructor.AddI2D();
             }
             else if (expectType.Tag == VariableTypeTag.INT && actualType.Tag == VariableTypeTag.BYTE)
-            {
-                Constructor.AddB2I();
+            {   // XiVM不需要任何操作
+                return;
             }
 
             throw new XiLangError($"Need Explicit cast to cast from {actualType.Tag} to {expectType.Tag}");

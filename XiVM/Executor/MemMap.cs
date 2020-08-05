@@ -8,11 +8,20 @@ namespace XiVM.Executor
     /// </summary>
     internal enum MemTag
     {
-        STACK, HEAP, INVALID
+        STACK, HEAP, NULL, INVALID
     }
 
     internal static class MemMap
     {
+        /// <summary>
+        /// Warning: HardCoding的slot
+        /// </summary>
+        public static readonly int ByteSize = 1;
+        public static readonly int IntSize = 1;
+        public static readonly int DoubleSize = 2;
+        public static readonly int AddressSize = 1;
+
+
         /// <summary>
         /// 从addr映射到Tag空间的res
         /// </summary>
@@ -21,6 +30,12 @@ namespace XiVM.Executor
         /// <returns></returns>
         public static MemTag MapFrom(uint addr, out uint res)
         {
+            if (addr == 0)
+            {
+                res = 0;
+                return MemTag.NULL;
+            }
+
             if (addr < Stack.MaxStackSize)
             {
                 res = addr;

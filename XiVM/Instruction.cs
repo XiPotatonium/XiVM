@@ -11,13 +11,13 @@ namespace XiVM
         PUSHD = 0x03,
         PUSHA = 0x04,
 
-        POP = 0x08,
-        POP4 = 0x09,
-        POP8 = 0x0A,
+        POPB = 0x08,
+        POPI = 0x09,
+        POPD = 0x0A,
+        POPA = 0x0B,
 
         DUP = 0x10,
-        DUP4 = 0x11,
-        DUP8 = 0x12,
+        DUP2 = 0x11,
 
         LOCALA = 0x18,
         GLOBALA = 0x19,
@@ -58,7 +58,6 @@ namespace XiVM
 
         I2D = 0x60,
         D2I = 0x61,
-        B2I = 0x62,
 
         SETEQI = 0x70,
         SETNEI = 0x71,
@@ -92,6 +91,7 @@ namespace XiVM
     {
         public InstructionType OpCode { set; get; }
         public byte[] Params { set; get; }
+
         public bool IsBranch => IsRet ||
             OpCode == InstructionType.JMP ||
             OpCode == InstructionType.JCOND;
@@ -111,15 +111,15 @@ namespace XiVM
                 InstructionType.PUSHI => $"PUSHI {BitConverter.ToInt32(Params)}",
                 InstructionType.PUSHD => $"PUSHD {BitConverter.ToDouble(Params)}",
                 InstructionType.PUSHA => $"PUSHA {BitConverter.ToUInt32(Params)}",
-                InstructionType.POP => "POP",
-                InstructionType.POP4 => "POP4",
-                InstructionType.POP8 => "POP8",
+                InstructionType.POPB => "POPB",
+                InstructionType.POPI => "POPI",
+                InstructionType.POPD => "POPD",
+                InstructionType.POPA => "POPA",
                 InstructionType.DUP => "DUP",
-                InstructionType.DUP4 => "DUP4",
-                InstructionType.DUP8 => "DUP8",
+                InstructionType.DUP2 => "DUP2",
                 InstructionType.LOCALA => $"LOCALA {BitConverter.ToInt32(Params)}",
                 InstructionType.GLOBALA => $"GLOBALA {BitConverter.ToInt32(Params)}",
-                InstructionType.CONSTA => $"CONSTA {BitConverter.ToInt32(Params)}",
+                InstructionType.CONSTA => $"CONSTA {BitConverter.ToUInt32(Params)}",
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",
                 InstructionType.LOADD => "LOADD",
@@ -148,7 +148,6 @@ namespace XiVM
                 InstructionType.SETGEI => "SETGEI",
                 InstructionType.I2D => "I2D",
                 InstructionType.D2I => "D2I",
-                InstructionType.B2I => "B2I",
                 InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
                 InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
                 InstructionType.NEW => throw new NotImplementedException(),

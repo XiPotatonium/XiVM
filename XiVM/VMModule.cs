@@ -38,8 +38,11 @@ namespace XiVM
     /// <summary>
     /// BinaryModule加载之后，已经进行了Link
     /// </summary>
-    internal class Module
+    internal class VMModule
     {
+        /// <summary>
+        /// TODO 改成HeapData?好了
+        /// </summary>
         public LinkedListNode<HeapData>[] StringLiterals { set; get; }
         public BinaryClassType[] Classes { set; get; }
         public BinaryFunction[] Functions { set; get; }

@@ -9,8 +9,8 @@ namespace XiVM
     [Serializable]
     internal class BinaryFunction
     {
-        public int LocalSize { set; get; } = 0;
-        public int ParamSize { set; get; } = 0;
+        public byte[] LocalTypes { set; get; }
+        public byte[] ParamTypes { set; get; }
         public BinaryInstruction[] Instructions { set; get; }
     }
 
@@ -90,25 +90,8 @@ namespace XiVM
         {
             BinaryFunction binaryFunction = new BinaryFunction();
 
-            // 计算参数大小
-            if (Params.Count == 0)
-            {
-                binaryFunction.ParamSize = 0;
-            }
-            else
-            {
-                binaryFunction.ParamSize = -Params[^1].Offset;
-            }
-
-            // 计算局部变量空间大小
-            if (Locals.Count == 0)
-            {
-                binaryFunction.LocalSize = 0;
-            }
-            else
-            {
-                binaryFunction.LocalSize = Locals[^1].Offset + Locals[^1].Type.Size;
-            }
+            binaryFunction.ParamTypes = Params.Select(v => v.Type.ToBinary()).ToArray();
+            binaryFunction.LocalTypes = Locals.Select(v => v.Type.ToBinary()).ToArray();
 
             // 检查每个BB最后是不是br
             foreach (BasicBlock basicBlock in BasicBlocks)

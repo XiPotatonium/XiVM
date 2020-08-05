@@ -6,10 +6,9 @@
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiLang以及XiVM中对类的支持
 * XiVM的浮点数运算
-* XiVM中对于类型的处理（主要是Size）还比较混乱
 * 系统库函数，以及如何很好地实现多模块以及import
-* 为了支持函数引用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
-* 堆栈如何支持GC（确定是不是Address）
+* 为了支持动态绑定的函数调用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
+* RET(T)指令取消，只留下RET，VM可以通过函数类型自行判断返回类型（这样可以支持多返回值）
 
 ## XiLang
 
@@ -29,7 +28,6 @@
 * 运算符
     * 单目运算符
     * 双目运算符
-    * 三目运算符
 * 注释：C++风格注释
 * 字面量
     * 整数：十进制，十六进制
@@ -40,9 +38,6 @@
 * 循环
     * while，body必须被花括号包围，或者是空
     * for：可以在init中定义变量，body必须被花括号包围，或者是空
-* 类
-    * 成员变量
-    * 成员函数
 
 ### Grammar
 
@@ -133,10 +128,15 @@ ConstExpr
 * Stack Based Runtime Environment without Local Procedure
 * 支持生成.xibc字节码和.xir文本中间码
 
+### 堆栈
+
+堆栈本质上是一个变长Slot数组。Slot包含一个数据块（sizeof(int))，包含一个Tag，表明这个slot包含什么数据。
+目前仅表示是不是地址，因为要支持未来可能支持的GC。
+
 ### 指令集
 
-以下说明中的T为类型，可以是B(byte 1字节), I(int 4字节), D(double 8字节), A(Address 4字节)；
-N为大小（单位为字节）。
+以下说明中的T为类型，可以是B(byte 1字节，1Slot), I(int 4字节，1Slot), D(double 8字节，2Slots), A(addr 4字节，1Slot)；
+N为大小（单位为Slot）。注意计算栈中的byte, int, double, addr均指对应类型的slot
 
 单个指令的使用说明格式: 
 ```[指令] ([参数(参数的C#类型)] ...) [指令编码]```
@@ -163,11 +163,12 @@ N为大小（单位为字节）。
 
 #### POP(N)
 
-* POP 0X08
-* POP4 0X09
-* POP8 0X0A
+* POPB 0X08
+* POPI 0X09
+* POPD 0X0A
+* POPA 0X0B
 
-将计算栈中大小为N的空间Pop出去，POP的N就是1
+将栈中指定类型的数据Pop出去
 
 ```
 ... | value(N) |
@@ -177,8 +178,7 @@ N为大小（单位为字节）。
 #### DUP(N)
 
 * DUP 0X10
-* DUP4 0X11
-* DUP8 0X12
+* DUP2 0X11
 
 将计算栈中大小为N的空间复制并Push进计算栈，DUP的N就是1
 
@@ -191,35 +191,35 @@ N为大小（单位为字节）。
 
 * LOCALA offset(int) 0x18
 
-获取当前栈帧的某个栈地址并Push进计算栈。offset的为目标地址与BP的距离
+获取当前栈帧的某个栈地址并Push进计算栈。offset的为目标地址与FP的距离
 
 ```
 ... |
-... | addr(uint) |
+... | res(addr) |
 ```
 
 #### GLOBALA
 
 * GLOBALA offset(int) 0x19
 
-获取全局栈帧的某个栈地址并Push进计算栈。offset的为目标地址与全局栈帧BP（就是栈开头）的距离。
+获取全局栈帧的某个栈地址并Push进计算栈。offset的为目标地址与全局栈帧FP（就是栈开头）的距离。
 因为只有LocalA和GlobalA两个取栈地址的指令，XiVM实际上不支持local procedure
 
 ```
 ... |
-... | addr(uint) |
+... | res(addr) |
 ```
 
 #### CONSTA
 
-* GLOBALA index(int) 0x1A
+* CONSTA index(uint) 0x1A
 
-获取当前Module的下标为index的字符串常量的地址，index必须是正数。
+获取当前Module的下标为index的字符串常量的地址.
 字符串常量参考[字符串常量池](#字符串常量池)
 
 ```
 ... |
-... | addr(uint) |
+... | res(addr) |
 ```
 
 #### LOADT
@@ -229,10 +229,10 @@ N为大小（单位为字节）。
 * LOADD 0X22
 * LOADA 0X23
 
-load会从栈顶的地址位置加载一个T类型的值，Push进计算栈
+load会从src指向的位置加载一个T类型的值，Push进计算栈
 
 ```
-... | addr(uint) |
+... | src(addr) |
 ... | value(T) |
 ```
 
@@ -243,10 +243,10 @@ load会从栈顶的地址位置加载一个T类型的值，Push进计算栈
 * STORED 0X2A
 * STOREA 0X2B
 
-store会从栈顶的地址位置加载uint类型的addr，将T类型的value存储到这个地址
+store会将T类型的value存储到dest这个地址
 
 ```
-... | value(T) | addr(uint) |
+... | value(T) | dest(addr) |
 ... |
 ```
 
@@ -320,7 +320,6 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 
 * I2D 0X60
 * D2I 0X61
-* B2I 0X62
 
 类型转换
 
@@ -396,7 +395,7 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 通过地址，获取[内建字符串类型](#内建字符串)，取其中的数据转化为ASCII格式字符串输出到控制台
 
 ```
-... | addr(uint) |
+... | src(addr) |
 ... |
 ```
 
@@ -410,23 +409,23 @@ store会从栈顶的地址位置加载uint类型的addr，将T类型的value存�
 ```
 ... | ... | argN | ... | arg0 |
     ^                         ^
-    BP                        SP
+    FP                        SP
 ```
 
 #### 发起调用
 
-Call执行之后，会创建函数栈帧，修改BP和SP。
+Call执行之后，会创建函数栈帧，局部变量空间会被创建，修改FP和SP。
 
 ```
 ... | argN | ... | arg0 | MiscData | ...Local Vars... |
                         ^                             ^
-                        BP                            SP
+                        FP                            SP
 ```
 
-栈帧的Misc数据用于Ret时恢复堆栈。包括如下内容，OldBP是Call之前的BP，Caller的Index和OldIP用于找到Call指令的下一条指令
+栈帧的Misc数据用于Ret时恢复堆栈。包括如下内容，OldBP是Call之前的FP，Caller的Index和OldIP用于找到Call指令的下一条指令
 
 ```
-| OldBP(int) | CallerIndex(int) | OldIP |
+| OldBP(int) | CallerIndex(int) | OldIP(int) |
 ```
 
 #### 函数运算
@@ -436,7 +435,7 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
 ```
 ... | argN | ... | arg0 | MiscData | ...Local Vars... | tmp0 | ... |
                         ^                                          ^
-                        BP                                         SP
+                        FP                                         SP
 ```
 
 #### 返回值
@@ -446,7 +445,7 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
 ```
 ... | argN | ... | arg0 | MiscData | ...Local Vars... | value(RETT) |
                         ^                                           ^
-                        BP                                          SP
+                        FP                                          SP
 ```
 
 #### 函数返回
@@ -459,12 +458,25 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
 ```
 ... | ... | value(RETT) |
     ^                   ^
-    BP                  SP
+    FP                  SP
 ```
 
-### 内建类型
+
+### 堆空间
+
+堆空间整个虚拟机全局唯一
 
 堆上的每一段堆数据都以MiscData开头，大小为sizeof(int)，用来确定数据是哪一个类
+
+不同于堆栈，堆空间的基本单位是byte而不是slot
+
+#### 字符串常量池
+
+字符串常量池在堆空间中，加载模块时会将模块中的常量放到全局常量池中。因此同一个string只会有一份常量，哪怕他们来自不同Module。
+加载模块时会动态链接，因此VM在执行CONSTA时依然能够从Index直到字符串常量的堆地址。
+字符串常量会被创建为[内建的字符串类型](#内建字符串)，其行为/结构和普通堆数据完全相同，除了不能被GC（设想，GC还未实现）。
+
+### 内建类型
 
 #### 数组
 
@@ -479,14 +491,3 @@ Call执行之后，会创建函数栈帧，修改BP和SP。
 #### 内建字符串
 
 堆数据格式和Byte数组相同。字符串字面量也会生成字符串堆数据
-
-
-### 堆空间
-
-堆空间整个虚拟机全局唯一
-
-#### 字符串常量池
-
-字符串常量池在堆空间中，加载模块时会将模块中的常量放到全局常量池中。因此同一个string只会有一份常量，哪怕他们来自不同Module。
-加载模块时会动态链接，因此VM在执行CONSTA时依然能够从Index直到字符串常量的堆地址。
-字符串常量会被创建为[内建的字符串类型](#内建字符串)，其行为/结构和普通堆数据完全相同，除了不能被GC（设想，GC还未实现）。

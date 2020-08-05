@@ -111,7 +111,7 @@ namespace XiVM.Xir
             int offset = 0;
             foreach (VariableType paramType in function.Type.Params)
             {
-                offset -= paramType.Size;
+                offset -= paramType.SlotSize;
                 function.Params.Add(new Variable(paramType, offset));
             }
 
@@ -157,7 +157,7 @@ namespace XiVM.Xir
             }
             else
             {
-                xirVariable = new Variable(type, CurrentFunction.Locals[^1].Offset + CurrentFunction.Locals[^1].Type.Size);
+                xirVariable = new Variable(type, CurrentFunction.Locals[^1].Offset + CurrentFunction.Locals[^1].Type.SlotSize);
             }
             CurrentFunction.Locals.Add(xirVariable);
 

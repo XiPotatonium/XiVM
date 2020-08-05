@@ -10,7 +10,7 @@
             Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.JMP,
-                Params = new byte[VariableType.IntSize]
+                Params = new byte[sizeof(int)]
             };
             CurrentInstructions.AddLast(inst);
             CurrentBasicBlock.JmpTargets.Add(target);
@@ -21,7 +21,7 @@
             Instruction inst = new Instruction()
             {
                 OpCode = InstructionType.JCOND,
-                Params = new byte[VariableType.IntSize * 2]
+                Params = new byte[sizeof(int) * 2]
             };
             CurrentInstructions.AddLast(inst);
             CurrentBasicBlock.JmpTargets.Add(target1);

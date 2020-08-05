@@ -456,7 +456,7 @@ namespace XiLang.AbstractSyntaxTree
                             {
                                 idx = Constructor.StringLiterals.Add(Value.StringValue);
                             }
-                            Constructor.AddConstA(idx);
+                            Constructor.AddConstA((uint)idx);
                             return Constructor.StringType;
                         case ValueType.BOOL:
                             Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
@@ -585,7 +585,7 @@ namespace XiLang.AbstractSyntaxTree
                             throw new NotImplementedException();
                         case OpType.ASSIGN:
                             valueType = Expr2.CodeGen();
-                            Constructor.AddDupT(valueType);   // Assign的返回值
+                            Constructor.AddDup(valueType);   // Assign的返回值
                             Expr1.LeftValueCodeGen();
                             Constructor.AddStoreT(valueType);
                             return valueType;

@@ -134,15 +134,6 @@
             return VariableType.IntType;
         }
 
-        public VariableType AddB2I()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.B2I
-            });
-            return VariableType.IntType;
-        }
-
 
         #endregion
 
