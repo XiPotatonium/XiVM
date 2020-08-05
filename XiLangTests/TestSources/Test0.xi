@@ -1,10 +1,10 @@
-﻿class Demo {
-	static string arr;
-
-	static int foo(int a, int b) {
-		return a + b;
-	}
-}
+﻿//class Demo {
+//	static string arr;
+//
+//	static int foo(int a, int b) {
+//		return a + b;
+//	}
+//}
 
 int a = 9;
 
