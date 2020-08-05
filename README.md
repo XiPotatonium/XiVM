@@ -349,13 +349,13 @@ store会将T类型的value存储到dest这个地址
 
 * JMP offset(int) 0X80
 
-栈不改变。IP+=offset
+栈不改变。IP += sizeof(int) + offset
 
 #### JCOND
 
 * JCOND offset(int) offset1(int) 0X81
 
-如果cond为0，IP+=offset1，否则，IP+=offset
+如果cond为0，IP += 2 * sizeof(int) + offset1，否则，IP += 2 * sizeof(int) + offset
 
 ```
 ... | cond(byte) |

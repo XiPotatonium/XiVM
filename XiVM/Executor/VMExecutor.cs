@@ -37,22 +37,25 @@ namespace XiVM.Executor
 
             while (!Stack.Empty)
             {
-                BinaryInstruction inst = CurrentFunction.Instructions[IP++];
-                switch ((InstructionType)inst.OpCode)
+                byte opCode = CurrentFunction.Instructions[IP++];
+                switch ((InstructionType)opCode)
                 {
                     case InstructionType.NOP:
                         break;
                     case InstructionType.PUSHB:
-                        Stack.PushByte(inst.Params[0]);
+                        Stack.PushByte(CurrentFunction.Instructions[IP++]);
                         break;
                     case InstructionType.PUSHI:
-                        Stack.PushInt(BitConverter.ToInt32(inst.Params));
+                        Stack.PushInt(BitConverter.ToInt32(CurrentFunction.Instructions, IP));
+                        IP += sizeof(int);
                         break;
                     case InstructionType.PUSHD:
-                        Stack.PushDouble(BitConverter.ToDouble(inst.Params));
+                        Stack.PushDouble(BitConverter.ToDouble(CurrentFunction.Instructions, IP));
+                        IP += sizeof(double);
                         break;
                     case InstructionType.PUSHA:
-                        Stack.PushAddress(BitConverter.ToUInt32(inst.Params));
+                        Stack.PushAddress(BitConverter.ToUInt32(CurrentFunction.Instructions, IP));
+                        IP += sizeof(uint);
                         break;
                     case InstructionType.POPB:
                         Stack.PopByte();
@@ -73,14 +76,17 @@ namespace XiVM.Executor
                         Stack.DupN(2);
                         break;
                     case InstructionType.LOCALA:
-                        Stack.PushAddress((uint)(Stack.FP + BitConverter.ToInt32(inst.Params)));
+                        Stack.PushAddress((uint)(Stack.FP + BitConverter.ToInt32(CurrentFunction.Instructions, IP)));
+                        IP += sizeof(int);
                         break;
                     case InstructionType.GLOBALA:
-                        Stack.PushAddress((uint)BitConverter.ToInt32(inst.Params));
+                        Stack.PushAddress((uint)BitConverter.ToInt32(CurrentFunction.Instructions, IP));
+                        IP += sizeof(int);
                         break;
                     case InstructionType.CONSTA:
                         Stack.PushAddress(
-                            MemMap.MapTo(StringConstants[BitConverter.ToUInt32(inst.Params)].Value.Offset, MemTag.HEAP));
+                            MemMap.MapTo(StringConstants[BitConverter.ToUInt32(CurrentFunction.Instructions, IP)].Value.Offset, MemTag.HEAP));
+                        IP += sizeof(uint);
                         break;
                     case InstructionType.LOADB:
                         addr = Stack.PopAddress();
@@ -213,7 +219,7 @@ namespace XiVM.Executor
                     case InstructionType.SETGEI:
                         rhsi = Stack.PopInt();
                         lhsi = Stack.PopInt();
-                        Stack.PushByte((InstructionType)inst.OpCode switch
+                        Stack.PushByte((InstructionType)opCode switch
                         {
                             InstructionType.SETEQI => lhsi == rhsi ? (byte)1 : (byte)0,
                             InstructionType.SETNEI => lhsi != rhsi ? (byte)1 : (byte)0,
@@ -225,14 +231,25 @@ namespace XiVM.Executor
                         });
                         break;
                     case InstructionType.JMP:
-                        IP += BitConverter.ToInt32(inst.Params);
+                        IP += BitConverter.ToInt32(CurrentFunction.Instructions, IP);
+                        IP += sizeof(int);          // JMP的参数
                         break;
                     case InstructionType.JCOND:
                         bValue = Stack.PopByte();
-                        IP += bValue == 0 ? BitConverter.ToInt32(inst.Params, sizeof(int)) : BitConverter.ToInt32(inst.Params);
+                        if (bValue != 0)
+                        {   // if
+                            IP += BitConverter.ToInt32(CurrentFunction.Instructions, IP);
+                        }
+                        else
+                        {   // else
+                            IP += BitConverter.ToInt32(CurrentFunction.Instructions, IP + sizeof(int));
+                        }
+                        IP += 2 * sizeof(int);      // JCOND的两个参数
                         break;
                     case InstructionType.CALL:
-                        addr = BitConverter.ToUInt32(inst.Params);
+                        addr = BitConverter.ToUInt32(CurrentFunction.Instructions, IP);
+                        IP += sizeof(uint);
+
                         if (addr == 0)
                         {
                             throw new XiVMError("Call of NULL function is not allowed");
@@ -289,7 +306,7 @@ namespace XiVM.Executor
                             case MemTag.HEAP:
                                 LinkedListNode<HeapData> data = Heap.GetHeapData(addr, out index);
                                 // TODO 检查MiscData是不是StringType
-                                Console.Write(Encoding.ASCII.GetString(data.Value.Data, 
+                                Console.Write(Encoding.ASCII.GetString(data.Value.Data,
                                     index + HeapData.MiscDataSize + sizeof(int),
                                     BitConverter.ToInt32(new Span<byte>(data.Value.Data, index + HeapData.MiscDataSize, sizeof(int)))));
                                 break;

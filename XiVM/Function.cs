@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using XiVM.Errors;
 using XiVM.Xir;
@@ -11,7 +12,8 @@ namespace XiVM
     {
         public byte[] LocalTypes { set; get; }
         public byte[] ParamTypes { set; get; }
-        public BinaryInstruction[] Instructions { set; get; }
+
+        public byte[] Instructions { set; get; }
     }
 
     public class FunctionType : VariableType
@@ -112,7 +114,16 @@ namespace XiVM
             {
                 // 计算每个BasicBlock在函数中的offset
                 bb.Offset = offset;
-                offset += bb.Instructions.Count;
+                bb.InstLength = 0;
+                foreach (var inst in bb.Instructions)
+                {
+                    bb.InstLength += 1;
+                    if (inst.Params != null)
+                    {
+                        bb.InstLength += inst.Params.Length;
+                    }
+                }
+                offset += bb.InstLength;
             }
             foreach (BasicBlock bb in BasicBlocks)
             {
@@ -120,34 +131,28 @@ namespace XiVM
                 {
                     // offset是目的地的地址减Next IP
                     BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params,
-                        bb.JmpTargets[0].Offset - (bb.Offset + bb.Instructions.Count));
+                        bb.JmpTargets[0].Offset - (bb.Offset + bb.InstLength));
                 }
                 else if (bb.Instructions.Last.Value.OpCode == InstructionType.JCOND)
                 {
                     // offset是目的地的地址减Next IP
-                    BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params,
-                        bb.JmpTargets[0].Offset - (bb.Offset + bb.Instructions.Count));
+                    BitConverter.TryWriteBytes(new Span<byte>(bb.Instructions.Last.Value.Params, 0, sizeof(int)),
+                        bb.JmpTargets[0].Offset - (bb.Offset + bb.InstLength));
                     BitConverter.TryWriteBytes(new Span<byte>(bb.Instructions.Last.Value.Params, sizeof(int), sizeof(int)),
-                        bb.JmpTargets[1].Offset - (bb.Offset + bb.Instructions.Count));
+                        bb.JmpTargets[1].Offset - (bb.Offset + bb.InstLength));
                 }
             }
 
             // 拼接每个BB的指令生成最终指令
-            int instructionCount = BasicBlocks.Sum(b => b.Instructions.Count);
-            binaryFunction.Instructions = new BinaryInstruction[instructionCount];
-            int i = 0;
-            foreach (BasicBlock bb in BasicBlocks)
+            Stream instStream = new MemoryStream();
+            foreach (Instruction inst in BasicBlocks.SelectMany(b => b.Instructions))
             {
-                foreach (Instruction inst in bb.Instructions)
-                {
-                    binaryFunction.Instructions[i] = new BinaryInstruction()
-                    {
-                        OpCode = (byte)inst.OpCode,
-                        Params = inst.Params
-                    };
-                    ++i;
-                }
+                instStream.WriteByte((byte)inst.OpCode);
+                instStream.Write(inst.Params);
             }
+            binaryFunction.Instructions = new byte[instStream.Length];
+            instStream.Seek(0, SeekOrigin.Begin);
+            instStream.Read(binaryFunction.Instructions);
 
             return binaryFunction;
         }
