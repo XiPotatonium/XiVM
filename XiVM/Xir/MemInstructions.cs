@@ -5,29 +5,34 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddLocalA(int offset)
+        public void AddGetStaticFieldAddress(ClassField field)
+        {
+            if (!field.AccessFlag.IsStatic)
+            {
+                throw new XiVMError("AddGetStaticFieldAddress only accept static field");
+            }
+
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.STATIC,
+                Params = BitConverter.GetBytes(field.ConstantPoolIndex)
+            });
+        }
+
+        public void AddLocal(int offset)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.LOCALA,
+                OpCode = InstructionType.LOCAL,
                 Params = BitConverter.GetBytes(offset)
             });
         }
 
-        public void AddGlobalA(int offset)
+        public void AddConst(int index)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.GLOBALA,
-                Params = BitConverter.GetBytes(offset)
-            });
-        }
-
-        public void AddConstA(uint index)
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.CONSTA,
+                OpCode = InstructionType.CONST,
                 Params = BitConverter.GetBytes(index)
             });
         }

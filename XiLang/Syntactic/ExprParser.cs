@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices.WindowsRuntime;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Lexical;
+using XiVM;
 
 namespace XiLang.Syntactic
 {
@@ -9,29 +11,15 @@ namespace XiLang.Syntactic
     {
         /// <summary>
         /// TypeExpr
-        ///     ANY_TYPE_MODIFIER* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+        ///     (ANY_TYPE | ID) (LBRACKET RBRACKET)?
         /// </summary>
         /// <returns></returns>
         private TypeExpr ParseTypeExpr()
         {
             TypeExpr ret = new TypeExpr();
-            Token typeToken;
 
-            while (!Check(LexicalRules.TypeTokens) && !Check(TokenType.ID))
-            {
-                // 解析Attribute
-                if (Check(TokenType.STATIC))
-                {
-                    typeToken = Consume(TokenType.STATIC);
-                    if ((ret.Modifier & (uint)TypeModifier.STATIC) != 0)
-                    {
-                        throw new SyntaxError("Duplicated static modifier", typeToken);
-                    }
-                    ret.Modifier |= (uint)TypeModifier.STATIC;
-                }
-            }
+            Token typeToken = Consume();
 
-            typeToken = Consume();
             switch (typeToken.Type)
             {
                 case TokenType.BOOL:
@@ -461,10 +449,10 @@ namespace XiLang.Syntactic
         ///     ID
         /// </summary>
         /// <returns></returns>
-        private Expr ParseId()
+        private IdExpr ParseId()
         {
             Token t = Consume(TokenType.ID);
-            return Expr.MakeId(t.Literal, t.Line);
+            return IdExpr.MakeId(t.Literal, t.Line);
         }
 
         /// <summary>
@@ -472,7 +460,7 @@ namespace XiLang.Syntactic
         ///     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL | CHAR_LITERAL
         /// </summary>
         /// <returns></returns>
-        private Expr ParseConstExpr()
+        private ConstExpr ParseConstExpr()
         {
             Token t = Consume(TokenType.TRUE, TokenType.FALSE, TokenType.NULL,
                             TokenType.DEC_LITERAL, TokenType.HEX_LITERAL, TokenType.FLOAT_LITERAL,
@@ -480,21 +468,21 @@ namespace XiLang.Syntactic
             switch (t.Type)
             {
                 case TokenType.NULL:
-                    return Expr.MakeNull(t.Line);
+                    return ConstExpr.MakeNull(t.Line);
                 case TokenType.TRUE:
-                    return Expr.MakeBool(true, t.Line);
+                    return ConstExpr.MakeBool(true, t.Line);
                 case TokenType.FALSE:
-                    return Expr.MakeBool(false, t.Line);
+                    return ConstExpr.MakeBool(false, t.Line);
                 case TokenType.DEC_LITERAL:
-                    return Expr.MakeInt(t.Literal, 10, t.Line);
+                    return ConstExpr.MakeInt(t.Literal, 10, t.Line);
                 case TokenType.HEX_LITERAL:
-                    return Expr.MakeInt(t.Literal, 16, t.Line);
+                    return ConstExpr.MakeInt(t.Literal, 16, t.Line);
                 case TokenType.FLOAT_LITERAL:
-                    return Expr.MakeFloat(t.Literal, t.Line);
+                    return ConstExpr.MakeFloat(t.Literal, t.Line);
                 case TokenType.STR_LITERAL:
-                    return Expr.MakeString(t.Literal, t.Line);
+                    return ConstExpr.MakeString(t.Literal, t.Line);
                 case TokenType.CHAR_LITERAL:
-                    return Expr.MakeChar(t.Literal, t.Line);
+                    return ConstExpr.MakeChar(t.Literal, t.Line);
                 default:
                     break;
             }

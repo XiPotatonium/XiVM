@@ -4,7 +4,7 @@ namespace XiVM.Xir
 {
     public class BasicBlock
     {
-        public Function Function { get; }
+        public Method Function { get; }
 
         /// <summary>
         /// BasicBlock的指令在函数所有指令中的offset
@@ -22,7 +22,7 @@ namespace XiVM.Xir
         public LinkedList<Instruction> Instructions { get; } = new LinkedList<Instruction>();
         public List<BasicBlock> JmpTargets { get; } = new List<BasicBlock>();
 
-        internal BasicBlock(Function function)
+        internal BasicBlock(Method function)
         {
             Function = function;
         }

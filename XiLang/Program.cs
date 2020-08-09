@@ -2,16 +2,21 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Pass;
 using XiLang.Syntactic;
+using XiVM;
 using XiVM.Xir;
 
 namespace XiLang
 {
     public class Program
     {
+        public static List<BinaryModule> ImportedModules { private set; get; } = new List<BinaryModule>();
         public static ModuleConstructor ModuleConstructor { private set; get; }
+        public static ClassType StringType { private set; get; }
 
         public static void Main(string[] args)
         {
@@ -60,22 +65,50 @@ namespace XiLang
 
             ASTPassManager astPasses = new ASTPassManager(root);
 
-            // 3，常量表达式直接估值
-            astPasses.Run(new ConstExprPass());
-
-            // 4，打印json文件
+            // 3，打印json文件
             if (argumentParser.GetValue("verbose").IsSet)
             {
                 string json = (string)astPasses.Run(new JsonPass());
                 File.WriteAllText(fileName + ".ast.json", json);
             }
 
-            // 5，编译生成ir与字节码
+            // 4，编译生成ir与字节码，编译阶段会完成常量表达式的估值
             ModuleConstructor = new ModuleConstructor(moduleName);
             astPasses.Run(CodeGenPass.Singleton);
 
             // 输出生成字节码
             ModuleConstructor.Dump(dirName, argumentParser.GetValue("verbose").IsSet);
+        }
+
+        /// <summary>
+        /// 查找方法
+        /// </summary>
+        /// <param name="moduleName">模块名</param>
+        /// <param name="className">类名</param>
+        /// <param name="name">函数名</param>
+        /// <param name="methodTypes">返回潜在函数列表</param>
+        /// <returns></returns>
+        public static bool TryGetMethod(string moduleName, string className, string name, out List<MethodType> methodTypes)
+        {
+            List<Method> methods;
+            methodTypes = null;
+            if (moduleName == ModuleConstructor.Module.Name)
+            {
+                foreach (var classType in ModuleConstructor.Classes)
+                {
+                    if (classType.Name == className)
+                    {
+                        if (classType.Methods.TryGetValue(name, out methods))
+                        {
+                            methodTypes = methods.Select(m => m.Type).ToList();
+                            return true;
+                        }
+                        break;
+                    }
+                }
+                return false;
+            }
+            throw new NotImplementedException();
         }
     }
 }

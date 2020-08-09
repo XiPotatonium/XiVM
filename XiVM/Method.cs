@@ -2,35 +2,64 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using XiVM.Errors;
+using XiVM.Runtime;
 using XiVM.Xir;
 
 namespace XiVM
 {
     [Serializable]
-    internal class BinaryFunction
+    public class BinaryMethod
     {
-        public byte[] LocalTypes { set; get; }
-        public byte[] ParamTypes { set; get; }
+        public int ConstantPoolIndex { set; get; }
+        public int LocalDescriptorIndex { set; get; }
 
         public byte[] Instructions { set; get; }
     }
 
-    public class FunctionType : VariableType
+    internal class VMMethod
     {
+        public VMClass Parent { set; get; }
+        /// <summary>
+        /// 描述符在常量池中的地址
+        /// </summary>
+        public uint DescriptorAddress { set; get; }
+        public uint LocalDescriptorAddress { set; get; }
+        /// <summary>
+        /// VMMethod在MethodArea的MethodIndexTable中的Index
+        /// </summary>
+        public int MethodIndex { set; get; }
+        public LinkedListNode<HeapData> CodeBlock { set; get; }
+    }
+
+    public class MethodType : VariableType, IConstantPoolValue
+    {
+        public static string GetDescriptor(VariableType retType, List<VariableType> ps)
+        {
+            StringBuilder stringBuilder = new StringBuilder("(");
+            foreach (var p in ps)
+            {
+                stringBuilder.Append(p.ToString());
+            }
+            stringBuilder.Append(")");
+            stringBuilder.Append(retType == null ? "V" : retType.ToString());
+            return stringBuilder.ToString();
+        }
+
         /// <summary>
         /// 如果为null表示返回void
         /// </summary>
         public VariableType ReturnType { set; get; }
         public List<VariableType> Params { set; get; }
-        public bool IsVarArg { set; get; }
+        public int ConstantPoolIndex { get; set; }
 
-        public FunctionType(VariableType retType, List<VariableType> ps, bool isVarArg = false)
+        internal MethodType(VariableType retType, List<VariableType> ps, int index)
             : base(VariableTypeTag.ADDRESS)
         {
             ReturnType = retType;
             Params = ps;
-            IsVarArg = isVarArg;
+            ConstantPoolIndex = index;
         }
 
         /// <summary>
@@ -40,7 +69,7 @@ namespace XiVM
         /// <returns></returns>
         public override bool Equivalent(VariableType b)
         {
-            if (b is FunctionType functionType)
+            if (b is MethodType functionType)
             {
                 if ((ReturnType == null && functionType.ReturnType == null) ||
                     ReturnType.Equivalent(functionType.ReturnType) && Params.Count == functionType.Params.Count)
@@ -64,36 +93,49 @@ namespace XiVM
                 return false;
             }
         }
+
+        /// <summary>
+        /// Descriptor形式和JVM相同
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return GetDescriptor(ReturnType, Params);
+        }
     }
 
-    public class Function
+    public class Method : IClassMember
     {
-        /// <summary>
-        /// 函数的在全局函数表中的Index
-        /// Call的时候就是call这个index
-        /// Global的Index是0，可以根据这个进行特殊处理
-        /// </summary>
-        public uint Index { private set; get; }
-        public string Name { set; get; }
-        public FunctionType Type { set; get; }
+        public MethodType Type { set; get; }
         public LinkedList<BasicBlock> BasicBlocks { get; } = new LinkedList<BasicBlock>();
 
         public List<Variable> Locals { get; } = new List<Variable>();
         public List<Variable> Params { get; } = new List<Variable>();
 
-        internal Function(uint index, string name, FunctionType type)
+        public ClassType Parent { get; set; }
+        public AccessFlag AccessFlag { get; set; }
+        public int ConstantPoolIndex { get; set; }
+        public int LocalDescriptorIndex { set; get; }
+        public string Name => Parent.Parent.StringPool.ElementList[
+            Parent.Parent.MemberPool.ElementList[(int)ConstantPoolIndex - 1].Name - 1];
+        public string Descriptor => Parent.Parent.StringPool.ElementList[
+            Parent.Parent.MemberPool.ElementList[(int)ConstantPoolIndex - 1].Type - 1];
+
+        internal Method(MethodType type, ClassType parent, AccessFlag flag, int index)
         {
-            Index = index;
-            Name = name;
+            Parent = parent;
+            AccessFlag = flag;
             Type = type;
+            ConstantPoolIndex = index;
         }
 
-        internal BinaryFunction ToBinary()
+        internal BinaryMethod ToBinary()
         {
-            BinaryFunction binaryFunction = new BinaryFunction();
-
-            binaryFunction.ParamTypes = Params.Select(v => v.Type.ToBinary()).ToArray();
-            binaryFunction.LocalTypes = Locals.Select(v => v.Type.ToBinary()).ToArray();
+            BinaryMethod binaryMethod = new BinaryMethod()
+            {
+                ConstantPoolIndex = ConstantPoolIndex,
+                LocalDescriptorIndex = LocalDescriptorIndex
+            };
 
             // 检查每个BB最后是不是br
             foreach (BasicBlock basicBlock in BasicBlocks)
@@ -103,7 +145,7 @@ namespace XiVM
                     if ((inst.IsBranch && inst != basicBlock.Instructions.Last.Value) ||
                         (!inst.IsBranch && inst == basicBlock.Instructions.Last.Value))
                     {
-                        throw new XiVMError($"Basic Block of function {Name} is not ended with br");
+                        throw new XiVMError($"Basic Block is not ended with br");
                     }
                 }
             }
@@ -150,11 +192,11 @@ namespace XiVM
                 instStream.WriteByte((byte)inst.OpCode);
                 instStream.Write(inst.Params);
             }
-            binaryFunction.Instructions = new byte[instStream.Length];
+            binaryMethod.Instructions = new byte[instStream.Length];
             instStream.Seek(0, SeekOrigin.Begin);
-            instStream.Read(binaryFunction.Instructions);
+            instStream.Read(binaryMethod.Instructions);
 
-            return binaryFunction;
+            return binaryMethod;
         }
     }
 }

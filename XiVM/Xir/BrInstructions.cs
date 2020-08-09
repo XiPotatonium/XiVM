@@ -40,38 +40,6 @@
             });
         }
 
-        public void AddRetB()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.RETB
-            });
-        }
-
-        public void AddRetI()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.RETI
-            });
-        }
-
-        public void AddRetD()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.RETD
-            });
-        }
-
-        public void AddRetA()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.RETA
-            });
-        }
-
         #endregion
 
 

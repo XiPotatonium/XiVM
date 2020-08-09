@@ -1,18 +1,18 @@
 ﻿using System;
 using XiVM.Errors;
 
-namespace XiVM.Executor
+namespace XiVM.Runtime
 {
     internal class Stack
     {
         /// <summary>
         /// 最大1M个slot
         /// </summary>
-        public static readonly int MaxStackSize = 0x100000;
+        public static readonly int MaxSize = 0x100000;
         /// <summary>
         /// 最小1K个slot
         /// </summary>
-        public static readonly int MinStackSize = 0x400;
+        public static readonly int MinSize = 0x400;
         /// <summary>
         /// 函数栈中用于储存调用返回信息的MiscData是FP后的3个Slot
         /// </summary>
@@ -34,7 +34,7 @@ namespace XiVM.Executor
 
         public Stack()
         {
-            Capacity = MinStackSize;
+            Capacity = MinSize;
             Slots = new Slot[Capacity];
             FP = 0;
             SP = 0;
@@ -89,7 +89,7 @@ namespace XiVM.Executor
                 {
                     Capacity *= 2;
                 }
-                if (Capacity > MaxStackSize)
+                if (Capacity > MaxSize)
                 {
                     throw new XiVMError("Stack overflow");
                 }
@@ -111,10 +111,10 @@ namespace XiVM.Executor
         /// </summary>
         private void Shrink()
         {
-            if (SP < 4 * Capacity && Capacity > MinStackSize)
+            if (SP < 4 * Capacity && Capacity > MinSize)
             {
                 Slot[] old = Slots;
-                while (SP < 4 * Capacity && Capacity > MinStackSize)
+                while (SP < 4 * Capacity && Capacity > MinSize)
                 {
                     Capacity /= 2;
                 }
@@ -155,7 +155,7 @@ namespace XiVM.Executor
         public byte PopByte()
         {
             byte ret = TopByte;
-            PopN(MemMap.ByteSize);
+            PopN(MemoryMap.ByteSize);
             return ret;
         }
 
@@ -168,7 +168,7 @@ namespace XiVM.Executor
         public int PopInt()
         {
             int ret = TopInt;
-            PopN(MemMap.IntSize);
+            PopN(MemoryMap.IntSize);
             return ret;
         }
 
@@ -181,7 +181,7 @@ namespace XiVM.Executor
         public double PopDouble()
         {
             double ret = TopDouble;
-            PopN(MemMap.DoubleSize);
+            PopN(MemoryMap.DoubleSize);
             return ret;
         }
 
@@ -195,7 +195,7 @@ namespace XiVM.Executor
         public uint PopAddress()
         {
             uint ret = TopUInt;
-            PopN(MemMap.AddressSize);
+            PopN(MemoryMap.AddressSize);
             return ret;
         }
 

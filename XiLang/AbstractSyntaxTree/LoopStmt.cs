@@ -78,11 +78,11 @@ namespace XiLang.AbstractSyntaxTree
 
         private void ForCodeGen()
         {
-            Constructor.SymbolTable.Push();
-            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock stepBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            CodeGenPass.LocalSymbolTable.PushFrame();
+            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock stepBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
 
             CodeGenPass.Breakable.Push(afterBB);
             CodeGenPass.Continuable.Push(stepBB);
@@ -124,13 +124,14 @@ namespace XiLang.AbstractSyntaxTree
             Constructor.CurrentBasicBlock = afterBB;
             CodeGenPass.Breakable.Pop();
             CodeGenPass.Continuable.Pop();
+            CodeGenPass.LocalSymbolTable.PopFrame();
         }
 
         private void WhileCodeGen()
         {
-            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
 
             CodeGenPass.Breakable.Push(afterBB);
             CodeGenPass.Continuable.Push(condBB);

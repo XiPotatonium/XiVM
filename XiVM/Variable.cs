@@ -1,5 +1,6 @@
-﻿using XiVM.Errors;
-using XiVM.Executor;
+﻿using System;
+using XiVM.Errors;
+using XiVM.Runtime;
 
 namespace XiVM
 {
@@ -40,15 +41,27 @@ namespace XiVM
         /// </summary>
         public int SlotSize => Tag switch
         {
-            VariableTypeTag.BYTE => MemMap.ByteSize,
-            VariableTypeTag.INT => MemMap.IntSize,
-            VariableTypeTag.DOUBLE => MemMap.DoubleSize,
-            VariableTypeTag.ADDRESS => MemMap.AddressSize,
-            _ => throw new XiVMError($"Unsupported Type {Tag}"),
+            VariableTypeTag.BYTE => MemoryMap.ByteSize,
+            VariableTypeTag.INT => MemoryMap.IntSize,
+            VariableTypeTag.DOUBLE => MemoryMap.DoubleSize,
+            VariableTypeTag.ADDRESS => MemoryMap.AddressSize,
+            _ => throw new NotImplementedException(),
         };
 
         /// <summary>
-        /// Equivalent的类型之间允许互相赋值
+        /// 获取这个类型占几个byte
+        /// </summary>
+        public int Size => Tag switch
+        {
+            VariableTypeTag.BYTE => sizeof(byte),
+            VariableTypeTag.INT => sizeof(int),
+            VariableTypeTag.DOUBLE => sizeof(double),
+            VariableTypeTag.ADDRESS => sizeof(uint),
+            _ => throw new NotImplementedException(),
+        };
+
+        /// <summary>
+        /// Equivalent的类型之间允许（无任何转换）赋值
         /// </summary>
         /// <param name="b"></param>
         /// <returns></returns>
@@ -61,13 +74,16 @@ namespace XiVM
             return Tag == b.Tag;
         }
 
-        /// <summary>
-        /// TODO ref等可以放在这里
-        /// </summary>
-        /// <returns></returns>
-        public byte ToBinary()
+        public override string ToString()
         {
-            return (byte)Tag;
+            return Tag switch
+            {
+                VariableTypeTag.BYTE => "B",
+                VariableTypeTag.INT => "I",
+                VariableTypeTag.DOUBLE => "D",
+                VariableTypeTag.ADDRESS => "L",
+                _ => throw new NotImplementedException(),
+            };
         }
     }
 
@@ -75,19 +91,29 @@ namespace XiVM
     {
         public VariableType Type { private set; get; }
         /// <summary>
-        /// 单位为slot
+        /// 如果这个Variable是栈上的，offset单位为slot
+        /// 如果是堆上的，offset单位为byte
         /// </summary>
-        public int Offset { private set; get; }
+        public int Offset { internal set; get; }
 
-        /// <summary>
-        /// offset是VM相关的，因此不允许外部项目创建Variable
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="offset"></param>
-        internal Variable(VariableType type, int offset)
+        internal Variable(VariableType type)
         {
             Type = type;
-            Offset = offset;
+        }
+    }
+
+    public class ClassField : Variable, IClassMember
+    {
+        public ClassType Parent { get; set; }
+        public AccessFlag AccessFlag { get; set; }
+        public int ConstantPoolIndex { get; set; }
+
+        internal ClassField(AccessFlag flag, ClassType parent, VariableType type, int index)
+            : base(type)
+        {
+            Parent = parent;
+            AccessFlag = flag;
+            ConstantPoolIndex = index;
         }
     }
 }

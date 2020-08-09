@@ -1,12 +1,13 @@
-﻿using XiVM;
+﻿using System;
+using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
     public class ClassStmt : Stmt
     {
         public string Id { set; get; }
-        public FuncStmt Functions { set; get; }
-        public VarStmt Variables { set; get; }
+        public FuncStmt Methods { set; get; }
+        public VarStmt Fields { set; get; }
 
         public ClassStmt(string id)
         {
@@ -15,7 +16,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public override AST[] Children()
         {
-            return new AST[] { Functions, Variables };
+            return new AST[] { Methods, Fields };
         }
 
         public override string ASTLabel()
@@ -25,7 +26,7 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,71 +1,45 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using XiVM.Executor;
-using XiVM.Xir.Symbol;
+using System.Text;
+using XiVM.ConstantTable;
+using XiVM.Runtime;
 
 namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        private string Name { set; get; }
+        public Module Module { private set; get; }
+        private string Name => Module.Name;
+        public List<ClassType> Classes => Module.Classes;
 
-        /// <summary>
-        /// 函数表
-        /// </summary>
-        private List<Function> Functions { get; } = new List<Function>();
-        public Function MainFunction { set; get; }
-        public Function CurrentFunction => CurrentBasicBlock?.Function;
         public BasicBlock CurrentBasicBlock { set; get; }
+        public Method CurrentMethod => CurrentBasicBlock?.Function;
+        public ClassType CurrentClass => CurrentMethod?.Parent;
         private LinkedList<Instruction> CurrentInstructions => CurrentBasicBlock?.Instructions;
-        public Dictionary<string, ClassType> Classes { private set; get; }
 
-        public ConstantTable<string> StringLiterals { get; } = new ConstantTable<string>();
-
-        /// <summary>
-        /// 符号栈
-        /// </summary>
-        public SymbolTable SymbolTable { get; } = new SymbolTable();
-
+        public ConstantTable<string> StringPool => Module.StringPool;
+        public ConstantTable<ClassConstantInfo> ClassPool => Module.ClassPool;
+        public ConstantTable<MemberConstantInfo> MemberPool => Module.MemberPool;
 
         public ModuleConstructor(string name)
         {
-            Name = name;
-
-            // 添加全局代码
-            Function global = new Function(0, null, null);
-            Functions.Add(global);
-            CurrentBasicBlock = AddBasicBlock(global);
-
-            ConsturctBuiltIn();
+            Module = new Module(name);
         }
 
         public void Dump(string dirName, bool dumpXir = true)
         {
-            CurrentBasicBlock = Functions[0].BasicBlocks.First.Value;
-            if (MainFunction != null)
-            {
-                AddPushA(0);    // 暂时给main函数传NULL
-                AddCall(MainFunction.Index);
-            }
-            AddRet();           // 为了满足bb的要求，全局也ret一下
-
             if (string.IsNullOrEmpty(dirName))
             {
                 dirName = ".";
             }
 
-            BinaryFormatter binaryFormatter = new BinaryFormatter();
-            BinaryModule binaryModule = new BinaryModule
-            {
-                Functions = Functions.Select(f => f.ToBinary()).ToArray(),
-                // TODO Class
-                StringLiterals = StringLiterals.ToArray()
-            };
+            BinaryModule binaryModule = Module.ToBinary();
 
             using (FileStream fs = new FileStream(Path.Combine(dirName, $"{Name}.xibc"), FileMode.Create))
             {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
                 binaryFormatter.Serialize(fs, binaryModule);
             }
 
@@ -73,69 +47,150 @@ namespace XiVM.Xir
             {
                 using (StreamWriter sw = new StreamWriter(Path.Combine(dirName, $"{Name}.xir")))
                 {
-                    sw.WriteLine($"# {Name}");
+                    sw.WriteLine($".Module {Name}");
 
-                    sw.WriteLine($"\n.global:");
-                    foreach (Instruction inst in Functions[0].BasicBlocks.First.Value.Instructions)
+
+                    sw.WriteLine($"\n.StringPool");
+                    for (int i = 0; i < binaryModule.StringPool.Length; ++i)
                     {
-                        sw.WriteLine(inst.ToString());
+                        sw.WriteLine($"#{i + 1}: {binaryModule.StringPool[i]}");
                     }
 
-                    for (int i = 1; i < Functions.Count; ++i)
+                    sw.WriteLine($"\n.ClassPool");
+                    for (int i = 0; i < binaryModule.ClassConstantInfos.Length; ++i)
                     {
-                        sw.WriteLine($"\n.f{i}:\t# {Functions[i].Name}");
-                        foreach (BasicBlock bb in Functions[i].BasicBlocks)
+                        sw.WriteLine($"#{i + 1}: {binaryModule.ClassConstantInfos[i].Module}" +
+                            $" {binaryModule.ClassConstantInfos[i].Name}");
+                    }
+
+                    sw.WriteLine($"\n.MemberPool");
+                    for (int i = 0; i < binaryModule.MemberConstantInfos.Length; ++i)
+                    {
+                        sw.WriteLine($"#{i + 1}: {binaryModule.MemberConstantInfos[i].Class}" +
+                            $" {binaryModule.MemberConstantInfos[i].Name} {binaryModule.MemberConstantInfos[i].Type}");
+                    }
+
+                    foreach (var classType in Classes)
+                    {
+                        sw.WriteLine($"\n.Class {classType.Name} {{");
+                        foreach (var methodGroup in classType.Methods)
                         {
-                            foreach (Instruction inst in bb.Instructions)
+                            foreach (var method in methodGroup.Value)
                             {
-                                sw.WriteLine(inst.ToString());
+                                sw.WriteLine($"\n\t.Method {method.Name} {method.Descriptor} {{");
+                                foreach (var bb in method.BasicBlocks)
+                                {
+                                    foreach (var inst in bb.Instructions)
+                                    {
+                                        sw.WriteLine($"\t\t{inst}");
+                                    }
+                                }
+                                sw.WriteLine($"\t}} // {method.Name} {method.Descriptor}");
                             }
                         }
+                        sw.WriteLine($"}} // {classType.Name}");
                     }
                 }
             }
         }
 
+        #region Class Construction
+
         /// <summary>
-        /// 函数会被加入符号表
+        /// 创建一个Class，会自动为静态构造函数添加一个bb
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="type"></param>
         /// <returns></returns>
-        public Function AddFunction(string name, FunctionType type)
+        public ClassType AddClassType(string name)
         {
-            Function function = new Function((uint)Functions.Count, name, type);
-            Functions.Add(function);
+            ClassType ret = new ClassType(Module, ClassPool.Add(
+                new ClassConstantInfo(Module.ModuleNameIndex, StringPool.TryAdd(name))));
+            Classes.Add(ret);
 
-            // 添加参数
-            int offset = 0;
-            foreach (VariableType paramType in function.Type.Params)
-            {
-                offset -= paramType.SlotSize;
-                function.Params.Add(new Variable(paramType, offset));
-            }
+            // 静态构造函数
+            ret.StaticInitializer = AddMethod(ret, "(sinit)",
+                AddMethodType(null, new List<VariableType>()),
+                AccessFlag.DefaultFlag);
+            AddBasicBlock(ret.StaticInitializer);
+            return ret;
+        }
 
-            // 加入符号表
-            SymbolTable.Add(name, new FunctionSymbol(name, function));
+        public MethodType AddMethodType(VariableType retType, List<VariableType> ps)
+        {
+            int index = StringPool.TryAdd(MethodType.GetDescriptor(retType, ps));
+            return new MethodType(retType, ps, index);
+        }
 
-            return function;
+        public ClassField AddClassField(ClassType classType, string name, VariableType type, AccessFlag flag)
+        {
+            int index = MemberPool.Add(new MemberConstantInfo(
+                classType.ConstantPoolIndex,
+                StringPool.TryAdd(name),
+                StringPool.TryAdd(type.ToString())));
+            return classType.AddField(name, type, flag, index);
+        }
+
+        public Method AddMethod(ClassType classType, string name, MethodType type, AccessFlag flag)
+        {
+            int index = MemberPool.Add(new MemberConstantInfo(
+                classType.ConstantPoolIndex,
+                StringPool.TryAdd(name),
+                StringPool.TryAdd(type.ToString())));
+            return classType.AddMethod(name, type, flag, index);
         }
 
         /// <summary>
-        /// 给函数的参数提供一个名字，同时也会将该参数加入符号表
+        /// 完成函数生成，会将局部变量信息保存
         /// </summary>
-        /// <param name="param"></param>
-        /// <param name="name"></param>
-        public void SetFunctionParamName(Variable param, string name)
+        /// <param name="method"></param>
+        public void CompleteMethodGeneration(Method method)
         {
-            VariableSymbol ret = new VariableSymbol(name, param);
-            SymbolTable.Add(name, ret);
+            if (method.Locals.Count == 0)
+            {
+                method.LocalDescriptorIndex = 0;
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            foreach (var v in method.Locals)
+            {
+                sb.Append(v.Type.ToString());
+            }
+            method.LocalDescriptorIndex = StringPool.TryAdd(sb.ToString());
         }
 
-        public BasicBlock AddBasicBlock(Function function)
+        /// <summary>
+        /// 在构造类的时候不需要手动调用这个函数
+        /// 是在方法代码生成过程中遇到（可能是其他module的类）时使用
+        /// </summary>
+        /// <param name="moduleName"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        public int AddClassConstantPoolInfo(string moduleName, string className)
         {
-            BasicBlock ret = new BasicBlock(function);
-            function.BasicBlocks.AddLast(ret);
+            return ClassPool.TryAdd(new ClassConstantInfo(StringPool.TryAdd(moduleName), StringPool.TryAdd(className)));
+        }
+
+        /// <summary>
+        /// 在构造成员的时候不需要手动调用这个函数
+        /// 是在方法代码生成过程中遇到（可能是其他module的member）时使用
+        /// </summary>
+        /// <param name="classIndex"></param>
+        /// <param name="name"></param>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        public int AddMemberConstantPoolInfo(int classIndex, string name, string descriptor)
+        {
+            return MemberPool.TryAdd(new MemberConstantInfo(classIndex, StringPool.TryAdd(name), StringPool.TryAdd(descriptor)));
+        }
+
+        #endregion
+
+        #region Method Construction
+
+        public BasicBlock AddBasicBlock(Method method)
+        {
+            BasicBlock ret = new BasicBlock(method);
+            method.BasicBlocks.AddLast(ret);
             return ret;
         }
 
@@ -147,31 +202,31 @@ namespace XiVM.Xir
             return ret;
         }
 
-        public Variable AddLocalVariable(string id, VariableType type)
+        public Variable AddLocalVariable(string name, VariableType type)
         {
             Variable xirVariable;
-            if (CurrentFunction.Locals.Count == 0)
+            if (CurrentMethod.Locals.Count == 0)
             {
                 // 第一个局部变量
-                xirVariable = new Variable(type, Stack.MiscDataSize);
+                xirVariable = new Variable(type) { Offset = Stack.MiscDataSize };
             }
             else
             {
-                xirVariable = new Variable(type, CurrentFunction.Locals[^1].Offset + CurrentFunction.Locals[^1].Type.SlotSize);
+                xirVariable = new Variable(type)
+                {
+                    Offset = CurrentMethod.Locals[^1].Offset + CurrentMethod.Locals[^1].Type.SlotSize
+                };
             }
-            CurrentFunction.Locals.Add(xirVariable);
-
-            // 添加到符号表
-            SymbolTable.Add(id, new VariableSymbol(id, xirVariable));
+            CurrentMethod.Locals.Add(xirVariable);
 
             return xirVariable;
         }
 
-        public ClassType AddClass(string name)
+        #endregion
+
+        public uint AddConstantPool(string name)
         {
-            ClassType ret = new ClassType(name);
-            Classes.Add(name, ret);
-            return ret;
+            throw new NotImplementedException();
         }
     }
 }

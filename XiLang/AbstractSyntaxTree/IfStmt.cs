@@ -32,9 +32,9 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            BasicBlock thenBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock otherwiseBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
-            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentFunction);
+            BasicBlock thenBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock otherwiseBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
 
             // cond
             Cond.CodeGen();

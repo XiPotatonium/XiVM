@@ -11,7 +11,9 @@ namespace XiLang.Lexical
         // 类型
         BOOL, INT, DOUBLE, VOID, STRING,
         // OO关键词
-        CLASS, BASE, STATIC,
+        CLASS, BASE, 
+        // Access flag
+        STATIC,
         // 其他关键词
         FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN,
         // 常量
@@ -49,6 +51,7 @@ namespace XiLang.Lexical
 
             { "class", TokenType.CLASS },
             { "base", TokenType.BASE },
+
             { "static", TokenType.STATIC },
 
             { "for", TokenType.FOR },
@@ -77,7 +80,7 @@ namespace XiLang.Lexical
         /// 所有可能出现在Type中的Atribute
         /// 这个东西会在Parser中用于Check与预判
         /// </summary>
-        public static readonly TokenType[] TypeModifierTokens =
+        public static readonly TokenType[] AccessFlagTokens =
         {
             TokenType.STATIC
         };

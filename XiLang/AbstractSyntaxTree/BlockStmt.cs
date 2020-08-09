@@ -1,4 +1,5 @@
-﻿using XiVM;
+﻿using XiLang.Pass;
+using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
@@ -23,9 +24,9 @@ namespace XiLang.AbstractSyntaxTree
 
         public override VariableType CodeGen()
         {
-            Constructor.SymbolTable.Push();
+            CodeGenPass.LocalSymbolTable.PushFrame();
             CodeGen(Child);
-            Constructor.SymbolTable.Pop();
+            CodeGenPass.LocalSymbolTable.PopFrame();
             return null;
         }
     }

@@ -30,7 +30,7 @@ namespace XiLang.Syntactic
                 return true;
             }
 
-            return LexicalRules.TypeTokens.Contains(t.Type) || LexicalRules.TypeModifierTokens.Contains(t.Type);
+            return LexicalRules.TypeTokens.Contains(t.Type);
         }
 
         /// <summary>

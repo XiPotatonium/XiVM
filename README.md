@@ -4,12 +4,11 @@
 
 * ref和new
 * XiLang中char字面量和string字面量中的转义字符问题
-* XiLang以及XiVM中对类的支持
+* XiVM支持对象访问以及成员方法调用
 * XiVM的浮点数运算
-* 系统库函数，以及如何很好地实现多模块以及import
+* 系统库函数和import
 * 为了支持动态绑定的函数调用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
-* RET(T)指令取消，只留下RET，VM可以通过函数类型自行判断返回类型（这样可以支持多返回值）
-* 符号栈好像没什么用，可以删掉了
+* 字节码有冗余信息，树状信息可以删掉，只留常量池
 
 ## XiLang
 
@@ -39,6 +38,7 @@
 * 循环
     * while，body必须被花括号包围，或者是空
     * for：可以在init中定义变量，body必须被花括号包围，或者是空
+* 禁止隐式类型提升，8.0 / 4这样的表达式也是非法的
 
 ### Grammar
 
@@ -46,22 +46,20 @@
 
 ```
 Program
-    (GlobalStmt)*
-GlobalStmt
-    ClassStmt | DeclarationStmt
+    (ClassStmt)*
 ClassStmt
     CLASS ID LBRACES DeclarationStmt* RBRACES
 DeclarationStmt
-    TypeExpr FuncDeclarator BlockStmt
-    TypeExpr VarDeclarator SEMICOLON
+    ACCESS_FLAG* TypeExpr FuncDeclarator BlockStmt
+    ACCESS_FLAG* TypeExpr VarDeclarator SEMICOLON
 FuncDeclarator
-    ID LPAREN ParamsAST? RPAREN
+    ID LPAREN ParamsAST RPAREN
 VarDeclarator
     ID (ASSIGN Expr)? (COMMA VarDeclarator)?
 ParamsAST
-    Params
+    Params*
 Params
-    TypeExpr ID (ASSIGN Expr)? (COMMA Params)?
+    TypeExpr ID (COMMA Params)?
 Stmt
     LoopStmt | IfStmt | JumpStmt | BlockStmt | VarOrExprStmt
 BlockStmt
@@ -83,7 +81,7 @@ ExprStmt
 
 ```
 TypeExpr
-    ANY_TYPE_MODIFIER* (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+    (ANY_TYPE | ID) (LBRACKET RBRACKET)?
 ListExpr
     Expr [COMMA Expr]*
 Expr
@@ -127,7 +125,7 @@ ConstExpr
 
 * 栈式虚拟机
 * Stack Based Runtime Environment without Local Procedure
-* 支持生成.xibc字节码和.xir文本中间码
+* 支持生成.xibc字节码和.xir文本中间码，字节码参考了JVM
 
 ### 堆栈
 
@@ -188,7 +186,7 @@ N为大小（单位为Slot）。注意计算栈中的byte, int, double, addr均�
 ... | value(N) | value(N) |
 ```
 
-#### LOCALA
+#### LOCAL
 
 * LOCALA offset(int) 0x18
 
@@ -199,24 +197,23 @@ N为大小（单位为Slot）。注意计算栈中的byte, int, double, addr均�
 ... | res(addr) |
 ```
 
-#### GLOBALA
+#### CONST
 
-* GLOBALA offset(int) 0x19
+* CONST index(int) 0x19
 
-获取全局栈帧的某个栈地址并Push进计算栈。offset的为目标地址与全局栈帧FP（就是栈开头）的距离。
-因为只有LocalA和GlobalA两个取栈地址的指令，XiVM实际上不支持local procedure
+获取当前Module的下标为index的字符串常量的地址.
+字符串常量参考[字符串常量池](#字符串常量池)
 
 ```
 ... |
 ... | res(addr) |
 ```
 
-#### CONSTA
+#### STATIC
 
-* CONSTA index(uint) 0x1A
+* STATIC index(int) 0x19
 
 获取当前Module的下标为index的字符串常量的地址.
-字符串常量参考[字符串常量池](#字符串常量池)
 
 ```
 ... |
@@ -364,17 +361,14 @@ store会将T类型的value存储到dest这个地址
 
 #### CALL
 
-* CALL addr(uint) 0X90
+* CALL index(int) 0X90
 
+Index是模块常量池中成员常量池的index，
 行为参考[发起调用](#发起调用)
 
 #### RET(T)
 
 * RET 0X94
-* RETB 0X95
-* RETI 0X96
-* RETD 0X97
-* RETA 0X98
 
 行为参考[函数返回](#函数返回)
 
@@ -400,6 +394,10 @@ store会将T类型的value存储到dest这个地址
 ... |
 ```
 
+
+### 字节码结构
+
+TODO
 
 ### 函数调用规范
 
@@ -471,24 +469,17 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 
 不同于堆栈，堆空间的基本单位是byte而不是slot
 
+### 方法区
+
+方法区数据和堆空间相同
+
+#### 类的静态成员区
+
+#### 代码段
+
 #### 字符串常量池
 
-字符串常量池在堆空间中，加载模块时会将模块中的常量放到全局常量池中。因此同一个string只会有一份常量，哪怕他们来自不同Module。
+这个常量池和模块的常量池是不同的东西，模块加载后，模块的字符串常量池会链接到这里。
+字符串常量池在方法区中，加载模块时会将模块中的常量放到全局常量池中。因此同一个string只会有一份常量，哪怕他们来自不同Module。
 加载模块时会动态链接，因此VM在执行CONSTA时依然能够从Index直到字符串常量的堆地址。
-字符串常量会被创建为[内建的字符串类型](#内建字符串)，其行为/结构和普通堆数据完全相同，除了不能被GC（设想，GC还未实现）。
-
-### 内建类型
-
-#### 数组
-
-内建了四个基本类型(byte, int, double, address)的数组
-
-堆数据格式
-
-```
-| MiscData | Length(int) | Data(Length * sizeof(T)) |
-```
-
-#### 内建字符串
-
-堆数据格式和Byte数组相同。字符串字面量也会生成字符串堆数据
+(设想)字符串常量的结构和堆上的字符串完全相同，不能被GC。

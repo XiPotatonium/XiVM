@@ -4,12 +4,12 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddCall(uint index)
+        public void AddCall(int methodIndex)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.CALL,
-                Params = BitConverter.GetBytes(index)
+                Params = BitConverter.GetBytes(methodIndex)
             });
         }
 

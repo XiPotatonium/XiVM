@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using XiLang.AbstractSyntaxTree;
+using XiLang.Errors;
 using XiLang.Lexical;
 using XiLang.Pass;
+using XiVM;
 
 namespace XiLang.Syntactic
 {
@@ -37,7 +39,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// Program
-        ///     (GlobalStmt)*
+        ///     (ClassStmt)*
         /// </summary>
         /// <param name="terminateTokenTypes"></param>
         /// <returns></returns>
@@ -47,26 +49,16 @@ namespace XiLang.Syntactic
             AST cur = null;
             while (!Check(TokenType.EOF))
             {
-                AppendASTLinkedList(ref root, ref cur, ParseGlobalStmt());
+                if (Check(TokenType.CLASS))
+                {
+                    AppendASTLinkedList(ref root, ref cur, ParseClassStmt());
+                }
+                else
+                {
+                    throw new XiLangError("Module can only directly contain class");
+                }
             }
             return root;
-        }
-
-        /// <summary>
-        /// GlobalStmt
-        ///     ClassStmt | DeclarationStmt
-        /// </summary>
-        /// <returns></returns>
-        private AST ParseGlobalStmt()
-        {
-            if (Check(TokenType.CLASS))
-            {
-                return ParseClassStmt();
-            }
-            else
-            {
-                return ParseDeclOrDefStmt();
-            }
         }
 
         /// <summary>
@@ -96,8 +88,8 @@ namespace XiLang.Syntactic
                 }
             }
             Consume(TokenType.RBRACES);
-            ret.Functions = fs;
-            ret.Variables = vs;
+            ret.Methods = fs;
+            ret.Fields = vs;
             return ret;
         }
 
@@ -105,64 +97,92 @@ namespace XiLang.Syntactic
         /// 这里用了LookAhead
         /// 此外不允许不带定义的声明
         /// DeclarationStmt
-        ///     TypeExpr FuncDeclarator BlockStmt
-        ///     TypeExpr VarDeclarator SEMICOLON
+        ///     ACCESS_FLAG* TypeExpr FuncDeclarator BlockStmt
+        ///     ACCESS_FLAG* TypeExpr VarDeclarator SEMICOLON
         /// </summary>
         /// <returns></returns>
         private DeclarationStmt ParseDeclOrDefStmt()
         {
+            AccessFlag flag = ParserAccessFlag();
             TypeExpr type = ParseTypeExpr();
             if (CheckAt(1, TokenType.LPAREN))
             {
-                FuncStmt ret = ParseFuncDeclarator(type);
+                FuncStmt ret = ParseFuncDeclarator(type, flag);
                 ret.Body = ParseBlockStmt();
                 return ret;
             }
             else
             {
-                VarStmt ret = ParseVarDeclarator(type);
+                VarStmt ret = ParseVarDeclarator(type, flag);
                 Consume(TokenType.SEMICOLON);
                 return ret;
             }
         }
 
         /// <summary>
+        /// ACCESS_FLAG*
+        /// 目前仅支持static，只允许出现一次
+        /// </summary>
+        /// <returns></returns>
+        private AccessFlag ParserAccessFlag()
+        {
+            AccessFlag accessFlag = new AccessFlag();
+            while (Check(LexicalRules.AccessFlagTokens))
+            {
+                Token t = Consume(LexicalRules.AccessFlagTokens);
+                switch (t.Type)
+                {
+                    case TokenType.STATIC:
+                        if (accessFlag.IsStatic)
+                        {
+                            throw new SyntaxError("Duplicated static modifier", t);
+                        }
+                        accessFlag.IsStatic = true;
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+            return accessFlag;
+        }
+
+        /// <summary>
         /// 参数中不能出现void
         /// FuncDeclarator
-        ///     ID LPAREN ParamsAST? RPAREN
+        ///     ID LPAREN ParamsAST RPAREN
         /// </summary>
         /// <param name="retType"></param>
+        /// <param name="flag"></param>
         /// <returns></returns>
-        private FuncStmt ParseFuncDeclarator(TypeExpr retType)
+        private FuncStmt ParseFuncDeclarator(TypeExpr retType, AccessFlag flag)
         {
             string id = Consume(TokenType.ID).Literal;
             Consume(TokenType.LPAREN);
             ParamsAst ps = null;
-            if (!Check(TokenType.RPAREN))
-            {
-                ps = ParseParamsAST();
-            }
+            ps = ParseParamsAST();
 
             Consume(TokenType.RPAREN);
-            return new FuncStmt(retType, id, ps);
+            return new FuncStmt(flag, retType, id, ps);
         }
 
         /// <summary>
         /// VarDeclarator
         ///     Id (ASSIGN Expr)? (COMMA VarDeclarator)?
         /// </summary>
+        /// <param name="flag"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
-        private VarStmt ParseVarDeclarator(TypeExpr type)
+        private VarStmt ParseVarDeclarator(TypeExpr type, AccessFlag flag = null)
         {
             Expr declarator = ParseExpr(true);
             VarStmt vars;
-            if (declarator.ExprType == ExprType.ID)
+            if (declarator is IdExpr idExpr)
             {
-                vars = new VarStmt(type, declarator.Value.StringValue, null);
+                vars = new VarStmt(flag, type, idExpr.Id, null);
             }
             else
             {
-                vars = new VarStmt(type, declarator.Expr1.Value.StringValue, declarator.Expr2);
+                vars = new VarStmt(flag, type, ((IdExpr)declarator.Expr1).Id, declarator.Expr2);
             }
             if (Check(TokenType.COMMA))
             {
@@ -174,32 +194,32 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// ParamsAST
-        ///     Params
+        ///     Params*
         /// </summary>
         /// <returns></returns>
         private ParamsAst ParseParamsAST()
         {
-            return new ParamsAst(ParseParams());
+            if (!Check(TokenType.RPAREN))
+            {
+                return new ParamsAst(ParseParams());
+            }
+            else
+            {
+                return new ParamsAst(null);
+            }
         }
 
         /// <summary>
         /// Params
-        ///     TypeExpr Id (ASSIGN Expr)? (COMMA Params)?
+        ///     TypeExpr Id (COMMA Params)?
         /// </summary>
         /// <returns></returns>
         private VarStmt ParseParams()
         {
             TypeExpr type = ParseTypeExpr();
-            Expr declarator = ParseExpr(true);
-            VarStmt vars;
-            if (declarator.ExprType == ExprType.ID)
-            {
-                vars = new VarStmt(type, declarator.Value.StringValue, null);
-            }
-            else
-            {
-                vars = new VarStmt(type, declarator.Expr1.Value.StringValue, declarator.Expr2);
-            }
+            IdExpr id = ParseId();
+            VarStmt vars = new VarStmt(null, type, id.Id, null);
+
             if (Check(TokenType.COMMA))
             {
                 Consume(TokenType.COMMA);
@@ -257,8 +277,6 @@ namespace XiLang.Syntactic
         }
 
         /// <summary>
-        /// 如果VarDecl是class，第一个token是id，此时无法和Expr区分
-        /// 要看第二个token是不是id，如果是id则为VarDecl
         /// VarOrExprStmt
         ///     VarStmt | ExprStmt
         /// </summary>

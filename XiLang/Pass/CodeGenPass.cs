@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 using XiLang.AbstractSyntaxTree;
+using XiLang.Errors;
+using XiLang.Symbol;
 using XiVM;
 using XiVM.Xir;
 
 namespace XiLang.Pass
 {
+    /// <summary>
+    /// 注意CodeGen的过程会破坏AST，放在ASTPass的最后一个
+    /// </summary>
     internal class CodeGenPass : IASTPass
     {
         public static CodeGenPass Singleton { get; } = new CodeGenPass();
@@ -14,119 +20,162 @@ namespace XiLang.Pass
 
         public static Stack<BasicBlock> Breakable { private set; get; } = new Stack<BasicBlock>();
         public static Stack<BasicBlock> Continuable { private set; get; } = new Stack<BasicBlock>();
+        /// <summary>
+        /// 函数局部变量的符号栈
+        /// </summary>
+        public static SymbolTable LocalSymbolTable { set; get; }
 
         private CodeGenPass() { }
 
         public object Run(AST root)
         {
-            // TODO 对于顶层需要进行特殊处理
-            // 所有的Class、Function均需要建立但是不生成内部细节
-            // 等于是先进行默认的声明
+            // 声明缓存，免得再找一遍
+            List<ClassType> classes = new List<ClassType>();
+            List<ClassField> fields = new List<ClassField>();
+            List<Method> methods = new List<Method>();
+
+            // 第一轮生成类的声明
             AST cur = root;
+            ClassStmt classStmt;
+            ClassType classType;
             while (cur != null)
             {
-                if (cur is ClassStmt)
-                {
-                    GlobalCodeGenClass((ClassStmt)cur);
-                }
-                else if (cur is FuncStmt)
-                {
-                    GlobalCodeGenFunction((FuncStmt)cur);
-                }
-                else if (cur is VarStmt)
-                {
-                    GlobalCodeGenVariable((VarStmt)cur);
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
+                classStmt = (ClassStmt)cur;
+                classType = Constructor.AddClassType(classStmt.Id);
+                classes.Add(classType);
                 cur = cur.SiblingAST;
             }
 
+            // 第二轮生成类方法和域的声明
+            VarStmt varStmt;
+            FuncStmt funcStmt;
+            cur = root;
+            var classesEnumerator = classes.GetEnumerator();
+            while (cur != null)
+            {
+                classStmt = (ClassStmt)cur;
+                classesEnumerator.MoveNext();
+                classType = classesEnumerator.Current;
+
+                varStmt = classStmt.Fields;
+                while (varStmt != null)
+                {
+                    fields.Add(Constructor.AddClassField(classType, varStmt.Id, varStmt.Type.ToXirType(), varStmt.AccessFlag));
+                    varStmt = (VarStmt)varStmt.SiblingAST;
+                }
+
+                funcStmt = classStmt.Methods;
+                while (funcStmt != null)
+                {
+                    List<VariableType> pTypes = new List<VariableType>();
+                    VarStmt param = funcStmt.Params.Params;
+                    while (param != null)
+                    {
+                        pTypes.Add(param.Type.ToXirType());
+                        param = (VarStmt)param.SiblingAST;
+                    }
+                    methods.Add(Constructor.AddMethod(classType, funcStmt.Id, 
+                        Constructor.AddMethodType(funcStmt.Type.ToXirType(), pTypes), 
+                        funcStmt.AccessFlag));
+
+                    funcStmt = (FuncStmt)funcStmt.SiblingAST;
+                }
+
+                cur = cur.SiblingAST;
+            }
+
+            // 最后一轮生成类方法和域的定义
+            classesEnumerator = classes.GetEnumerator();
+            var fieldEnumerator = fields.GetEnumerator();
+            var methodEnumerator = methods.GetEnumerator();
             cur = root;
             while (cur != null)
             {
-                if (cur is ClassStmt)
+                classStmt = (ClassStmt)cur;
+                classesEnumerator.MoveNext();
+                classType = classesEnumerator.Current;
+
+                // 正在生成静态构造函数
+                Constructor.CurrentBasicBlock = classType.StaticInitializer.BasicBlocks.First.Value;
+
+                varStmt = classStmt.Fields;
+                while (varStmt != null)
                 {
-                    throw new NotImplementedException();
+                    fieldEnumerator.MoveNext();
+                    ClassField field = fieldEnumerator.Current;
+
+                    if (varStmt.AccessFlag.IsStatic == true)
+                    {
+                        if (varStmt.Init != null)
+                        {
+                            Constructor.AddGetStaticFieldAddress(field);
+                            Constructor.AddLoadT(varStmt.Init.CodeGen());
+                        }
+                        // XiVM类变量默认全0的
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+
+                    varStmt = (VarStmt)varStmt.SiblingAST;
                 }
-                else if (cur is FuncStmt)
+
+                // 静态构造是return void，需要检查
+                if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsRet != true)
                 {
-                    cur.CodeGen();
+                    Constructor.AddRet();
                 }
-                else if (cur is VarStmt)
+
+                funcStmt = classStmt.Methods;
+                while (funcStmt != null)
                 {
-                    // 跳过全局变量，已经生成过了
+                    methodEnumerator.MoveNext();
+                    Method method = methodEnumerator.Current;
+
+                    // 函数局部变量栈
+                    LocalSymbolTable = new SymbolTable();
+                    LocalSymbolTable.PushFrame();
+
+                    // 将参数加入符号表
+                    VarStmt param = funcStmt.Params.Params;
+                    foreach (Variable p in method.Params)
+                    {
+                        LocalSymbolTable.AddSymbol(param.Id, p);
+                        param = (VarStmt)param.SiblingAST;
+                    }
+
+                    Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(method);
+                    // 不要直接Body.CodeGen()，因为那样会新建一个NS
+                    AST.CodeGen(funcStmt.Body.Child);
+
+                    // 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
+                    if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsRet != true)
+                    {
+                        // 如果最后一条不是return
+                        if (method.Type.ReturnType == null)
+                        {
+                            // 如果函数返回void，自动补上ret
+                            Constructor.AddRet();
+                        }
+                        else
+                        {
+                            // 说明理论上应该返回值但是代码中没有return，报错
+                            throw new XiLangError($"Function {param.Id} should return a value.");
+                        }
+                    }
+
+                    // 清空函数局部变量栈
+                    LocalSymbolTable = null;
+
+                    funcStmt = (FuncStmt)funcStmt.SiblingAST;
+                    Constructor.CompleteMethodGeneration(method);
                 }
-                else
-                {
-                    throw new NotImplementedException();
-                }
+
                 cur = cur.SiblingAST;
             }
 
             return null;
-        }
-
-        private void GlobalCodeGenClass(ClassStmt classStmt)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void GlobalCodeGenFunction(FuncStmt funcStmt)
-        {
-            // 参数类型信息
-            List<VariableType> paramsType = new List<VariableType>();
-            VarStmt param = funcStmt.Params.Params;
-            while (param != null)
-            {
-                VariableType paramType = param.Type.ToXirType();
-                paramsType.Add(paramType);
-                param = (VarStmt)param.SiblingAST;
-            }
-
-            // 函数
-            FunctionType functionType = new FunctionType(funcStmt.Type.ToXirType(), paramsType);
-            Function function = Constructor.AddFunction(funcStmt.Id, functionType);
-
-            if (Constructor.SymbolTable.Count == 1 && funcStmt.Id == "main")
-            {
-                // 是main函数
-                Constructor.MainFunction = function;
-            }
-        }
-
-        private void GlobalCodeGenVariable(VarStmt varStmt)
-        {
-            Variable var = Constructor.AddLocalVariable(varStmt.Id, varStmt.Type.ToXirType());
-
-            if (varStmt.Init != null)
-            {   // 初始化代码
-                varStmt.Init.CodeGen();
-            }
-            else
-            {   // 没有初始化，全局变量有默认初始化
-                switch (var.Type.Tag)
-                {
-                    case VariableTypeTag.BYTE:
-                        Constructor.AddPushB(0);
-                        break;
-                    case VariableTypeTag.INT:
-                        Constructor.AddPushI(0);
-                        break;
-                    case VariableTypeTag.DOUBLE:
-                        Constructor.AddPushD(0);
-                        break;
-                    case VariableTypeTag.ADDRESS:
-                        Constructor.AddPushA(0);
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-            Constructor.AddLocalA(var.Offset);      // addr
-            Constructor.AddStoreT(var.Type);        // store
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using ConsoleArgumentParser;
-using XiVM.Executor;
+using XiVM.Runtime;
 
 namespace XiVM
 {
@@ -13,10 +13,7 @@ namespace XiVM
 
             string fileName = argumentParser.GetValue().StringValue;
 
-            BinaryModule binaryModule = BinaryModule.Load(fileName);
-            
-            VMModule module = Heap.AddModule(binaryModule);
-            VMExecutor executor = new VMExecutor(module);
+            VMExecutor executor = new VMExecutor(MethodArea.AddModule(BinaryModule.Load(fileName)));
             executor.Execute();
         }
     }

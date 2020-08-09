@@ -1,96 +1,200 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using XiVM.Errors;
+using XiVM.Runtime;
 
 namespace XiVM
 {
     [Serializable]
-    internal class BinaryClassType
+    public class BinaryClassType
     {
+        public int ConstantPoolIndex { set; get; }
+        public BinaryMethod[] Methods { internal set; get; }
+    }
+
+    internal class VMClass
+    {
+        public VMModule Parent { set; get; }
+        public Dictionary<uint, List<VMMethod>> Methods { set; get; }
     }
 
     /// <summary>
     /// 类的静态信息
     /// </summary>
-    public class ClassType : VariableType
+    public class ClassType : VariableType, IConstantPoolValue
     {
-        /// <summary>
-        /// Class的名字，使用这个判断两个ClassType是否相等
-        /// </summary>
-        public string ClassName { private set; get; }
-        /// <summary>
-        /// Class在模块中的Index，模块需要Index来构造对应类的对象
-        /// </summary>
-        internal int Index { private set; get; }
-        /// <summary>
-        /// 静态变量
-        /// </summary>
-        internal List<Variable> StaticVariables { set; get; } = new List<Variable>();
+        public Module Parent { private set; get; }
+
         /// <summary>
         /// 成员变量
         /// </summary>
-        internal List<Variable> Variables { set; get; } = new List<Variable>();
-        /// <summary>
-        /// 静态函数
-        /// 默认构造函数应该是StaticFunctions的第一个
-        /// </summary>
-        internal List<Function> StaticFunctions { set; get; } = new List<Function>();
-        /// <summary>
-        /// 成员函数
-        /// </summary>
-        internal List<Function> Functions { set; get; } = new List<Function>();
+        public Dictionary<string, ClassField> Fields { private set; get; } = new Dictionary<string, ClassField>();
 
-        public ClassType(string name)
+        /// <summary>
+        /// 包括静态和非静态方法
+        /// </summary>
+        public Dictionary<string, List<Method>> Methods { private set; get; } = new Dictionary<string, List<Method>>();
+
+        public Method StaticInitializer { internal set; get; }
+        public int ConstantPoolIndex { get; set; }
+        public string Name => Parent.StringPool.ElementList[(int)Parent.ClassPool.ElementList[ConstantPoolIndex - 1].Name - 1];
+
+        internal ClassType(Module module, int index)
             : base(VariableTypeTag.ADDRESS)
         {
-            ClassName = name;
+            Parent = module;
+            ConstantPoolIndex = index;
         }
 
-        public Variable AddVariable(VariableType type)
+        /// <summary>
+        /// 请使用这个函数添加field
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="flag"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        internal ClassField AddField(string name, VariableType type, AccessFlag flag, int index)
         {
-            Variable v = new Variable(type, Variables.Count == 0 ? 0 : Variables[^1].Offset + Variables[^1].Type.SlotSize);
-            Variables.Add(v);
-            return v;
+            if (Methods.ContainsKey(name))
+            {
+                throw new XiVMError($"Dupilcate Name {name} in class {Name}");
+            }
+
+            ClassField field = new ClassField(flag, this, type, index);
+            Fields.Add(name, field);
+            return field;
+        }
+
+        /// <summary>
+        /// API使用这个函数添加method
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="flag"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        internal Method AddMethod(string name, MethodType type, AccessFlag flag, int index)
+        {
+            if (Fields.ContainsKey(name))
+            {
+                throw new XiVMError($"Dupilcate Name {name} in class {Name}");
+            }
+
+            Method function = new Method(type, this, flag, index);
+            if (Methods.TryGetValue(name, out List<Method> value))
+            {
+                foreach (var m in value)
+                {
+                    if (m.Type.Equivalent(type))
+                    {
+                        // 重复定义
+                        throw new XiVMError($"Duplicate definition for {Name}.{name}");
+                    }
+                }
+                value.Add(function);
+            }
+            else
+            {
+                Methods.Add(name, new List<Method>() { function });
+            }
+
+            // 添加参数
+            int offset = 0;
+            foreach (VariableType paramType in function.Type.Params)
+            {
+                offset -= paramType.SlotSize;
+                function.Params.Add(new Variable(paramType) { Offset = offset });
+            }
+
+            return function;
         }
 
         public override bool Equivalent(VariableType b)
         {
             if (b is ClassType bType)
             {
-                return (ClassName == bType.ClassName) && base.Equivalent(b);
+                return (Name == bType.Name) && base.Equivalent(b);
             }
             return false;
+        }
+
+        internal BinaryClassType ToBinary()
+        {
+            return new BinaryClassType()
+            {
+                Methods = Methods.SelectMany(p => p.Value).Select(m => m.ToBinary()).ToArray(),
+                ConstantPoolIndex = ConstantPoolIndex
+            };
         }
     }
 
     /// <summary>
     /// 类对象的信息
     /// </summary>
-    public class ClassInstance : Variable
+    //public class ClassInstance : Variable
+    //{
+    //    public ClassType ClassType => (ClassType)Type;
+    //    public int InstanceSize { private set; get; } = 0;
+
+    //    /// <summary>
+    //    /// Offset 对于Class Instance无意义
+    //    /// 注意类定义完成之前是可以创建对象的，因此在构造函数里不要对ClassType产生任何依赖
+    //    /// </summary>
+    //    /// <param name="classType"></param>
+    //    public ClassInstance(ClassType classType)
+    //        : base(classType, 0)
+    //    {
+
+    //    }
+
+    //    /// <summary>
+    //    /// 调用这个之前务必保证ClassType已经建立完毕
+    //    /// 为ClassInstance确定堆上要分配多大空间
+    //    /// 对于一般对象而言，就是成员变量空间
+    //    /// 但是为了支持数组这样的特殊数据，允许分配额外空间
+    //    /// </summary>
+    //    /// <param name="additionalSize">局部变量外的额外空间, 单位byte</param>
+    //    public void SetSize(int additionalSize = 0)
+    //    {
+
+    //    }
+    //}
+
+    public class AccessFlag
     {
-        public ClassType ClassType => (ClassType)Type;
-        public int InstanceSize { private set; get; } = 0;
+        public static readonly AccessFlag DefaultFlag = new AccessFlag();
 
-        /// <summary>
-        /// Offset 对于Class Instance无意义
-        /// 注意类定义完成之前是可以创建对象的，因此在构造函数里不要对ClassType产生任何依赖
-        /// </summary>
-        /// <param name="classType"></param>
-        public ClassInstance(ClassType classType)
-            : base(classType, 0)
+        private static readonly uint StaticFlag = 0x01;
+
+        public uint Flag { set; get; } = 0;
+
+        public bool IsStatic
         {
-
+            get => (Flag & StaticFlag) != 0;
+            set
+            {
+                if (value)
+                {
+                    Flag |= StaticFlag;
+                }
+                else
+                {
+                    Flag ^= StaticFlag;
+                }
+            }
         }
+    }
 
-        /// <summary>
-        /// 调用这个之前务必保证ClassType已经建立完毕
-        /// 为ClassInstance确定堆上要分配多大空间
-        /// 对于一般对象而言，就是成员变量空间
-        /// 但是为了支持数组这样的特殊数据，允许分配额外空间
-        /// </summary>
-        /// <param name="additionalSize">局部变量外的额外空间</param>
-        public void SetSize(int additionalSize = 0)
-        {
+    public interface IClassMember : IConstantPoolValue
+    {
+        ClassType Parent { set; get; }
+        AccessFlag AccessFlag { set; get; }
+    }
 
-        }
+    public interface IConstantPoolValue
+    {
+        int ConstantPoolIndex { set; get; }
     }
 }

@@ -6,26 +6,15 @@ using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public enum TypeModifier
-    {
-        STATIC = 0x1
-    }
-
     public class TypeExpr : Expr
     {
         public SyntacticValueType Type { set; get; }
         public bool IsArray { set; get; }
-        public uint Modifier { set; get; } = 0;
         public string ClassName { set; get; }
 
         public override string ASTLabel()
         {
             StringBuilder stringBuilder = new StringBuilder("<");
-
-            if ((Modifier & (uint)TypeModifier.STATIC) != 0)
-            {
-                stringBuilder.Append("static ");
-            }
 
             stringBuilder.Append(Type switch
             {
@@ -58,11 +47,11 @@ namespace XiLang.AbstractSyntaxTree
             {
                 return Type switch
                 {
-                    SyntacticValueType.BOOL => Constructor.ByteArrayType,
+                    SyntacticValueType.BOOL => ArrayType.ByteArrayType,
                     SyntacticValueType.INT => throw new NotImplementedException(),
                     SyntacticValueType.DOUBLE => throw new NotImplementedException(),
-                    SyntacticValueType.STRING => Constructor.AddressArrayType,
-                    SyntacticValueType.CLASS => Constructor.AddressArrayType,
+                    SyntacticValueType.STRING => throw new NotImplementedException(),
+                    SyntacticValueType.CLASS => throw new NotImplementedException(),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -73,7 +62,7 @@ namespace XiLang.AbstractSyntaxTree
                     SyntacticValueType.BOOL => VariableType.ByteType,
                     SyntacticValueType.INT => VariableType.IntType,
                     SyntacticValueType.DOUBLE => VariableType.DoubleType,
-                    SyntacticValueType.STRING => Constructor.StringType,
+                    SyntacticValueType.STRING => throw new NotImplementedException(),
                     SyntacticValueType.CLASS => throw new NotImplementedException(),
                     SyntacticValueType.VOID => null,
                     _ => throw new NotImplementedException(),

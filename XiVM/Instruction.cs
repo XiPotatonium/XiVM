@@ -19,9 +19,9 @@ namespace XiVM
         DUP = 0x10,
         DUP2 = 0x11,
 
-        LOCALA = 0x18,
-        GLOBALA = 0x19,
-        CONSTA = 0x1A,
+        LOCAL = 0x18,
+        CONST = 0x19,
+        STATIC = 0x1A,
         NEW = 0x1B,
 
         LOADB = 0x20,
@@ -71,10 +71,6 @@ namespace XiVM
 
         CALL = 0x90,
         RET = 0x94,
-        RETB = 0x95,
-        RETI = 0x96,
-        RETD = 0x97,
-        RETA = 0x98,
 
         PUTC = 0xA0,
         PUTS = 0xA1,
@@ -95,11 +91,7 @@ namespace XiVM
         public bool IsBranch => IsRet ||
             OpCode == InstructionType.JMP ||
             OpCode == InstructionType.JCOND;
-        public bool IsRet => OpCode == InstructionType.RET ||
-            OpCode == InstructionType.RETB ||
-            OpCode == InstructionType.RETI ||
-            OpCode == InstructionType.RETD ||
-            OpCode == InstructionType.RETA;
+        public bool IsRet => OpCode == InstructionType.RET;
 
 
         public override string ToString()
@@ -117,9 +109,10 @@ namespace XiVM
                 InstructionType.POPA => "POPA",
                 InstructionType.DUP => "DUP",
                 InstructionType.DUP2 => "DUP2",
-                InstructionType.LOCALA => $"LOCALA {BitConverter.ToInt32(Params)}",
-                InstructionType.GLOBALA => $"GLOBALA {BitConverter.ToInt32(Params)}",
-                InstructionType.CONSTA => $"CONSTA {BitConverter.ToUInt32(Params)}",
+                InstructionType.LOCAL => $"LOCAL {BitConverter.ToInt32(Params)}",
+                InstructionType.CONST => $"CONST {BitConverter.ToInt32(Params)}",
+                InstructionType.STATIC => $"STATIC {BitConverter.ToInt32(Params)}",
+                InstructionType.NEW => throw new NotImplementedException(),
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",
                 InstructionType.LOADD => "LOADD",
@@ -129,12 +122,8 @@ namespace XiVM
                 InstructionType.STORED => "STORED",
                 InstructionType.STOREA => "STOREA",
                 InstructionType.ADDI => "ADDI",
-                InstructionType.CALL => $"CALL {BitConverter.ToUInt32(Params)}",
+                InstructionType.CALL => $"CALL {BitConverter.ToInt32(Params)}",
                 InstructionType.RET => "RET",
-                InstructionType.RETB => "RETB",
-                InstructionType.RETI => "RETI",
-                InstructionType.RETD => "RETD",
-                InstructionType.RETA => "RETA",
                 InstructionType.SUBI => "SUBI",
                 InstructionType.MULI => "MULI",
                 InstructionType.DIVI => "DIVI",
@@ -150,7 +139,6 @@ namespace XiVM
                 InstructionType.D2I => "D2I",
                 InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
                 InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
-                InstructionType.NEW => throw new NotImplementedException(),
                 InstructionType.ALOADB => throw new NotImplementedException(),
                 InstructionType.ALOADI => throw new NotImplementedException(),
                 InstructionType.ALOADD => throw new NotImplementedException(),

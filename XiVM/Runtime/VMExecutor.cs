@@ -3,59 +3,81 @@ using System.Collections.Generic;
 using System.Text;
 using XiVM.Errors;
 
-namespace XiVM.Executor
+namespace XiVM.Runtime
 {
     public class VMExecutor
     {
-        private int IP;                         // 指令在函数中的IP
-        private int FunctionIndex;              // 当前运行的函数的Index
-        private BinaryFunction CurrentFunction => Functions[FunctionIndex];
+        private int IP { set; get; }                        // 指令在函数中的IP
+        private VMMethod CurrentMethod { set; get; }
+        private int MethodIndex => CurrentMethod.MethodIndex;
+        private byte[] CurrentInstructions => CurrentMethod.CodeBlock.Value.Data;
+        private VMClass CurrentClass => CurrentMethod.Parent;
+        private VMModule CurrentModule => CurrentClass.Parent;
 
         private Stack Stack { get; } = new Stack();
 
         private VMModule Module { set; get; }
-        private BinaryFunction[] Functions => Module.Functions;
-        private LinkedListNode<HeapData>[] StringConstants => Module.StringLiterals;
-        private BinaryClassType[] Classes => Module.Classes;
+        private List<uint> StringConstants => Module.StringPool;
 
         internal VMExecutor(VMModule module)
         {
             Module = module;
+
+            if (!module.Classes.TryGetValue(MethodArea.StringProgramAddress, out var entryClass))
+            {
+                throw new XiVMError("Program.Main() not found");
+            }
+
+            if (!entryClass.Methods.TryGetValue(MethodArea.StringMainAddress, out var entryMethodGroup))
+            {
+                throw new XiVMError("Program.Main() not found");
+            }
+
+            // TODO 有string后改成(A)V
+            foreach (var method in entryMethodGroup)
+            {
+                if (method.DescriptorAddress == MethodArea.StringMainDescriptorAddress)
+                {
+                    CurrentMethod = method;
+                    break;
+                }
+            }
+
+            if (CurrentMethod == null)
+            {
+                throw new XiVMError("Program.Main() not found");
+            }
         }
 
         public void Execute()
         {
-            IP = 0;
-            FunctionIndex = 0;
+            // TODO Main的参数
             Stack.PushFrame(0, 0);    // 全局的ret ip可以随便填
             PushLocals();
 
             uint addr, uValue;
-            int iValue, lhsi, rhsi, index;
+            int iValue, lhsi, rhsi, index, ip;
             double dValue;
             byte bValue;
 
             while (!Stack.Empty)
             {
-                byte opCode = CurrentFunction.Instructions[IP++];
+                byte opCode = CurrentInstructions[IP++];
                 switch ((InstructionType)opCode)
                 {
                     case InstructionType.NOP:
                         break;
                     case InstructionType.PUSHB:
-                        Stack.PushByte(CurrentFunction.Instructions[IP++]);
+                        Stack.PushByte(ConsumeByte());
                         break;
                     case InstructionType.PUSHI:
-                        Stack.PushInt(BitConverter.ToInt32(CurrentFunction.Instructions, IP));
-                        IP += sizeof(int);
+                        Stack.PushInt(ConsumeInt());
                         break;
                     case InstructionType.PUSHD:
-                        Stack.PushDouble(BitConverter.ToDouble(CurrentFunction.Instructions, IP));
-                        IP += sizeof(double);
+                        Stack.PushDouble(ConsumeDouble());
                         break;
                     case InstructionType.PUSHA:
-                        Stack.PushAddress(BitConverter.ToUInt32(CurrentFunction.Instructions, IP));
-                        IP += sizeof(uint);
+                        Stack.PushAddress(ConsumeUint());
                         break;
                     case InstructionType.POPB:
                         Stack.PopByte();
@@ -75,24 +97,20 @@ namespace XiVM.Executor
                     case InstructionType.DUP2:
                         Stack.DupN(2);
                         break;
-                    case InstructionType.LOCALA:
-                        Stack.PushAddress((uint)(Stack.FP + BitConverter.ToInt32(CurrentFunction.Instructions, IP)));
-                        IP += sizeof(int);
+                    case InstructionType.LOCAL:
+                        Stack.PushAddress((uint)(Stack.FP + ConsumeInt()));
                         break;
-                    case InstructionType.GLOBALA:
-                        Stack.PushAddress((uint)BitConverter.ToInt32(CurrentFunction.Instructions, IP));
-                        IP += sizeof(int);
+                    case InstructionType.CONST:
+                        Stack.PushAddress(MemoryMap.MapTo(
+                            StringConstants[ConsumeInt()], MemoryTag.METHOD));
                         break;
-                    case InstructionType.CONSTA:
-                        Stack.PushAddress(
-                            MemMap.MapTo(StringConstants[BitConverter.ToUInt32(CurrentFunction.Instructions, IP)].Value.Offset, MemTag.HEAP));
-                        IP += sizeof(uint);
-                        break;
+                    case InstructionType.STATIC:
+                        throw new NotImplementedException();
                     case InstructionType.LOADB:
                         addr = Stack.PopAddress();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.PushByte(Stack.GetByte(addr));
                                 break;
                             default:
@@ -101,9 +119,9 @@ namespace XiVM.Executor
                         break;
                     case InstructionType.LOADI:
                         addr = Stack.PopAddress();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.PushInt(Stack.GetInt(addr));
                                 break;
                             default:
@@ -112,9 +130,9 @@ namespace XiVM.Executor
                         break;
                     case InstructionType.LOADD:
                         addr = Stack.PopAddress();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.PushDouble(Stack.GetDouble(addr));
                                 break;
                             default:
@@ -123,9 +141,9 @@ namespace XiVM.Executor
                         break;
                     case InstructionType.LOADA:
                         addr = Stack.PopAddress();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.PushAddress(Stack.GetAddress(addr));
                                 break;
                             default:
@@ -135,9 +153,9 @@ namespace XiVM.Executor
                     case InstructionType.STOREB:
                         addr = Stack.PopAddress();
                         bValue = Stack.PopByte();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.SetValue(addr, bValue);
                                 break;
                             default:
@@ -147,9 +165,9 @@ namespace XiVM.Executor
                     case InstructionType.STOREI:
                         addr = Stack.PopAddress();
                         iValue = Stack.PopInt();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.SetValue(addr, iValue);
                                 break;
                             default:
@@ -159,9 +177,9 @@ namespace XiVM.Executor
                     case InstructionType.STORED:
                         addr = Stack.PopAddress();
                         dValue = Stack.PopDouble();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.SetValue(addr, dValue);
                                 break;
                             default:
@@ -171,9 +189,9 @@ namespace XiVM.Executor
                     case InstructionType.STOREA:
                         addr = Stack.PopAddress();
                         uValue = Stack.PopAddress();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 Stack.SetValue(addr, uValue);
                                 break;
                             default:
@@ -231,66 +249,45 @@ namespace XiVM.Executor
                         });
                         break;
                     case InstructionType.JMP:
-                        IP += BitConverter.ToInt32(CurrentFunction.Instructions, IP);
-                        IP += sizeof(int);          // JMP的参数
+                        iValue = ConsumeInt();
+                        IP += iValue;
                         break;
                     case InstructionType.JCOND:
                         bValue = Stack.PopByte();
                         if (bValue != 0)
                         {   // if
-                            IP += BitConverter.ToInt32(CurrentFunction.Instructions, IP);
+                            iValue = ConsumeInt();
+                            IP += sizeof(int);
                         }
                         else
                         {   // else
-                            IP += BitConverter.ToInt32(CurrentFunction.Instructions, IP + sizeof(int));
+                            IP += sizeof(int);
+                            iValue = ConsumeInt();
                         }
-                        IP += 2 * sizeof(int);      // JCOND的两个参数
+                        IP += iValue;
                         break;
                     case InstructionType.CALL:
-                        addr = BitConverter.ToUInt32(CurrentFunction.Instructions, IP);
-                        IP += sizeof(uint);
+                        index = ConsumeInt();
 
-                        if (addr == 0)
-                        {
-                            throw new XiVMError("Call of NULL function is not allowed");
-                        }
-                        Stack.PushFrame(FunctionIndex, IP);
-                        FunctionIndex = (int)addr;
+                        Stack.PushFrame(MethodIndex, IP);
+
+                        iValue = CurrentModule.MemberConstantInfos[index - 1].Class;    // Class Index
+
+                        MethodArea.TryGetMethod(CurrentModule.StringPool[CurrentModule.ClassConstantInfos[iValue - 1].Module - 1],
+                            CurrentModule.StringPool[CurrentModule.ClassConstantInfos[iValue - 1].Name - 1],
+                            CurrentModule.StringPool[CurrentModule.MemberConstantInfos[index - 1].Name - 1],
+                            CurrentModule.StringPool[CurrentModule.MemberConstantInfos[index - 1].Type - 1],
+                            out VMMethod newMethod);
+
+                        CurrentMethod = newMethod;
+
                         IP = 0;
                         PushLocals();
                         break;
                     case InstructionType.RET:
-                        index = FunctionIndex;
-                        Stack.PopFrame(out FunctionIndex, out IP);
-                        PopParams(index);
-                        break;
-                    case InstructionType.RETB:
-                        index = FunctionIndex;
-                        bValue = Stack.PopByte();
-                        Stack.PopFrame(out FunctionIndex, out IP);
-                        PopParams(index);
-                        Stack.PushByte(bValue);
-                        break;
-                    case InstructionType.RETI:
-                        index = FunctionIndex;
-                        iValue = Stack.PopInt();
-                        Stack.PopFrame(out FunctionIndex, out IP);
-                        PopParams(index);
-                        Stack.PushInt(iValue);
-                        break;
-                    case InstructionType.RETD:
-                        index = FunctionIndex;
-                        dValue = Stack.PopDouble();
-                        Stack.PopFrame(out FunctionIndex, out IP);
-                        PopParams(index);
-                        Stack.PushDouble(dValue);
-                        break;
-                    case InstructionType.RETA:
-                        index = FunctionIndex;
-                        uValue = Stack.PopAddress();
-                        Stack.PopFrame(out FunctionIndex, out IP);
-                        PopParams(index);
-                        Stack.PushAddress(uValue);
+                        MethodReturn(out index, out ip);
+                        CurrentMethod = MethodArea.MethodIndexTable[index];
+                        IP = ip;
                         break;
                     case InstructionType.PUTC:
                         iValue = Stack.PopInt();
@@ -299,16 +296,28 @@ namespace XiVM.Executor
                     case InstructionType.PUTS:
                         // 这个地址应该指向一个StringType
                         addr = Stack.PopAddress();
-                        switch (MemMap.MapFrom(addr, out addr))
+                        byte[] data;
+                        switch (MemoryMap.MapFrom(addr, out addr))
                         {
-                            case MemTag.STACK:
+                            case MemoryTag.STACK:
                                 throw new XiVMError("String should located on the heap");
-                            case MemTag.HEAP:
-                                LinkedListNode<HeapData> data = Heap.GetHeapData(addr, out index);
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr, out uValue);
+                                if (uValue != 0)
+                                {
+                                    throw new XiVMError("Address of PUTS should point to the head of a string");
+                                }
                                 // TODO 检查MiscData是不是StringType
-                                Console.Write(Encoding.ASCII.GetString(data.Value.Data,
-                                    index + HeapData.MiscDataSize + sizeof(int),
-                                    BitConverter.ToInt32(new Span<byte>(data.Value.Data, index + HeapData.MiscDataSize, sizeof(int)))));
+                                Console.Write(Encoding.UTF8.GetString(data, Heap.MiscDataSize, data.Length - Heap.MiscDataSize));
+                                break;
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr, out uValue);
+                                if (uValue != 0)
+                                {
+                                    throw new XiVMError("Address of PUTS should point to the head of a string");
+                                }
+                                // TODO 检查MiscData是不是StringType
+                                Console.Write(Encoding.UTF8.GetString(data, MethodArea.StringMiscDataSize, data.Length - MethodArea.StringMiscDataSize));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -322,22 +331,37 @@ namespace XiVM.Executor
 
         private void PushLocals()
         {
-            foreach (var localType in CurrentFunction.LocalTypes)
+            switch (MemoryMap.MapFrom(CurrentMethod.LocalDescriptorAddress, out uint addr))
             {
-                // Warning mask是hard coding
-                // 局部变量也会初始化
-                switch ((VariableTypeTag)(localType & 0x04))
+                case MemoryTag.NULL:
+                    // 没有局部变量
+                    return;
+                case MemoryTag.METHOD:
+                    break;
+                default:
+                    throw new XiVMError("Descriptor should be in method area");
+            }
+
+            byte[] descriptorData = MethodArea.GetData(addr, out var offset);
+            string descriptor = Encoding.UTF8.GetString(descriptorData, 
+                MethodArea.StringMiscDataSize, 
+                descriptorData.Length - MethodArea.StringMiscDataSize);
+
+            for (int i = 0; i < descriptor.Length; ++i)
+            {
+                // Warning Hardcoding
+                switch (descriptor[i])
                 {
-                    case VariableTypeTag.BYTE:
+                    case 'B':
                         Stack.PushByte();
                         break;
-                    case VariableTypeTag.INT:
+                    case 'I':
                         Stack.PushInt();
                         break;
-                    case VariableTypeTag.DOUBLE:
+                    case 'D':
                         Stack.PushDouble();
                         break;
-                    case VariableTypeTag.ADDRESS:
+                    case 'L':
                         Stack.PushAddress();
                         break;
                     default:
@@ -346,29 +370,104 @@ namespace XiVM.Executor
             }
         }
 
-        private void PopParams(int calleeIndex)
+        private void PopParams(string paramsDescriptor)
         {
-            foreach (var paramType in Functions[calleeIndex].ParamTypes)
+            for (int i = 0; i < paramsDescriptor.Length; ++i)
             {
-                // Warning mask是hard coding
-                switch ((VariableTypeTag)(paramType & 0x04))
+                // Warning Hardcoding
+                switch (paramsDescriptor[i])
                 {
-                    case VariableTypeTag.BYTE:
+                    case 'B':
                         Stack.PopByte();
                         break;
-                    case VariableTypeTag.INT:
+                    case 'I':
                         Stack.PopInt();
                         break;
-                    case VariableTypeTag.DOUBLE:
+                    case 'D':
                         Stack.PopDouble();
                         break;
-                    case VariableTypeTag.ADDRESS:
+                    case 'L':
                         Stack.PopAddress();
                         break;
                     default:
                         throw new NotImplementedException();
                 }
             }
+        }
+
+        private void MethodReturn(out int index, out int ip)
+        {
+            switch (MemoryMap.MapFrom(CurrentMethod.DescriptorAddress, out uint addr))
+            {
+                case MemoryTag.METHOD:
+                    break;
+                default:
+                    throw new XiVMError("Descriptor should be in method area");
+            }
+
+            byte[] descriptorData = MethodArea.GetData(addr, out var offset);
+            string descriptor = Encoding.UTF8.GetString(descriptorData,
+                MethodArea.StringMiscDataSize,
+                descriptorData.Length - MethodArea.StringMiscDataSize).Substring(1);
+            string[] vs = descriptor.Split(')');
+
+            switch (vs[1][0])
+            {
+                case 'B':
+                    byte bValue = Stack.PopByte();
+                    Stack.PopFrame(out index, out ip);
+                    PopParams(vs[0]);
+                    Stack.PushByte(bValue);
+                    break;
+                case 'I':
+                    int iValue = Stack.PopInt();
+                    Stack.PopFrame(out index, out ip);
+                    PopParams(vs[0]);
+                    Stack.PushInt(iValue);
+                    break;
+                case 'D':
+                    double dValue = Stack.PopDouble();
+                    Stack.PopFrame(out index, out ip);
+                    PopParams(vs[0]);
+                    Stack.PushDouble(dValue);
+                    break;
+                case 'L':
+                    uint aValue = Stack.PopAddress();
+                    Stack.PopFrame(out index, out ip);
+                    PopParams(vs[0]);
+                    Stack.PushAddress(aValue);
+                    break;
+                case 'V':
+                    Stack.PopFrame(out index, out ip);
+                    PopParams(vs[0]);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private uint ConsumeUint()
+        {
+            IP += sizeof(uint);
+            return BitConverter.ToUInt32(CurrentInstructions, IP - sizeof(uint));
+        }
+
+        private int ConsumeInt()
+        {
+            IP += sizeof(int);
+            return BitConverter.ToInt32(CurrentInstructions, IP - sizeof(int));
+        }
+
+        private double ConsumeDouble()
+        {
+            IP += sizeof(double);
+            return BitConverter.ToDouble(CurrentInstructions, IP - sizeof(double));
+        }
+
+        private byte ConsumeByte()
+        {
+            IP += 1;
+            return CurrentInstructions[IP - 1];
         }
     }
 }

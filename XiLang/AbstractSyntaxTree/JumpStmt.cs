@@ -1,4 +1,5 @@
 ﻿using System;
+using XiLang.Errors;
 using XiLang.Pass;
 using XiVM;
 
@@ -44,30 +45,13 @@ namespace XiLang.AbstractSyntaxTree
                     if (ReturnVal != null)
                     {
                         VariableType actualReturnType = ReturnVal.CodeGen();
-                        VariableType returnType = Constructor.CurrentFunction.Type.ReturnType;
-                        TryImplicitCast(returnType, actualReturnType);  // 可能需要隐式类型转换
-                        switch (returnType.Tag)
+                        VariableType returnType = Constructor.CurrentMethod.Type.ReturnType;
+                        if (!returnType.Equivalent(actualReturnType))
                         {
-                            case VariableTypeTag.BYTE:
-                                Constructor.AddRetB();
-                                break;
-                            case VariableTypeTag.INT:
-                                Constructor.AddRetI();
-                                break;
-                            case VariableTypeTag.DOUBLE:
-                                Constructor.AddRetD();
-                                break;
-                            case VariableTypeTag.ADDRESS:
-                                Constructor.AddRetA();
-                                break;
-                            default:
-                                throw new NotImplementedException();
+                            throw new TypeError($"Expect return type {returnType}, actual return type {actualReturnType}", -1);
                         }
                     }
-                    else
-                    {
-                        Constructor.AddRet();
-                    }
+                    Constructor.AddRet();
                     break;
                 default:
                     break;

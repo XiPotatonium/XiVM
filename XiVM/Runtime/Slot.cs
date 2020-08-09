@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace XiVM.Executor
+namespace XiVM.Runtime
 {
     /// <summary>
     /// 暂时只区分是不是地址
