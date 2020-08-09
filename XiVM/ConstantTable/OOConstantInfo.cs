@@ -35,13 +35,14 @@ namespace XiVM.ConstantTable
 
 
     [Serializable]
-    public class MemberConstantInfo
+    public class MethodConstantInfo
     {
         public int Class { private set; get; }
         public int Name { private set; get; }
         public int Type { private set; get; }
+        public int Local { set; get; }
 
-        internal MemberConstantInfo(int classIndex, int nameIndex, int typeIndex)
+        internal MethodConstantInfo(int classIndex, int nameIndex, int typeIndex)
         {
             Class = classIndex;
             Name = nameIndex;
@@ -54,7 +55,42 @@ namespace XiVM.ConstantTable
             {
                 return false;
             }
-            if (obj is MemberConstantInfo info)
+            if (obj is MethodConstantInfo info)
+            {
+                return Name == info.Name &&
+                    Class == info.Class &&
+                    Type == info.Type;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Class, Name, Type);
+        }
+    }
+
+    [Serializable]
+    public class FieldConstantInfo
+    {
+        public int Class { private set; get; }
+        public int Name { private set; get; }
+        public int Type { private set; get; }
+
+        internal FieldConstantInfo(int classIndex, int nameIndex, int typeIndex)
+        {
+            Class = classIndex;
+            Name = nameIndex;
+            Type = typeIndex;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+            if (obj is MethodConstantInfo info)
             {
                 return Name == info.Name &&
                     Class == info.Class &&

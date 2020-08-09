@@ -17,7 +17,7 @@ namespace XiVM.Runtime
         private Stack Stack { get; } = new Stack();
 
         private VMModule Module { set; get; }
-        private List<uint> StringConstants => Module.StringPool;
+        private List<uint> StringConstants => Module.StringPoolLink;
 
         internal VMExecutor(VMModule module)
         {
@@ -271,15 +271,7 @@ namespace XiVM.Runtime
 
                         Stack.PushFrame(MethodIndex, IP);
 
-                        iValue = CurrentModule.MemberConstantInfos[index - 1].Class;    // Class Index
-
-                        MethodArea.TryGetMethod(CurrentModule.StringPool[CurrentModule.ClassConstantInfos[iValue - 1].Module - 1],
-                            CurrentModule.StringPool[CurrentModule.ClassConstantInfos[iValue - 1].Name - 1],
-                            CurrentModule.StringPool[CurrentModule.MemberConstantInfos[index - 1].Name - 1],
-                            CurrentModule.StringPool[CurrentModule.MemberConstantInfos[index - 1].Type - 1],
-                            out VMMethod newMethod);
-
-                        CurrentMethod = newMethod;
+                        CurrentMethod = MethodArea.MethodIndexTable[CurrentModule.MethodPoolLink[index - 1]];
 
                         IP = 0;
                         PushLocals();

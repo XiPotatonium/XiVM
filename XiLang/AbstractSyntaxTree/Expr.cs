@@ -506,8 +506,8 @@ namespace XiLang.AbstractSyntaxTree
                         throw new XiLangError($"No matched method");
                     }
 
-                    Constructor.AddCall(Constructor.AddMemberConstantPoolInfo(
-                        Constructor.AddClassConstantPoolInfo(moduleName, className),
+                    Constructor.AddCall(Constructor.AddMethodPoolInfo(
+                        Constructor.AddClassPoolInfo(moduleName, className),
                         memberName, methodType.ToString()));
                     return methodType.ReturnType;
                 case OpType.CLASS_ACCESS:

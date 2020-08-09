@@ -118,15 +118,6 @@ namespace XiVM
             }
             return false;
         }
-
-        internal BinaryClassType ToBinary()
-        {
-            return new BinaryClassType()
-            {
-                Methods = Methods.SelectMany(p => p.Value).Select(m => m.ToBinary()).ToArray(),
-                ConstantPoolIndex = ConstantPoolIndex
-            };
-        }
     }
 
     /// <summary>

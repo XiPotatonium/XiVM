@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using XiVM.Errors;
 
@@ -55,21 +56,24 @@ namespace XiVM.Runtime
         {
             VMModule module = new VMModule()
             {
-                StringPool = new List<uint>(),
+                StringPoolLink = new List<uint>(),
                 Classes = new Dictionary<uint, VMClass>(),
-                ClassConstantInfos = binaryModule.ClassConstantInfos,
-                MemberConstantInfos = binaryModule.MemberConstantInfos
+                ClassPool = binaryModule.ClassPool,
+                MethodPool = binaryModule.MethodPool,
+                FieldPool = binaryModule.FieldPool,
+                FieldPoolLink = new List<uint>(),
+                MethodPoolLink = new List<int>()
             };
 
             // 字符串常量
             foreach (string stringConstant in binaryModule.StringPool)
             {
                 // 建立映射
-                module.StringPool.Add(TryAddConstantString(stringConstant));
+                module.StringPoolLink.Add(TryAddConstantString(stringConstant));
             }
 
-            int i = 0;
-            foreach (BinaryClassType binaryClass in binaryModule.Classes)
+            int methodIndex = 0;
+            foreach (var classInfo in binaryModule.ClassPool)
             {
                 VMClass vmClass = new VMClass()
                 {
@@ -77,73 +81,58 @@ namespace XiVM.Runtime
                     Methods = new Dictionary<uint, List<VMMethod>>()
                 };
 
-                foreach (BinaryMethod binaryMethod in binaryClass.Methods)
+                foreach ((var methodInfo, var code) in binaryModule.MethodPool.Zip(binaryModule.Code))
                 {
-                    // 寻找方法索引空位
-                    for (; i < MethodIndexTable.Length && MethodIndexTable[i] != null; ++i) ;
-                    if (i == MethodIndexTable.Length)
+                    if (code == null)
                     {
-                        throw new XiVMError("Code segment overflow");
-                    }
-
-                    // 构造VMMethod
-                    VMMethod vmMethod = new VMMethod()
-                    {
-                        Parent = vmClass,
-                        MethodIndex = i,
-                        DescriptorAddress = module.StringPool[module.MemberConstantInfos
-                            [binaryMethod.ConstantPoolIndex - 1].Type - 1],
-                        LocalDescriptorAddress = binaryMethod.LocalDescriptorIndex == 0 ?
-                            MemoryMap.NullAddress : module.StringPool[binaryMethod.LocalDescriptorIndex - 1],
-                        CodeBlock = Data.AddLast(new HeapData(
-                            Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                            binaryMethod.Instructions))
-                    };
-
-                    MethodIndexTable[i] = vmMethod;
-
-                    // 将VMMethod添加到Class中
-                    uint methodNameAddr = module.StringPool[
-                        module.MemberConstantInfos[binaryMethod.ConstantPoolIndex - 1].Name - 1];
-                    if (vmClass.Methods.TryGetValue(methodNameAddr, out List<VMMethod> methodGroup))
-                    {
-                        methodGroup.Add(vmMethod);
+                        // 外部符号
+                        throw new NotImplementedException();
                     }
                     else
                     {
-                        vmClass.Methods.Add(methodNameAddr, new List<VMMethod>() { vmMethod });
+                        // 寻找方法索引空位
+                        for (; methodIndex < MethodIndexTable.Length && MethodIndexTable[methodIndex] != null; ++methodIndex) ;
+                        if (methodIndex == MethodIndexTable.Length)
+                        {
+                            throw new XiVMError("Code segment overflow");
+                        }
+
+                        // 构造VMMethod
+                        VMMethod vmMethod = new VMMethod()
+                        {
+                            Parent = vmClass,
+                            MethodIndex = methodIndex,
+                            DescriptorAddress = module.StringPoolLink[methodInfo.Type - 1],
+                            LocalDescriptorAddress = methodInfo.Local == 0 ?
+                                MemoryMap.NullAddress : module.StringPoolLink[methodInfo.Local - 1],
+                            CodeBlock = Data.AddLast(new HeapData(
+                                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
+                                code))
+                        };
+
+                        MethodIndexTable[methodIndex] = vmMethod;
+
+                        // 将VMMethod添加到Class中
+                        uint methodNameAddr = module.StringPoolLink[methodInfo.Name - 1];
+                        if (vmClass.Methods.TryGetValue(methodNameAddr, out List<VMMethod> methodGroup))
+                        {
+                            methodGroup.Add(vmMethod);
+                        }
+                        else
+                        {
+                            vmClass.Methods.Add(methodNameAddr, new List<VMMethod>() { vmMethod });
+                        }
+
+                        // 建立Link
+                        module.MethodPoolLink.Add(methodIndex);
                     }
                 }
-                module.Classes.Add(module.StringPool[module.ClassConstantInfos
-                        [binaryClass.ConstantPoolIndex - 1].Name - 1], vmClass);
+                module.Classes.Add(module.StringPoolLink[classInfo.Name - 1], vmClass);
             }
 
-            Modules.Add(module.StringPool[binaryModule.ModuleNameIndex - 1], module);
+            Modules.Add(module.StringPoolLink[binaryModule.ModuleNameIndex - 1], module);
 
             return module;
-        }
-
-        public static bool TryGetMethod(uint moduleName, uint className, uint name, uint descriptor, out VMMethod method)
-        {
-            if (Modules.TryGetValue(moduleName, out VMModule module))
-            {
-                if (module.Classes.TryGetValue(className, out VMClass vmClass))
-                {
-                    if (vmClass.Methods.TryGetValue(name, out List<VMMethod> candidateMethods))
-                    {
-                        foreach (VMMethod candidate in candidateMethods)
-                        {
-                            if (candidate.DescriptorAddress == descriptor)
-                            {
-                                method = candidate;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            method = null;
-            return false;
         }
 
         public static byte[] GetData(uint addr, out uint offset)

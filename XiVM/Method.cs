@@ -115,11 +115,10 @@ namespace XiVM
         public ClassType Parent { get; set; }
         public AccessFlag AccessFlag { get; set; }
         public int ConstantPoolIndex { get; set; }
-        public int LocalDescriptorIndex { set; get; }
         public string Name => Parent.Parent.StringPool.ElementList[
-            Parent.Parent.MemberPool.ElementList[ConstantPoolIndex - 1].Name - 1];
+            Parent.Parent.MethodPool.ElementList[ConstantPoolIndex - 1].Name - 1];
         public string Descriptor => Parent.Parent.StringPool.ElementList[
-            Parent.Parent.MemberPool.ElementList[ConstantPoolIndex - 1].Type - 1];
+            Parent.Parent.MethodPool.ElementList[ConstantPoolIndex - 1].Type - 1];
 
         internal Method(MethodType type, ClassType parent, AccessFlag flag, int index)
         {
@@ -129,14 +128,8 @@ namespace XiVM
             ConstantPoolIndex = index;
         }
 
-        internal BinaryMethod ToBinary()
+        internal byte[] ToBinary()
         {
-            BinaryMethod binaryMethod = new BinaryMethod()
-            {
-                ConstantPoolIndex = ConstantPoolIndex,
-                LocalDescriptorIndex = LocalDescriptorIndex
-            };
-
             // 检查每个BB最后是不是br
             foreach (BasicBlock basicBlock in BasicBlocks)
             {
@@ -192,11 +185,11 @@ namespace XiVM
                 instStream.WriteByte((byte)inst.OpCode);
                 instStream.Write(inst.Params);
             }
-            binaryMethod.Instructions = new byte[instStream.Length];
+            byte[] insts = new byte[instStream.Length];
             instStream.Seek(0, SeekOrigin.Begin);
-            instStream.Read(binaryMethod.Instructions);
+            instStream.Read(insts);
 
-            return binaryMethod;
+            return insts;
         }
     }
 }
