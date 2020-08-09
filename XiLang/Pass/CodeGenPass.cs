@@ -28,6 +28,14 @@ namespace XiLang.Pass
 
         public object Run(AST root)
         {
+            // Import
+            while (root != null && root is ImportStmt)
+            {
+                root.CodeGen();
+                root = root.SiblingAST;
+            }
+
+
             // 声明缓存，免得再找一遍
             List<ClassType> classes = new List<ClassType>();
             List<ClassField> fields = new List<ClassField>();

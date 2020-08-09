@@ -39,7 +39,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// Program
-        ///     (ClassStmt)*
+        ///     (ImportStmt)* (ClassStmt)*
         /// </summary>
         /// <param name="terminateTokenTypes"></param>
         /// <returns></returns>
@@ -49,6 +49,11 @@ namespace XiLang.Syntactic
             AST cur = null;
             while (!Check(TokenType.EOF))
             {
+                while (Check(TokenType.IMPORT))
+                {
+                    AppendASTLinkedList(ref root, ref cur, ParseImport());
+                }
+
                 if (Check(TokenType.CLASS))
                 {
                     AppendASTLinkedList(ref root, ref cur, ParseClassStmt());
@@ -59,6 +64,29 @@ namespace XiLang.Syntactic
                 }
             }
             return root;
+        }
+
+        /// <summary>
+        /// ImportStmt
+        ///     IMPORT ID (DOT ID)* SEMICOLON
+        /// </summary>
+        /// <returns></returns>
+        private ImportStmt ParseImport()
+        {
+            Consume(TokenType.IMPORT);
+            Token t = Consume(TokenType.ID);
+            IdExpr root = IdExpr.MakeId(t.Literal, t.Line);
+            IdExpr cur = root;
+
+            while (Check(TokenType.DOT))
+            {
+                Consume(TokenType.DOT);
+                t = Consume(TokenType.ID);
+                AppendASTLinkedList(ref root, ref cur, IdExpr.MakeId(t.Literal, t.Line));
+            }
+
+            Consume(TokenType.SEMICOLON);
+            return new ImportStmt(root);
         }
 
         /// <summary>

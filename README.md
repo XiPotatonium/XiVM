@@ -2,13 +2,14 @@
 
 ## TODO
 
+* import的实现
+* 字节码有冗余信息，树状信息可以删掉，只留常量池
+* XiVM字符串类和数组(字符串和数组要放到系统库吗?)
 * ref和new
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiVM支持对象访问以及成员方法调用
 * XiVM的浮点数运算
-* 系统库函数和import
 * 为了支持动态绑定的函数调用，可能需要另一种Call，为了支持重载，可能需要扩展函数查询
-* 字节码有冗余信息，树状信息可以删掉，只留常量池
 
 ## XiLang
 
@@ -46,7 +47,9 @@
 
 ```
 Program
-    (ClassStmt)*
+    (ImportStmt)* (ClassStmt)*
+ImportStmt
+    IMPORT ID (DOT ID)* SEMICOLON
 ClassStmt
     CLASS ID LBRACES DeclarationStmt* RBRACES
 DeclarationStmt

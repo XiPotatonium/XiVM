@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using XiLang.AbstractSyntaxTree;
+using XiLang.Errors;
 using XiLang.Pass;
 using XiLang.Syntactic;
 using XiVM;
@@ -16,6 +17,7 @@ namespace XiLang
         public static List<BinaryModule> ImportedModules { private set; get; } = new List<BinaryModule>();
         public static ModuleConstructor ModuleConstructor { private set; get; }
         public static ClassType StringType { private set; get; }
+        public static string DirName { private set; get; } = ".";
 
         public static void Main(string[] args)
         {
@@ -27,14 +29,13 @@ namespace XiLang
 
             string moduleName = argumentParser.GetValue().StringValue;
             ConsoleArgument dirArg = argumentParser.GetValue("d");
-            string dirName = ".";
             if (dirArg.IsSet)
             {
-                dirName = dirArg.StringValue;
+                DirName = dirArg.StringValue;
             }
 
             string fileName = null;
-            foreach (string f in Directory.EnumerateFiles(dirName))
+            foreach (string f in Directory.EnumerateFiles(DirName))
             {
                 string fname = Path.GetFileName(f).ToString();
                 if (fname.StartsWith(moduleName + "."))
@@ -46,7 +47,7 @@ namespace XiLang
 
             if (string.IsNullOrEmpty(fileName))
             {
-                Console.Error.WriteLine($"Module {moduleName} not found in {dirName}");
+                Console.Error.WriteLine($"Module {moduleName} not found in {DirName}");
                 return;
             }
 
@@ -76,7 +77,31 @@ namespace XiLang
             astPasses.Run(CodeGenPass.Singleton);
 
             // 输出生成字节码
-            ModuleConstructor.Dump(dirName, argumentParser.GetValue("verbose").IsSet);
+            ModuleConstructor.Dump(DirName, argumentParser.GetValue("verbose").IsSet);
+        }
+
+        public void Import(List<string> moduleName)
+        {
+            if (moduleName.Count == 0)
+            {
+                if (File.Exists(Path.Combine(DirName, moduleName[0], ".xir")))
+                {
+
+                }
+                else if (File.Exists(Path.Combine(DirName, moduleName[0], ".xi")))
+                {
+                    // 可能需要共同编译，因为也许互相有依赖
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    throw new XiLangError($"{moduleName[0]} not found");
+                }
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         /// <summary>
@@ -89,7 +114,6 @@ namespace XiLang
         /// <returns></returns>
         public static bool TryGetMethod(string moduleName, string className, string name, out List<MethodType> methodTypes)
         {
-            List<Method> methods;
             methodTypes = null;
             if (moduleName == ModuleConstructor.Module.Name)
             {
@@ -97,7 +121,7 @@ namespace XiLang
                 {
                     if (classType.Name == className)
                     {
-                        if (classType.Methods.TryGetValue(name, out methods))
+                        if (classType.Methods.TryGetValue(name, out List<Method> methods))
                         {
                             methodTypes = methods.Select(m => m.Type).ToList();
                             return true;

@@ -15,7 +15,7 @@ namespace XiLang.Lexical
         // Access flag
         STATIC,
         // 其他关键词
-        FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN,
+        FOR, WHILE, IF, ELSE, CONTINUE, BREAK, RETURN, IMPORT,
         // 常量
         TRUE, FALSE, NULL,
         // 运算子
@@ -61,6 +61,7 @@ namespace XiLang.Lexical
             { "continue", TokenType.CONTINUE },
             { "break", TokenType.BREAK },
             { "return", TokenType.RETURN },
+            { "import", TokenType.IMPORT },
 
             { "true", TokenType.TRUE },
             { "false", TokenType.FALSE },
