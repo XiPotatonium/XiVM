@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using XiLang.Pass;
 using XiVM;
 
@@ -19,7 +18,7 @@ namespace XiLang.AbstractSyntaxTree
         /// <param name="type"></param>
         /// <param name="id"></param>
         /// <param name="init"></param>
-        public VarStmt(AccessFlag accessFlag, TypeExpr type, string id, Expr init) 
+        public VarStmt(AccessFlag accessFlag, TypeExpr type, string id, Expr init)
             : base(accessFlag, type, id)
         {
             Init = init;

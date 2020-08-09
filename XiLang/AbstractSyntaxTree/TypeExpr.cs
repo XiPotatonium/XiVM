@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Text;
-using XiLang.Errors;
-using XiLang.Lexical;
 using XiVM;
 
 namespace XiLang.AbstractSyntaxTree

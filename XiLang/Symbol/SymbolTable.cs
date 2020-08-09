@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using XiVM;
 
 namespace XiLang.Symbol
 {
-    class SymbolTable
+    internal class SymbolTable
     {
         /// <summary>
         /// 栈顶在链表头
@@ -24,7 +22,7 @@ namespace XiLang.Symbol
 
         public bool TryGetSymbol(string id, out Variable value)
         {
-            foreach (var item in SymbolStack)
+            foreach (SymbolTableFrame item in SymbolStack)
             {
                 if (item.TryGetValue(id, out value))
                 {

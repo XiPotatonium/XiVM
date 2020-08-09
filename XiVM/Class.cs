@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using XiVM.Errors;
-using XiVM.Runtime;
 
 namespace XiVM
 {
@@ -38,7 +37,7 @@ namespace XiVM
 
         public Method StaticInitializer { internal set; get; }
         public int ConstantPoolIndex { get; set; }
-        public string Name => Parent.StringPool.ElementList[(int)Parent.ClassPool.ElementList[ConstantPoolIndex - 1].Name - 1];
+        public string Name => Parent.StringPool.ElementList[Parent.ClassPool.ElementList[ConstantPoolIndex - 1].Name - 1];
 
         internal ClassType(Module module, int index)
             : base(VariableTypeTag.ADDRESS)
@@ -85,7 +84,7 @@ namespace XiVM
             Method function = new Method(type, this, flag, index);
             if (Methods.TryGetValue(name, out List<Method> value))
             {
-                foreach (var m in value)
+                foreach (Method m in value)
                 {
                     if (m.Type.Equivalent(type))
                     {

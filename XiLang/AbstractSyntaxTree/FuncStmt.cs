@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using XiLang.Errors;
-using XiLang.Pass;
 using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
@@ -12,7 +9,7 @@ namespace XiLang.AbstractSyntaxTree
         public BlockStmt Body { set; get; }
         public ParamsAst Params { private set; get; }
 
-        public FuncStmt(AccessFlag flag, TypeExpr type, string id, ParamsAst ps) 
+        public FuncStmt(AccessFlag flag, TypeExpr type, string id, ParamsAst ps)
             : base(flag, type, id)
         {
             Params = ps;

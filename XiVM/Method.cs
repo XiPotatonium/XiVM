@@ -38,7 +38,7 @@ namespace XiVM
         public static string GetDescriptor(VariableType retType, List<VariableType> ps)
         {
             StringBuilder stringBuilder = new StringBuilder("(");
-            foreach (var p in ps)
+            foreach (VariableType p in ps)
             {
                 stringBuilder.Append(p.ToString());
             }
@@ -117,9 +117,9 @@ namespace XiVM
         public int ConstantPoolIndex { get; set; }
         public int LocalDescriptorIndex { set; get; }
         public string Name => Parent.Parent.StringPool.ElementList[
-            Parent.Parent.MemberPool.ElementList[(int)ConstantPoolIndex - 1].Name - 1];
+            Parent.Parent.MemberPool.ElementList[ConstantPoolIndex - 1].Name - 1];
         public string Descriptor => Parent.Parent.StringPool.ElementList[
-            Parent.Parent.MemberPool.ElementList[(int)ConstantPoolIndex - 1].Type - 1];
+            Parent.Parent.MemberPool.ElementList[ConstantPoolIndex - 1].Type - 1];
 
         internal Method(MethodType type, ClassType parent, AccessFlag flag, int index)
         {
@@ -157,7 +157,7 @@ namespace XiVM
                 // 计算每个BasicBlock在函数中的offset
                 bb.Offset = offset;
                 bb.InstLength = 0;
-                foreach (var inst in bb.Instructions)
+                foreach (Instruction inst in bb.Instructions)
                 {
                     bb.InstLength += 1;
                     if (inst.Params != null)

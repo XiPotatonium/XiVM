@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Pass;
 using XiLang.Syntactic;
@@ -94,7 +93,7 @@ namespace XiLang
             methodTypes = null;
             if (moduleName == ModuleConstructor.Module.Name)
             {
-                foreach (var classType in ModuleConstructor.Classes)
+                foreach (ClassType classType in ModuleConstructor.Classes)
                 {
                     if (classType.Name == className)
                     {

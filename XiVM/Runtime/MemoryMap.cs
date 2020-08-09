@@ -59,7 +59,7 @@ namespace XiVM.Runtime
             {
                 res = addr;
                 return MemoryTag.METHOD;
-            } 
+            }
             else
             {
                 res = uint.MaxValue;

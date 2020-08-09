@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Runtime.InteropServices.WindowsRuntime;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Lexical;
-using XiVM;
 
 namespace XiLang.Syntactic
 {

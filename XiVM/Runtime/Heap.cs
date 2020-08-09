@@ -1,9 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows.Markup;
+﻿using System.Collections.Generic;
 using XiVM.Errors;
 
 namespace XiVM.Runtime
@@ -25,7 +20,7 @@ namespace XiVM.Runtime
                 throw new XiVMError("Heap overflow");
             }
             LinkedListNode<HeapData> newData = new LinkedListNode<HeapData>(new HeapData(
-                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length, 
+                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
                 new byte[size]));
             Data.AddLast(newData);
             return newData.Value.Offset;
@@ -33,7 +28,7 @@ namespace XiVM.Runtime
 
         public static byte[] GetData(uint addr, out uint offset)
         {
-            var cur = Data.First;
+            LinkedListNode<HeapData> cur = Data.First;
             while (cur != null)
             {
                 if (addr < cur.Value.Offset)

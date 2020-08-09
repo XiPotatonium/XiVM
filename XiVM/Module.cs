@@ -5,8 +5,6 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using XiVM.ConstantTable;
 using XiVM.Errors;
-using XiVM.Runtime;
-using XiVM.Xir;
 
 namespace XiVM
 {

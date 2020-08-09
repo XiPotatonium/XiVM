@@ -11,7 +11,7 @@ namespace XiLang.Lexical
         // 类型
         BOOL, INT, DOUBLE, VOID, STRING,
         // OO关键词
-        CLASS, BASE, 
+        CLASS, BASE,
         // Access flag
         STATIC,
         // 其他关键词

@@ -23,18 +23,18 @@ namespace XiVM.Runtime
         {
             Module = module;
 
-            if (!module.Classes.TryGetValue(MethodArea.StringProgramAddress, out var entryClass))
+            if (!module.Classes.TryGetValue(MethodArea.StringProgramAddress, out VMClass entryClass))
             {
                 throw new XiVMError("Program.Main() not found");
             }
 
-            if (!entryClass.Methods.TryGetValue(MethodArea.StringMainAddress, out var entryMethodGroup))
+            if (!entryClass.Methods.TryGetValue(MethodArea.StringMainAddress, out List<VMMethod> entryMethodGroup))
             {
                 throw new XiVMError("Program.Main() not found");
             }
 
             // TODO 有string后改成(A)V
-            foreach (var method in entryMethodGroup)
+            foreach (VMMethod method in entryMethodGroup)
             {
                 if (method.DescriptorAddress == MethodArea.StringMainDescriptorAddress)
                 {
@@ -223,7 +223,7 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.I2D:
                         iValue = Stack.PopInt();
-                        Stack.PushDouble((double)iValue);
+                        Stack.PushDouble(iValue);
                         break;
                     case InstructionType.D2I:
                         dValue = Stack.PopDouble();
@@ -342,9 +342,9 @@ namespace XiVM.Runtime
                     throw new XiVMError("Descriptor should be in method area");
             }
 
-            byte[] descriptorData = MethodArea.GetData(addr, out var offset);
-            string descriptor = Encoding.UTF8.GetString(descriptorData, 
-                MethodArea.StringMiscDataSize, 
+            byte[] descriptorData = MethodArea.GetData(addr, out uint offset);
+            string descriptor = Encoding.UTF8.GetString(descriptorData,
+                MethodArea.StringMiscDataSize,
                 descriptorData.Length - MethodArea.StringMiscDataSize);
 
             for (int i = 0; i < descriptor.Length; ++i)
@@ -405,7 +405,7 @@ namespace XiVM.Runtime
                     throw new XiVMError("Descriptor should be in method area");
             }
 
-            byte[] descriptorData = MethodArea.GetData(addr, out var offset);
+            byte[] descriptorData = MethodArea.GetData(addr, out uint offset);
             string descriptor = Encoding.UTF8.GetString(descriptorData,
                 MethodArea.StringMiscDataSize,
                 descriptorData.Length - MethodArea.StringMiscDataSize).Substring(1);

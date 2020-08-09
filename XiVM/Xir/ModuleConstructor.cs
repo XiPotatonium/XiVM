@@ -70,17 +70,17 @@ namespace XiVM.Xir
                             $" {binaryModule.MemberConstantInfos[i].Name} {binaryModule.MemberConstantInfos[i].Type}");
                     }
 
-                    foreach (var classType in Classes)
+                    foreach (ClassType classType in Classes)
                     {
                         sw.WriteLine($"\n.Class {classType.Name} {{");
-                        foreach (var methodGroup in classType.Methods)
+                        foreach (KeyValuePair<string, List<Method>> methodGroup in classType.Methods)
                         {
-                            foreach (var method in methodGroup.Value)
+                            foreach (Method method in methodGroup.Value)
                             {
                                 sw.WriteLine($"\n\t.Method {method.Name} {method.Descriptor} {{");
-                                foreach (var bb in method.BasicBlocks)
+                                foreach (BasicBlock bb in method.BasicBlocks)
                                 {
-                                    foreach (var inst in bb.Instructions)
+                                    foreach (Instruction inst in bb.Instructions)
                                     {
                                         sw.WriteLine($"\t\t{inst}");
                                     }
@@ -151,7 +151,7 @@ namespace XiVM.Xir
                 return;
             }
             StringBuilder sb = new StringBuilder();
-            foreach (var v in method.Locals)
+            foreach (Variable v in method.Locals)
             {
                 sb.Append(v.Type.ToString());
             }

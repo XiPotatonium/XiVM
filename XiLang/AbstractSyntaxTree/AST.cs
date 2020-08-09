@@ -1,5 +1,4 @@
-﻿using XiLang.Errors;
-using XiVM;
+﻿using XiVM;
 using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree

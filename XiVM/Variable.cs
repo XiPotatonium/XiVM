@@ -1,14 +1,13 @@
 ﻿using System;
-using XiVM.Errors;
 using XiVM.Runtime;
 
 namespace XiVM
 {
     public enum VariableTypeTag
     {
-        BYTE = 0x00, 
-        INT = 0x01, 
-        DOUBLE = 0x02, 
+        BYTE = 0x00,
+        INT = 0x01,
+        DOUBLE = 0x02,
         ADDRESS = 0x03
     }
 

@@ -206,41 +206,23 @@ namespace XiVM.Runtime
 
         public byte TopByte
         {
-            get
-            {
-                return (byte)Slots[SP - 1].Data;
-            }
+            get => (byte)Slots[SP - 1].Data;
 
-            set
-            {
-                Slots[SP - 1].Data = value;
-            }
+            set => Slots[SP - 1].Data = value;
         }
 
         public int TopInt
         {
-            get
-            {
-                return Slots[SP - 1].Data;
-            }
+            get => Slots[SP - 1].Data;
 
-            set
-            {
-                Slots[SP - 1].Data = value;
-            }
+            set => Slots[SP - 1].Data = value;
         }
 
         public uint TopUInt
         {
-            get
-            {
-                return (uint)Slots[SP - 1].Data;
-            }
+            get => (uint)Slots[SP - 1].Data;
 
-            set
-            {
-                Slots[SP - 1].Data = (int)value;
-            }
+            set => Slots[SP - 1].Data = (int)value;
         }
 
         /// <summary>
@@ -248,10 +230,7 @@ namespace XiVM.Runtime
         /// </summary>
         public long TopLong
         {
-            get
-            {
-                return (((long)Slots[SP - 1].Data) << 32) | ((long)Slots[SP - 2].Data & 0x0ffffffffL);
-            }
+            get => (((long)Slots[SP - 1].Data) << 32) | (Slots[SP - 2].Data & 0x0ffffffffL);
 
             set
             {
@@ -262,15 +241,9 @@ namespace XiVM.Runtime
 
         public double TopDouble
         {
-            get
-            {
-                return BitConverter.Int64BitsToDouble(TopLong);
-            }
+            get => BitConverter.Int64BitsToDouble(TopLong);
 
-            set
-            {
-                TopLong = BitConverter.DoubleToInt64Bits(value);
-            }
+            set => TopLong = BitConverter.DoubleToInt64Bits(value);
         }
 
         public void SetValue(uint addr, byte value)
@@ -328,7 +301,7 @@ namespace XiVM.Runtime
         {
             if (addr >= SP)
             {
-                throw new XiVMError("Invalid stack address"); 
+                throw new XiVMError("Invalid stack address");
             }
             return Slots[addr].Data;
         }
@@ -339,7 +312,7 @@ namespace XiVM.Runtime
             {
                 throw new XiVMError("Invalid stack address");
             }
-            return (((long)Slots[addr + 1].Data) << 32) | ((long)Slots[addr].Data & 0x0ffffffffL);
+            return (((long)Slots[addr + 1].Data) << 32) | (Slots[addr].Data & 0x0ffffffffL);
         }
 
         public double GetDouble(uint addr)

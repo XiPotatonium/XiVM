@@ -62,14 +62,14 @@ namespace XiVM.Runtime
             };
 
             // 字符串常量
-            foreach (var stringConstant in binaryModule.StringPool)
+            foreach (string stringConstant in binaryModule.StringPool)
             {
                 // 建立映射
                 module.StringPool.Add(TryAddConstantString(stringConstant));
             }
 
             int i = 0;
-            foreach (var binaryClass in binaryModule.Classes)
+            foreach (BinaryClassType binaryClass in binaryModule.Classes)
             {
                 VMClass vmClass = new VMClass()
                 {
@@ -77,7 +77,7 @@ namespace XiVM.Runtime
                     Methods = new Dictionary<uint, List<VMMethod>>()
                 };
 
-                foreach (var binaryMethod in binaryClass.Methods)
+                foreach (BinaryMethod binaryMethod in binaryClass.Methods)
                 {
                     // 寻找方法索引空位
                     for (; i < MethodIndexTable.Length && MethodIndexTable[i] != null; ++i) ;
@@ -93,7 +93,7 @@ namespace XiVM.Runtime
                         MethodIndex = i,
                         DescriptorAddress = module.StringPool[module.MemberConstantInfos
                             [binaryMethod.ConstantPoolIndex - 1].Type - 1],
-                        LocalDescriptorAddress = binaryMethod.LocalDescriptorIndex == 0 ? 
+                        LocalDescriptorAddress = binaryMethod.LocalDescriptorIndex == 0 ?
                             MemoryMap.NullAddress : module.StringPool[binaryMethod.LocalDescriptorIndex - 1],
                         CodeBlock = Data.AddLast(new HeapData(
                             Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
@@ -131,7 +131,7 @@ namespace XiVM.Runtime
                 {
                     if (vmClass.Methods.TryGetValue(name, out List<VMMethod> candidateMethods))
                     {
-                        foreach (var candidate in candidateMethods)
+                        foreach (VMMethod candidate in candidateMethods)
                         {
                             if (candidate.DescriptorAddress == descriptor)
                             {
@@ -148,7 +148,7 @@ namespace XiVM.Runtime
 
         public static byte[] GetData(uint addr, out uint offset)
         {
-            var cur = Data.First;
+            LinkedListNode<HeapData> cur = Data.First;
             while (cur != null)
             {
                 if (addr < cur.Value.Offset)

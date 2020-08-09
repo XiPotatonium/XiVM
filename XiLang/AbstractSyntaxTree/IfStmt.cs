@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using XiVM;
+﻿using XiVM;
 using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree

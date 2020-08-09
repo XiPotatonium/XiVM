@@ -484,10 +484,10 @@ namespace XiLang.AbstractSyntaxTree
 
                     // 确定对应函数
                     MethodType methodType = null;
-                    foreach (var candidate in candidateMethods)
+                    foreach (MethodType candidate in candidateMethods)
                     {
                         bool flag = true;
-                        foreach ((var realType, var actualType) in candidate.Params.Zip(pTypes))
+                        foreach ((VariableType realType, VariableType actualType) in candidate.Params.Zip(pTypes))
                         {
                             if (!realType.Equivalent(actualType))
                             {

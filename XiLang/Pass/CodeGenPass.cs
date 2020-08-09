@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Symbol;
@@ -50,7 +49,7 @@ namespace XiLang.Pass
             VarStmt varStmt;
             FuncStmt funcStmt;
             cur = root;
-            var classesEnumerator = classes.GetEnumerator();
+            List<ClassType>.Enumerator classesEnumerator = classes.GetEnumerator();
             while (cur != null)
             {
                 classStmt = (ClassStmt)cur;
@@ -74,8 +73,8 @@ namespace XiLang.Pass
                         pTypes.Add(param.Type.ToXirType());
                         param = (VarStmt)param.SiblingAST;
                     }
-                    methods.Add(Constructor.AddMethod(classType, funcStmt.Id, 
-                        Constructor.AddMethodType(funcStmt.Type.ToXirType(), pTypes), 
+                    methods.Add(Constructor.AddMethod(classType, funcStmt.Id,
+                        Constructor.AddMethodType(funcStmt.Type.ToXirType(), pTypes),
                         funcStmt.AccessFlag));
 
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;
@@ -86,8 +85,8 @@ namespace XiLang.Pass
 
             // 最后一轮生成类方法和域的定义
             classesEnumerator = classes.GetEnumerator();
-            var fieldEnumerator = fields.GetEnumerator();
-            var methodEnumerator = methods.GetEnumerator();
+            List<ClassField>.Enumerator fieldEnumerator = fields.GetEnumerator();
+            List<Method>.Enumerator methodEnumerator = methods.GetEnumerator();
             cur = root;
             while (cur != null)
             {
