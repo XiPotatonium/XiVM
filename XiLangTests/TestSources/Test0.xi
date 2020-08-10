@@ -1,11 +1,11 @@
 ﻿import System;
 
 class Program {
-	static int a;
+	static int AValue = 9;
+	static int BValue = 3 * 6;
 
 	static void Main() {
-//		int x = a + 3;
-		int x = 12;
+		int x = AValue * 3;
 		for (int i = 0; ; ) {
 			if (i == 10) {
 				break;
@@ -15,7 +15,7 @@ class Program {
 			i = i + 1;
 		}
 		System.IO.PutChar(10);
-		x = Gcd(x, 3 * 6);
+		x = Gcd(x, BValue);
 		Program.DispNumber(x);
 		System.IO.PutChar(10);
 	}

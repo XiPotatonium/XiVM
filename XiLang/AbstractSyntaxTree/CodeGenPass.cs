@@ -68,8 +68,9 @@ namespace XiLang.AbstractSyntaxTree
                     {
                         if (varStmt.Init != null)
                         {
+                            VariableType variableType = varStmt.Init.CodeGen(this);
                             Constructor.AddGetStaticFieldAddress(field);
-                            Constructor.AddLoadT(varStmt.Init.CodeGen(this));
+                            Constructor.AddStoreT(variableType);
                         }
                         // XiVM类变量默认全0的
                     }

@@ -135,7 +135,8 @@ namespace XiVM.Xir
             int index = FieldPool.Add(new FieldConstantInfo(
                 classType.ConstantPoolIndex,
                 StringPool.TryAdd(name),
-                StringPool.TryAdd(type.ToString())));
+                StringPool.TryAdd(type.ToString()),
+                flag.Flag));
             return classType.AddField(name, type, flag, index);
         }
 
@@ -144,7 +145,8 @@ namespace XiVM.Xir
             int index = MethodPool.Add(new MethodConstantInfo(
                 classType.ConstantPoolIndex,
                 StringPool.TryAdd(name),
-                StringPool.TryAdd(type.ToString())));
+                StringPool.TryAdd(type.ToString()),
+                flag.Flag));
             Method method = classType.AddMethod(name, type, flag, index);
             Methods.Add(method);
             return method;
@@ -189,10 +191,11 @@ namespace XiVM.Xir
         /// <param name="classIndex"></param>
         /// <param name="name"></param>
         /// <param name="descriptor"></param>
+        /// <param name="flag"></param>
         /// <returns></returns>
-        public int AddMethodPoolInfo(int classIndex, string name, string descriptor)
+        public int AddMethodPoolInfo(int classIndex, string name, string descriptor, uint flag)
         {
-            int index = MethodPool.TryAdd(new MethodConstantInfo(classIndex, StringPool.TryAdd(name), StringPool.TryAdd(descriptor)));
+            int index = MethodPool.TryAdd(new MethodConstantInfo(classIndex, StringPool.TryAdd(name), StringPool.TryAdd(descriptor), flag));
             if (index > Methods.Count)
             {
                 // 是新创建的，为了Methods和MethodPool可以匹配，要添加null

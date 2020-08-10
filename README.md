@@ -2,7 +2,6 @@
 
 ## TODO
 
-* 函数的静态成员
 * XiVM字符串类和数组(字符串和数组要放到系统库吗?)
 * XiVM支持对象访问
 * new
@@ -41,6 +40,9 @@
 * 循环
     * while，body必须被花括号包围，或者是空
     * for：可以在init中定义变量，body必须被花括号包围，或者是空
+* 类
+    * 静态域
+    * 静态方法
 * 禁止隐式类型提升，8.0 / 4这样的表达式也是非法的
 * import，目前仅支持线性依赖，会自动查找同一文件夹下的.xibc。
 
@@ -141,7 +143,9 @@ ConstExpr
 ### 指令集
 
 以下说明中的T为类型，可以是B(byte 1字节，1Slot), I(int 4字节，1Slot), D(double 8字节，2Slots), A(addr 4字节，1Slot)；
-N为大小（单位为Slot）。注意计算栈中的byte, int, double, addr均指对应类型的slot
+N为大小（单位为Slot）。
+注意计算栈中的byte, int, double, addr均指对应类型的slot。
+byte和int的slot实际上不区分，所以byte类型指令和int类型指令在处理栈上数据是完全一样的。
 
 单个指令的使用说明格式: 
 ```[指令] ([参数(参数的C#类型)] ...) [指令编码]```
@@ -207,7 +211,7 @@ N为大小（单位为Slot）。注意计算栈中的byte, int, double, addr均�
 
 * CONST index(int) 0x19
 
-获取当前Module的下标为index的字符串常量的地址.
+获取当前Module字符串常量池中下标为index的字符串常量的地址.
 字符串常量参考[字符串常量池](#字符串常量池)
 
 ```
@@ -219,7 +223,7 @@ N为大小（单位为Slot）。注意计算栈中的byte, int, double, addr均�
 
 * STATIC index(int) 0x19
 
-获取当前Module的下标为index的字符串常量的地址.
+获取当前Module的Field常量池中下标为index的字符串常量的地址.
 
 ```
 ... |
@@ -420,16 +424,15 @@ UTF字符串
 
 #### 域常量池
 
-类名Index、域名Index、类型Index
+类名Index、域名Index、类型Index、修饰符Flag
 
 #### 方法常量池
 
-类名Index、方法名Index、类型Index、局部变量类型Index
+类名Index、方法名Index、类型Index、局部变量类型Index、修饰符Flag
 
 #### 代码
 
 代码区和方法常量池一一对应。对于模块内方法，存放byte[]的指令，对于模块外的方法，存一个null。
-字节码加载到XiVM后会对代码进行链接，包括外部模块代码。减少函数调用时间。
 
 ### 函数调用规范
 
@@ -505,9 +508,9 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 
 方法区数据和堆空间相同
 
-#### 类的静态成员区
+#### 类的静态Field
 
-TODO
+类的静态field散落在方法区的Data中，一个Field会产生一个HeapData，这个HeapData开头并没有MiscData
 
 #### 代码段
 

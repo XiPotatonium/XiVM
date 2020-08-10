@@ -31,7 +31,7 @@ namespace XiVM.Runtime
         /// <param name="addr"></param>
         /// <param name="res"></param>
         /// <returns></returns>
-        public static MemoryTag MapFrom(uint addr, out uint res)
+        public static MemoryTag MapToOffset(uint addr, out uint res)
         {
             if (addr == NullAddress)
             {
@@ -68,7 +68,13 @@ namespace XiVM.Runtime
         }
 
 
-        public static uint MapTo(uint offset, MemoryTag to)
+        /// <summary>
+        /// 映射到绝对空间
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
+        public static uint MapToAbsolute(uint offset, MemoryTag to)
         {
             switch (to)
             {

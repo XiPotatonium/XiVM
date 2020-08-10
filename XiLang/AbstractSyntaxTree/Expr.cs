@@ -468,7 +468,7 @@ namespace XiLang.AbstractSyntaxTree
 
                     // 查找潜在函数集
                     (moduleName, className, memberName) = GetFullName(pass, Expr1);
-                    List<string> candidateMethods = Program.GetMethod(moduleName, className, memberName);
+                    List<(string descriptor, uint flag)> candidateMethods = Program.GetMethod(moduleName, className, memberName);
 
                     // 参数倒序进栈
                     List<VariableType> pTypes = new List<VariableType>();   // 正序
@@ -479,13 +479,15 @@ namespace XiLang.AbstractSyntaxTree
 
                     // 确定对应函数
                     string methodDescriptor = null;
+                    uint methodFlag = 0;
                     string actualParamsDescriptor = MethodType.GetParamsDescriptor(pTypes);
-                    foreach (string candidate in candidateMethods)
+                    foreach ((string candidate, uint candidateFlag) in candidateMethods)
                     {
                         if (MethodType.CallMatch(candidate, actualParamsDescriptor))
                         {
                             // 目前要求完全匹配，但是不区分地址类型
                             methodDescriptor = candidate;
+                            methodFlag = candidateFlag;
                         }
                     }
 
@@ -496,7 +498,7 @@ namespace XiLang.AbstractSyntaxTree
 
                     pass.Constructor.AddCall(pass.Constructor.AddMethodPoolInfo(
                         pass.Constructor.AddClassPoolInfo(moduleName, className),
-                        memberName, methodDescriptor));
+                        memberName, methodDescriptor, methodFlag));
                     return MethodType.GetReturnType(methodDescriptor);
                 case OpType.CLASS_ACCESS:
                     throw new NotImplementedException();

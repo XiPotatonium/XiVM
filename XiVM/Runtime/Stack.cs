@@ -146,19 +146,6 @@ namespace XiVM.Runtime
             System.Array.Copy(Slots, SP - 2 * n, Slots, SP - n, n);
         }
 
-        public void PushByte(byte value = 0)
-        {
-            PushN(1);
-            TopByte = value;
-        }
-
-        public byte PopByte()
-        {
-            byte ret = TopByte;
-            PopN(MemoryMap.ByteSize);
-            return ret;
-        }
-
         public void PushInt(int value = 0)
         {
             PushN(1);
@@ -203,14 +190,6 @@ namespace XiVM.Runtime
 
         #region Stack Data Modification
 
-
-        public byte TopByte
-        {
-            get => (byte)Slots[SP - 1].Data;
-
-            set => Slots[SP - 1].Data = value;
-        }
-
         public int TopInt
         {
             get => Slots[SP - 1].Data;
@@ -244,15 +223,6 @@ namespace XiVM.Runtime
             get => BitConverter.Int64BitsToDouble(TopLong);
 
             set => TopLong = BitConverter.DoubleToInt64Bits(value);
-        }
-
-        public void SetValue(uint addr, byte value)
-        {
-            if (addr >= SP)
-            {
-                throw new XiVMError("Invalid stack address");
-            }
-            Slots[addr].Data = value;
         }
 
         public void SetValue(uint addr, int value)

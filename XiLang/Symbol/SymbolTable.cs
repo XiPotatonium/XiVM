@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using XiLang.Errors;
 using XiVM;
 
 namespace XiLang.Symbol
@@ -35,7 +37,14 @@ namespace XiLang.Symbol
 
         public void AddSymbol(string id, Variable value)
         {
-            SymbolStack.First.Value.Add(id, value);
+            try
+            {
+                SymbolStack.First.Value.Add(id, value);
+            }
+            catch (ArgumentException)
+            {
+                throw new XiLangError($"Redeclaration of {id}");
+            }
         }
     }
 

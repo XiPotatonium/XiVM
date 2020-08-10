@@ -120,7 +120,7 @@ namespace XiLang
         /// <param name="className">类名</param>
         /// <param name="name">函数名</param>
         /// <returns>返回潜在函数列表</returns>
-        public static List<string> GetMethod(string moduleName, string className, string name)
+        public static List<(string descriptor, uint flag)> GetMethod(string moduleName, string className, string name)
         {
             if (!ModuleHeaders.TryGetValue(moduleName, out ModuleHeader header))
             {
@@ -128,13 +128,13 @@ namespace XiLang
             }
             else
             {
-                List<string> methodDescriptors = new List<string>();
+                List<(string descriptor, uint flag)> methodDescriptors = new List<(string descriptor, uint flag)>();
                 foreach (XiVM.ConstantTable.MethodConstantInfo candidate in header.MethodPoolList)
                 {
                     if (header.StringPoolList[header.ClassPoolList[candidate.Class - 1].Name - 1] == className &&
                         header.StringPoolList[candidate.Name - 1] == name)
                     {
-                        methodDescriptors.Add(header.StringPoolList[candidate.Type - 1]);
+                        methodDescriptors.Add((header.StringPoolList[candidate.Type - 1], candidate.Flag));
                     }
                 }
                 return methodDescriptors;

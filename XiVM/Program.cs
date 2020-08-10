@@ -22,7 +22,8 @@ namespace XiVM
             }
 
             VMExecutor executor = new VMExecutor(MethodArea.AddModule(LoadModule(moduleName)));
-            executor.Execute();
+            executor.ExecuteStaticConstructor();
+            executor.ExecuteMain();
         }
 
         public static BinaryModule LoadModule(string moduleName)

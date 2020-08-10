@@ -11,8 +11,5 @@ function Invoke-Module {
 Build-Module Test0
 Invoke-Module Test0
 
-# Build-Module GCD
-# Invoke-Module GCD.xibc
-
 # Build-Module HelloWorld
 # Invoke-Module HelloWorld.xibc
