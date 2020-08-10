@@ -1,4 +1,8 @@
-﻿void main(string[] args) {
-	puts("Hello world");
-	putc(10);
+﻿import System;
+
+class Program {
+	static void Main() {
+		System.IO.Write("Hello world");
+		System.IO.Write(10);
+	}
 }

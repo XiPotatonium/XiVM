@@ -15,12 +15,12 @@ class Program {
 				i = i + 1;
 			}
 			DispNumber(x + i);
-			System.IO.PutChar(' ');
+			System.IO.Write(' ');
 		}
-		System.IO.PutChar(10);
+		System.IO.Write(10);
 		x = Gcd(x, BValue);
 		Program.DispNumber(x);
-		System.IO.PutChar(10);
+		System.IO.Write(10);
 	}
 
 	static int Gcd(int a, int b) {
@@ -33,12 +33,12 @@ class Program {
 	static void DispNumber(int n) {
 		if (n < 0) {
 			n = -n;
-			System.IO.PutChar('-');
+			System.IO.Write('-');
 		} else if (n == 0) {
 			return;
 		}
 	
 		DispNumber(n / 10);
-		System.IO.PutChar(n % 10 + '0');
+		System.IO.Write(n % 10 + '0');
 	}
 }

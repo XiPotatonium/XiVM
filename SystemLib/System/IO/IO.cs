@@ -10,6 +10,7 @@ namespace SystemLib.System.IO
             Methods = new List<AbstractMethod>()
             {
                 new PutChar(this),
+                new Write(this)
             };
         }
 

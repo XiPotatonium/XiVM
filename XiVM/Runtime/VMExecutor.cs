@@ -120,8 +120,7 @@ namespace XiVM.Runtime
                         Stack.PushAddress((uint)(Stack.FP + ConsumeInt()));
                         break;
                     case InstructionType.CONST:
-                        Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            StringConstants[ConsumeInt()], MemoryTag.METHOD));
+                        Stack.PushAddress(StringConstants[ConsumeInt() - 1]);
                         break;
                     case InstructionType.STATIC:
                         index = ConsumeInt();
