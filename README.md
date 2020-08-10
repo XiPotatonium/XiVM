@@ -78,7 +78,7 @@ LoopStmt
     WHILE LPAREN Expr RPAREN (SELICOLON | BlockStmt)
     FOR LPAREN (VarOrExprStmt | SEMICOLON) Expr? SEMICOLON ExprList? RPAREN (SELICOLON | BlockStmt)
 IfStmt
-    IF LPAREN Expr RPAREN BlockStmt (ELSE BlockStmt | IfStmt)?
+    IF LPAREN Expr RPAREN BlockStmt (ELSE (BlockStmt | IfStmt))?
 JumpStmt
     (CONTINUE | BREAK | RETURN (ListExpr)?) SEMICOLON
 ExprStmt

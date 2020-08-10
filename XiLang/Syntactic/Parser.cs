@@ -384,7 +384,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// IfStmt
-        ///     IF LPAREN Expr RPAREN BlockStmt (ELSE BlockStmt | IfStmt)?
+        ///     IF LPAREN Expr RPAREN BlockStmt (ELSE (BlockStmt | IfStmt))?
         /// </summary>
         /// <returns></returns>
         private IfStmt ParseIfStmt()

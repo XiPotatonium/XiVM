@@ -6,13 +6,16 @@ class Program {
 
 	static void Main() {
 		int x = AValue * 3;
-		for (int i = 0; ; ) {
-			if (i == 10) {
-				break;
+		for (int i = 0; i < 10; ) {
+			if (i == 2) {
+				i = i + 2;
+			} else if (i == 5) {
+				i = i + 3;
+			} else {
+				i = i + 1;
 			}
 			DispNumber(x + i);
 			System.IO.PutChar(' ');
-			i = i + 1;
 		}
 		System.IO.PutChar(10);
 		x = Gcd(x, BValue);
