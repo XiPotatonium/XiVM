@@ -15,6 +15,10 @@ namespace XiVM
     {
         public VMModule Parent { set; get; }
         public Dictionary<uint, List<VMMethod>> Methods { set; get; }
+        public List<VMClassField> StaticFields { set; get; }
+        public int StaticFieldSize { set; get; }
+        public List<VMClassField> Fields { set; get; }
+        public int FieldSize { set; get; }
     }
 
     /// <summary>

@@ -27,7 +27,7 @@ namespace XiVM.Runtime
 
         public void ExecuteStaticConstructor()
         {
-            foreach ((var methodInfo, int index) in Module.MethodPool.Zip(Module.MethodPoolLink))
+            foreach ((ConstantTable.MethodConstantInfo methodInfo, int index) in Module.MethodPool.Zip(Module.MethodPoolLink))
             {
                 if (Module.StringPoolLink[methodInfo.Name - 1] == MethodArea.StaticConstructorNameAddress)
                 {
@@ -72,6 +72,7 @@ namespace XiVM.Runtime
 
         private void Execute()
         {
+            IP = 0;
             Stack.PushFrame(0, 0);    // 全局的ret ip可以随便填
             PushLocals();
 
@@ -124,7 +125,8 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.STATIC:
                         index = ConsumeInt();
-                        Stack.PushAddress(CurrentModule.FieldPoolLink[index - 1]);
+                        Stack.PushAddress(CurrentModule.ClassPoolLink[CurrentModule.FieldPool[index - 1].Class - 1]);
+                        Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
                         break;
                     case InstructionType.LOADB:
                     case InstructionType.LOADI:
@@ -175,7 +177,7 @@ namespace XiVM.Runtime
                     case InstructionType.STOREB:
                     case InstructionType.STOREI:
                         addr = Stack.PopAddress();
-                        iValue = Stack.PopInt();
+                        iValue = Stack.TopInt;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.STACK:
@@ -191,7 +193,7 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.STORED:
                         addr = Stack.PopAddress();
-                        dValue = Stack.PopDouble();
+                        dValue = Stack.TopDouble;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.STACK:
@@ -203,11 +205,119 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.STOREA:
                         addr = Stack.PopAddress();
-                        uValue = Stack.PopAddress();
+                        uValue = Stack.TopAddress;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.STACK:
                                 Stack.SetValue(addr, uValue);
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ALOADB:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                Stack.PushInt(data[index]);
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ALOADI:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                Stack.PushInt(BitConverter.ToInt32(data, index));
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ALOADD:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                Stack.PushDouble(BitConverter.ToDouble(data, index));
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ALOADA:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                Stack.PushAddress(BitConverter.ToUInt32(data, index));
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ASTOREB:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        iValue = Stack.TopInt;
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                data[index] = (byte)iValue;
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ASTOREI:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        iValue = Stack.TopInt;
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(int)), iValue);
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ASTORED:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        dValue = Stack.TopDouble;
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(double)), dValue);
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.ASTOREA:
+                        index = Stack.PopInt();
+                        addr = Stack.PopAddress();
+                        uValue = Stack.TopAddress;
+                        switch (MemoryMap.MapToOffset(addr, out addr))
+                        {
+                            case MemoryTag.METHOD:
+                                data = MethodArea.GetData(addr);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(uint)), uValue);
                                 break;
                             default:
                                 throw new NotImplementedException();

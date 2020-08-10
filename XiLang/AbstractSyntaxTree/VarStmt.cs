@@ -54,8 +54,9 @@ namespace XiLang.AbstractSyntaxTree
             if (Init != null)
             {
                 Init.CodeGen(pass);                         // value
-                pass.Constructor.AddLocal(var.Offset);       // addr
-                pass.Constructor.AddStoreT(var.Type);        // store
+                pass.Constructor.AddLocal(var.Offset);      // addr
+                pass.Constructor.AddStoreT(var.Type);       // store
+                pass.Constructor.AddPop(var.Type);
             }
 
             return null;

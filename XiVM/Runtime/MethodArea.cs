@@ -66,8 +66,9 @@ namespace XiVM.Runtime
                 StringPoolLink = new List<uint>(),
                 Classes = new Dictionary<uint, VMClass>(),
                 ClassPool = binaryModule.ClassPool,
+                ClassPoolLink = new List<uint>(),
                 FieldPool = binaryModule.FieldPool,
-                FieldPoolLink = new List<uint>(),
+                FieldPoolLink = new List<int>(),
                 MethodPool = binaryModule.MethodPool,
                 MethodPoolLink = new List<int>()
             };
@@ -87,14 +88,18 @@ namespace XiVM.Runtime
                 VMClass vmClass = new VMClass()
                 {
                     Parent = module,
-                    Methods = new Dictionary<uint, List<VMMethod>>()
+                    Methods = new Dictionary<uint, List<VMMethod>>(),
+                    StaticFields = new List<VMClassField>(),
+                    StaticFieldSize = 0,
+                    Fields = new List<VMClassField>(),
+                    FieldSize = 0
                 };
                 module.Classes.Add(module.StringPoolLink[classInfo.Name - 1], vmClass);
             }
 
             // Field
             AccessFlag accessFlag = new AccessFlag();
-            foreach (var fieldInfo in module.FieldPool)
+            foreach (FieldConstantInfo fieldInfo in module.FieldPool)
             {
                 int moduleNameIndex = module.ClassPool[fieldInfo.Class - 1].Module;
                 if (moduleNameIndex != binaryModule.ModuleNameIndex)
@@ -106,19 +111,16 @@ namespace XiVM.Runtime
                 }
                 else
                 {
-                    // 目前VMClass没有Static域信息
+                    module.Classes.TryGetValue(module.StringPoolLink[module.ClassPool[fieldInfo.Class - 1].Name - 1],
+                        out VMClass vmClass);
                     // 分配方法区空间并且链接地址
                     accessFlag.Flag = fieldInfo.Flag;
+                    VariableType fieldType = VariableType.GetType(binaryModule.StringPool[fieldInfo.Type - 1]);
                     if (accessFlag.IsStatic)
                     {
-                        module.FieldPoolLink.Add(MemoryMap.MapToAbsolute(VariableType.GetType(binaryModule.StringPool[fieldInfo.Type - 1]).Tag switch
-                        {
-                            VariableTypeTag.BYTE => Malloc(sizeof(byte)),
-                            VariableTypeTag.INT => Malloc(sizeof(int)),
-                            VariableTypeTag.DOUBLE => Malloc(sizeof(double)),
-                            VariableTypeTag.ADDRESS => Malloc(sizeof(uint)),
-                            _ => throw new NotImplementedException(),
-                        }, MemoryTag.METHOD));
+                        module.FieldPoolLink.Add(vmClass.StaticFieldSize);
+                        vmClass.StaticFields.Add(new VMClassField(fieldInfo.Flag, fieldType, vmClass.StaticFieldSize));
+                        vmClass.StaticFieldSize += fieldType.Size;
                     }
                     else
                     {
@@ -127,6 +129,12 @@ namespace XiVM.Runtime
                 }
             }
 
+            // 完成静态空间分配
+            foreach (ClassConstantInfo classInfo in module.ClassPool)
+            {
+                module.Classes.TryGetValue(module.StringPoolLink[classInfo.Name - 1], out VMClass vmClass);
+                module.ClassPoolLink.Add(MemoryMap.MapToAbsolute(Malloc(vmClass.StaticFieldSize), MemoryTag.METHOD));
+            }
 
             // Method
             int methodIndex = 0;
@@ -181,7 +189,7 @@ namespace XiVM.Runtime
             }
 
             // 导入外部模块
-            foreach (var externalModuleNameIndex in externalModuleNameIndexes)
+            foreach (int externalModuleNameIndex in externalModuleNameIndexes)
             {
                 if (!Modules.ContainsKey(module.StringPoolLink[externalModuleNameIndex - 1]))
                 {
@@ -245,7 +253,7 @@ namespace XiVM.Runtime
             return null;
         }
 
-        public static uint Malloc(uint size)
+        public static uint Malloc(int size)
         {
             if (Size + size > MaxSize)
             {

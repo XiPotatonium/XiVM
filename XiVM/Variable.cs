@@ -132,4 +132,16 @@ namespace XiVM
             ConstantPoolIndex = index;
         }
     }
+
+    internal class VMClassField : Variable
+    {
+        public AccessFlag AccessFlag { get; set; }
+
+        internal VMClassField(uint flag, VariableType type, int offset)
+            : base(type)
+        {
+            Offset = offset;
+            AccessFlag = new AccessFlag() { Flag = flag };
+        }
+    }
 }

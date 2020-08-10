@@ -176,12 +176,12 @@ namespace XiVM.Runtime
         {
             PushN(1);
             Slots[SP - 1].DataTag = SlotDataTag.ADDRESS;
-            TopUInt = value;
+            TopAddress = value;
         }
 
         public uint PopAddress()
         {
-            uint ret = TopUInt;
+            uint ret = TopAddress;
             PopN(MemoryMap.AddressSize);
             return ret;
         }
@@ -197,7 +197,7 @@ namespace XiVM.Runtime
             set => Slots[SP - 1].Data = value;
         }
 
-        public uint TopUInt
+        public uint TopAddress
         {
             get => (uint)Slots[SP - 1].Data;
 

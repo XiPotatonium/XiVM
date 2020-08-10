@@ -432,7 +432,6 @@ namespace XiLang.AbstractSyntaxTree
                     throw new NotImplementedException();
                 case OpType.ASSIGN:
                     expr2Type = Expr2.CodeGen(pass);
-                    pass.Constructor.AddDup(expr2Type);   // Assign的返回值
                     Expr1.LeftValueCodeGen(pass);
                     pass.Constructor.AddStoreT(expr2Type);
                     return expr2Type;
@@ -720,7 +719,7 @@ namespace XiLang.AbstractSyntaxTree
             {
                 // static或者非static field
                 pass.Constructor.AddGetStaticFieldAddress(field);
-                pass.Constructor.AddLoadT(field.Type);
+                pass.Constructor.AddALoadT(field.Type);
                 return field.Type;
             }
             else

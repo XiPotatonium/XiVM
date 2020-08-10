@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Lexical;

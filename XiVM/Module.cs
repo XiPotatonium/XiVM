@@ -94,17 +94,24 @@ namespace XiVM
     internal class VMModule
     {
         /// <summary>
-        /// 映射表，从原来的index映射到address
+        /// address，指向方法区字符串常量池中的字符串
         /// </summary>
         public List<uint> StringPoolLink { set; get; }
         public Dictionary<uint, VMClass> Classes { set; get; }
         public ClassConstantInfo[] ClassPool { set; get; }
+        /// <summary>
+        /// address，指向方法区类的静态field空间
+        /// </summary>
+        public List<uint> ClassPoolLink { set; get; }
         public MethodConstantInfo[] MethodPool { set; get; }
         /// <summary>
-        /// 映射表，从MethodPool到MethodIndexTable
+        /// 指向MethodIndexTable中的Method
         /// </summary>
         public List<int> MethodPoolLink { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
-        public List<uint> FieldPoolLink { set; get; }
+        /// <summary>
+        /// offset，是field在该类的静态field空间的offset
+        /// </summary>
+        public List<int> FieldPoolLink { set; get; }
     }
 }

@@ -3,7 +3,6 @@
 ## TODO
 
 * XiVM字符串类和数组(字符串和数组要放到系统库吗?)
-* XiVM支持对象访问
 * new
 * ref
 * XiLang中char字面量和string字面量中的转义字符问题
@@ -223,11 +222,11 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 
 * STATIC index(int) 0x19
 
-获取当前Module的Field常量池中下标为index的字符串常量的地址.
+获取当前Module的Field常量池中下标为index的字符串常量的地址，地址为res[offset]。
 
 ```
 ... |
-... | res(addr) |
+... | res(addr) | offset(int) |
 ```
 
 #### LOADT
@@ -251,11 +250,39 @@ load会从src指向的位置加载一个T类型的值，Push进计算栈
 * STORED 0X2A
 * STOREA 0X2B
 
-store会将T类型的value存储到dest这个地址
+store会将T类型的value存储到dest这个地址，注意value并不会被pop
 
 ```
 ... | value(T) | dest(addr) |
-... |
+... | value(T) |
+```
+
+#### ALOADT
+
+* ALOADB 0X20
+* ALOADI 0X21
+* ALOADD 0X22
+* ALOADA 0X23
+
+load会从src[offset]位置加载一个T类型的值，Push进计算栈
+
+```
+... | src(addr) | offset(int) |
+... | value(T) |
+```
+
+#### ASTORET
+
+* ASTOREB 0X28
+* ASTOREI 0X29
+* ASTORED 0X2A
+* ASTOREA 0X2B
+
+store会将T类型的value存储到dest[offset]位置，注意value并不会被pop
+
+```
+... | value(T) | dest(addr) | offset(int) |
+... | value(T) |
 ```
 
 #### ADDT
@@ -510,7 +537,7 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 
 #### 类的静态Field
 
-类的静态field散落在方法区的Data中，一个Field会产生一个HeapData，这个HeapData开头并没有MiscData
+一个类分配一个HeapData，所有静态Field都存储在这列，这个HeapData开头并没有MiscData
 
 #### 代码段
 

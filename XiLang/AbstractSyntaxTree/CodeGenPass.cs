@@ -70,7 +70,8 @@ namespace XiLang.AbstractSyntaxTree
                         {
                             VariableType variableType = varStmt.Init.CodeGen(this);
                             Constructor.AddGetStaticFieldAddress(field);
-                            Constructor.AddStoreT(variableType);
+                            Constructor.AddAStoreT(variableType);
+                            Constructor.AddPop(variableType);
                         }
                         // XiVM类变量默认全0的
                     }

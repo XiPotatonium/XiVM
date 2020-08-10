@@ -247,5 +247,118 @@ namespace XiVM.Xir
         }
 
         #endregion
+
+        #region AStore
+
+        public void AddAStoreT(VariableType type)
+        {
+            switch (type.Tag)
+            {
+                case VariableTypeTag.BYTE:
+                    AddAStoreB();
+                    break;
+                case VariableTypeTag.INT:
+                    AddAStoreI();
+                    break;
+                case VariableTypeTag.DOUBLE:
+                    AddAStoreD();
+                    break;
+                case VariableTypeTag.ADDRESS:
+                    AddAStoreA();
+                    break;
+                default:
+                    throw new XiVMError($"Unknown type {type.Tag} for TLoad");
+            }
+        }
+
+        internal void AddAStoreB()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ASTOREB
+            });
+        }
+
+        internal void AddAStoreI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ASTOREI
+            });
+        }
+
+        internal void AddAStoreD()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ASTORED
+            });
+        }
+
+        internal void AddAStoreA()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ASTOREA
+            });
+        }
+
+        #endregion
+
+        #region ALoadT
+        public void AddALoadT(VariableType type)
+        {
+            switch (type.Tag)
+            {
+                case VariableTypeTag.BYTE:
+                    AddALoadB();
+                    break;
+                case VariableTypeTag.INT:
+                    AddALoadI();
+                    break;
+                case VariableTypeTag.DOUBLE:
+                    AddALoadD();
+                    break;
+                case VariableTypeTag.ADDRESS:
+                    AddALoadA();
+                    break;
+                default:
+                    throw new XiVMError($"Unknown type {type.Tag} for TLoad");
+            }
+        }
+
+        internal void AddALoadB()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ALOADB
+            });
+        }
+
+        internal void AddALoadI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ALOADI
+            });
+        }
+
+        internal void AddALoadD()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ALOADD
+            });
+        }
+
+        internal void AddALoadA()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.ALOADA
+            });
+        }
+
+        #endregion
     }
 }

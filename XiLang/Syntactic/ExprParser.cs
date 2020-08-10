@@ -327,7 +327,7 @@ namespace XiLang.Syntactic
         {
             // 注意UnaryExpr中存在括号表达式
             // 需要解决Cast和括号表达式的冲突，因此需要判断是否是TypeExpr
-            if (Check(TokenType.LPAREN) && 
+            if (Check(TokenType.LPAREN) &&
                 ((CheckAt(1, LexicalRules.TypeTokens) && CheckAt(2, TokenType.RPAREN)) || CheckAfterCompoundId(1, TokenType.RPAREN)))
             {
                 Consume(TokenType.LPAREN);
