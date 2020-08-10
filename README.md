@@ -87,7 +87,7 @@ ExprStmt
 
 ```
 TypeExpr
-    (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+    (ANY_TYPE | ID (DOT ID)*) (LBRACKET RBRACKET)?
 ListExpr
     Expr [COMMA Expr]*
 Expr
