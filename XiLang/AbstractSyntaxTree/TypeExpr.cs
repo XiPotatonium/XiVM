@@ -4,7 +4,7 @@ using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class TypeExpr : Expr
+    internal class TypeExpr : Expr
     {
         public SyntacticValueType Type { set; get; }
         public bool IsArray { set; get; }

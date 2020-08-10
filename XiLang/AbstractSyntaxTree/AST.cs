@@ -1,25 +1,23 @@
 ﻿using XiVM;
-using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public abstract class AST
+    internal abstract class AST
     {
-        protected static ModuleConstructor Constructor => Program.ModuleConstructor;
-
         /// <summary>
         /// 会同时CodeGen兄弟节点
         /// </summary>
         /// <param name="ast"></param>
         /// <returns>如果是Expr返回Expr结果的Type，这个结果会保存在计算栈的栈顶；如果是Stmt，返回null</returns>
-        public static VariableType CodeGen(AST ast)
+        public static VariableType CodeGen(CodeGenPass pass, AST ast)
         {
             VariableType ret = null;
             while (ast != null)
             {
-                ret = ast.CodeGen();
-                if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch == true)
+                ret = ast.CodeGen(pass);
+                if (pass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch == true)
                 {
+                    // Continue, break, return 这样的语句后面的兄弟没有必要再生成了
                     break;
                 }
                 ast = ast.SiblingAST;
@@ -32,10 +30,12 @@ namespace XiLang.AbstractSyntaxTree
         public abstract string ASTLabel();
         public abstract AST[] Children();
 
+
         /// <summary>
         /// 不会CodeGen兄弟
         /// </summary>
+        /// <param name="pass"></param>
         /// <returns>如果是Expr返回Expr结果的Type，这个结果会保存在计算栈的栈顶；如果是Stmt，返回null</returns>
-        public abstract VariableType CodeGen();
+        public abstract VariableType CodeGen(CodeGenPass pass);
     }
 }

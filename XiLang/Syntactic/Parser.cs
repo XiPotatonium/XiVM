@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Lexical;
-using XiLang.Pass;
 using XiVM;
 
 namespace XiLang.Syntactic
@@ -11,7 +10,7 @@ namespace XiLang.Syntactic
     /// <summary>
     /// 语法分析，第二个Pass
     /// </summary>
-    public partial class Parser : AbstractParser, ITokenPass
+    internal partial class Parser : AbstractParser, ITokenPass
     {
         public Parser(HashSet<string> classes)
         {

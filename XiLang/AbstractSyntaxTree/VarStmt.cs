@@ -1,10 +1,9 @@
 ﻿using System.Text;
-using XiLang.Pass;
 using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class VarStmt : DeclarationStmt
+    internal class VarStmt : DeclarationStmt
     {
         /// <summary>
         /// 变量定义的初始化表达式
@@ -46,17 +45,17 @@ namespace XiLang.AbstractSyntaxTree
         /// 此处生成local变量
         /// </summary>
         /// <returns></returns>
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
-            Variable var = Constructor.AddLocalVariable(Id, Type.ToXirType());
-            CodeGenPass.LocalSymbolTable.AddSymbol(Id, var);
+            Variable var = pass.Constructor.AddLocalVariable(Id, Type.ToXirType());
+            pass.LocalSymbolTable.AddSymbol(Id, var);
 
             // 初始化代码
             if (Init != null)
             {
-                Init.CodeGen();                         // value
-                Constructor.AddLocal(var.Offset);       // addr
-                Constructor.AddStoreT(var.Type);        // store
+                Init.CodeGen(pass);                         // value
+                pass.Constructor.AddLocal(var.Offset);       // addr
+                pass.Constructor.AddStoreT(var.Type);        // store
             }
 
             return null;

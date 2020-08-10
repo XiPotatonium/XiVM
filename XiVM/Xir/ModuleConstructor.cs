@@ -11,7 +11,7 @@ namespace XiVM.Xir
     public partial class ModuleConstructor
     {
         public Module Module { private set; get; }
-        private string Name => Module.Name;
+        public string Name => Module.Name;
         public List<ClassType> Classes => Module.Classes;
 
         public BasicBlock CurrentBasicBlock { set; get; }

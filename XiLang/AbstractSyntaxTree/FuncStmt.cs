@@ -4,7 +4,7 @@ using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class FuncStmt : DeclarationStmt
+    internal class FuncStmt : DeclarationStmt
     {
         public BlockStmt Body { set; get; }
         public ParamsAst Params { private set; get; }
@@ -33,13 +33,13 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Type, Params, Body };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             throw new NotImplementedException();
         }
     }
 
-    public class ParamsAst : AST
+    internal class ParamsAst : AST
     {
         public VarStmt Params { set; get; }
 
@@ -58,7 +58,7 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Params };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             throw new NotImplementedException();
         }

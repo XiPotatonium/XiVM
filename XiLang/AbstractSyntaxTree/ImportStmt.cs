@@ -22,7 +22,7 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Module };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             throw new NotImplementedException();
         }

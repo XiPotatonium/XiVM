@@ -1,6 +1,4 @@
-﻿using XiLang.AbstractSyntaxTree;
-
-namespace XiLang.Pass
+﻿namespace XiLang.AbstractSyntaxTree
 {
     internal class JsonPass : IASTPass
     {

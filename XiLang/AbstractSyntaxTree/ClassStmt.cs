@@ -3,7 +3,7 @@ using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class ClassStmt : Stmt
+    internal class ClassStmt : Stmt
     {
         public string Id { set; get; }
         public FuncStmt Methods { set; get; }
@@ -24,7 +24,7 @@ namespace XiLang.AbstractSyntaxTree
             return $"(Class){Id}";
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             throw new NotImplementedException();
         }

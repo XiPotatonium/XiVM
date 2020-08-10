@@ -2,10 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
-using XiLang.Pass;
+using XiLang.Lexical;
 using XiLang.Syntactic;
 using XiVM;
 using XiVM.Xir;
@@ -14,9 +13,12 @@ namespace XiLang
 {
     public class Program
     {
-        public static List<BinaryModule> ImportedModules { private set; get; } = new List<BinaryModule>();
-        public static ModuleConstructor ModuleConstructor { private set; get; }
+        /// <summary>
+        /// TODO
+        /// </summary>
         public static ClassType StringType { private set; get; }
+
+        public static Dictionary<string, ModuleHeader> ModuleHeaders { private set; get; } = new Dictionary<string, ModuleHeader>();
         public static string DirName { private set; get; } = ".";
 
         public static void Main(string[] args)
@@ -56,12 +58,13 @@ namespace XiLang
             TokenPassManager tokenPasses = new TokenPassManager(text);
 
             // 1，获取所有类信息，我们的语法不允许分离类定义和声明
-            HashSet<string> classes = (HashSet<string>)tokenPasses.Run(new ClassPass());
+            HashSet<string> classNames = (HashSet<string>)tokenPasses.Run(new ClassPass());
 
             // 2，解析类信息之外的部分并生成AST
-            AST root = (AST)tokenPasses.Run(new Parser(classes));
+            AST root = (AST)tokenPasses.Run(new Parser(classNames));
 
             Console.WriteLine("Parse done!");
+
 
             ASTPassManager astPasses = new ASTPassManager(root);
 
@@ -73,29 +76,38 @@ namespace XiLang
             }
 
             // 4，编译生成ir与字节码，编译阶段会完成常量表达式的估值
-            ModuleConstructor = new ModuleConstructor(moduleName);
-            astPasses.Run(CodeGenPass.Singleton);
+            ModuleConstructor constructor = new ModuleConstructor(moduleName);
+            ModuleHeaders.Add(moduleName, constructor.Module);
+            List<ClassType> classes = (List<ClassType>)astPasses.Run(new ClassDeclarationPass(constructor));
+            (List<ClassField> fields, List<Method> methods) = ((List<ClassField> fields, List<Method> methods))
+                astPasses.Run(new MemberDeclarationPass(constructor, classes));
+            astPasses.Run(new CodeGenPass(constructor, classes, fields, methods));
 
             // 输出生成字节码
-            ModuleConstructor.Dump(DirName, argumentParser.GetValue("verbose").IsSet);
+            constructor.Dump(DirName, argumentParser.GetValue("verbose").IsSet);
         }
 
-        public void Import(List<string> moduleName)
+        public static void Import(List<string> moduleName)
         {
-            if (moduleName.Count == 0)
+            if (moduleName.Count == 1)
             {
-                if (File.Exists(Path.Combine(DirName, moduleName[0], ".xir")))
+                if (!ModuleHeaders.ContainsKey(moduleName[0]))
                 {
-
-                }
-                else if (File.Exists(Path.Combine(DirName, moduleName[0], ".xi")))
-                {
-                    // 可能需要共同编译，因为也许互相有依赖
-                    throw new NotImplementedException();
-                }
-                else
-                {
-                    throw new XiLangError($"{moduleName[0]} not found");
+                    // 避免重复导入
+                    if (File.Exists(Path.Combine(DirName, moduleName[0] + ".xibc")))
+                    {
+                        ModuleHeaders.Add(moduleName[0], BinaryModule.Load(Path.Combine(DirName, moduleName[0] + ".xibc")));
+                    }
+                    else if (File.Exists(Path.Combine(DirName, moduleName[0] + ".xi")))
+                    {
+                        // 可能需要共同编译，因为也许互相有依赖
+                        // 一个可能的想法是层序遍历，先声明所有的class，再声明所有的类成员，再定义所有的类成员
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        throw new XiLangError($"{moduleName[0]} not found");
+                    }
                 }
             }
             else
@@ -110,28 +122,26 @@ namespace XiLang
         /// <param name="moduleName">模块名</param>
         /// <param name="className">类名</param>
         /// <param name="name">函数名</param>
-        /// <param name="methodTypes">返回潜在函数列表</param>
-        /// <returns></returns>
-        public static bool TryGetMethod(string moduleName, string className, string name, out List<MethodType> methodTypes)
+        /// <returns>返回潜在函数列表</returns>
+        public static List<string> GetMethod(string moduleName, string className, string name)
         {
-            methodTypes = null;
-            if (moduleName == ModuleConstructor.Module.Name)
+            if (!ModuleHeaders.TryGetValue(moduleName, out ModuleHeader header))
             {
-                foreach (ClassType classType in ModuleConstructor.Classes)
+                throw new XiLangError($"Module {moduleName} not imported but used");
+            }
+            else
+            {
+                List<string> methodDescriptors = new List<string>();
+                foreach (XiVM.ConstantTable.MethodConstantInfo candidate in header.MethodPoolList)
                 {
-                    if (classType.Name == className)
+                    if (header.StringPoolList[header.ClassPoolList[candidate.Class - 1].Name - 1] == className &&
+                        header.StringPoolList[candidate.Name - 1] == name)
                     {
-                        if (classType.Methods.TryGetValue(name, out List<Method> methods))
-                        {
-                            methodTypes = methods.Select(m => m.Type).ToList();
-                            return true;
-                        }
-                        break;
+                        methodDescriptors.Add(header.StringPoolList[candidate.Type - 1]);
                     }
                 }
-                return false;
+                return methodDescriptors;
             }
-            throw new NotImplementedException();
         }
     }
 }

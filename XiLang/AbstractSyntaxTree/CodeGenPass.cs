@@ -1,111 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
-using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Symbol;
 using XiVM;
 using XiVM.Xir;
 
-namespace XiLang.Pass
+namespace XiLang.AbstractSyntaxTree
 {
     /// <summary>
     /// 注意CodeGen的过程会破坏AST，放在ASTPass的最后一个
     /// </summary>
     internal class CodeGenPass : IASTPass
     {
-        public static CodeGenPass Singleton { get; } = new CodeGenPass();
+        public Stack<BasicBlock> Breakable { get; }
+        public Stack<BasicBlock> Continuable { get; }
+        public ModuleConstructor Constructor { get; }
 
-        public static ModuleConstructor Constructor => Program.ModuleConstructor;
-
-        public static Stack<BasicBlock> Breakable { private set; get; } = new Stack<BasicBlock>();
-        public static Stack<BasicBlock> Continuable { private set; get; } = new Stack<BasicBlock>();
         /// <summary>
         /// 函数局部变量的符号栈
         /// </summary>
-        public static SymbolTable LocalSymbolTable { set; get; }
+        public SymbolTable LocalSymbolTable { set; get; }
 
-        private CodeGenPass() { }
+
+        private List<ClassField> Fields { get; }
+        private List<Method> Methods { get; }
+        private List<ClassType> Classes { get; }
+
+        public CodeGenPass(ModuleConstructor constructor, List<ClassType> classes, List<ClassField> fields, List<Method> methods)
+        {
+            Constructor = constructor;
+            Classes = classes;
+            Fields = fields;
+            Methods = methods;
+            Breakable = new Stack<BasicBlock>();
+            Continuable = new Stack<BasicBlock>();
+            LocalSymbolTable = null;
+        }
 
         public object Run(AST root)
         {
-            // Import
+            // 跳过Import
             while (root != null && root is ImportStmt)
             {
-                root.CodeGen();
                 root = root.SiblingAST;
             }
 
-
-            // 声明缓存，免得再找一遍
-            List<ClassType> classes = new List<ClassType>();
-            List<ClassField> fields = new List<ClassField>();
-            List<Method> methods = new List<Method>();
-
-            // 第一轮生成类的声明
-            AST cur = root;
-            ClassStmt classStmt;
-            ClassType classType;
-            while (cur != null)
-            {
-                classStmt = (ClassStmt)cur;
-                classType = Constructor.AddClassType(classStmt.Id);
-                classes.Add(classType);
-                cur = cur.SiblingAST;
-            }
-
-            // 第二轮生成类方法和域的声明
-            VarStmt varStmt;
-            FuncStmt funcStmt;
-            cur = root;
-            List<ClassType>.Enumerator classesEnumerator = classes.GetEnumerator();
-            while (cur != null)
-            {
-                classStmt = (ClassStmt)cur;
-                classesEnumerator.MoveNext();
-                classType = classesEnumerator.Current;
-
-                varStmt = classStmt.Fields;
-                while (varStmt != null)
-                {
-                    fields.Add(Constructor.AddClassField(classType, varStmt.Id, varStmt.Type.ToXirType(), varStmt.AccessFlag));
-                    varStmt = (VarStmt)varStmt.SiblingAST;
-                }
-
-                funcStmt = classStmt.Methods;
-                while (funcStmt != null)
-                {
-                    List<VariableType> pTypes = new List<VariableType>();
-                    VarStmt param = funcStmt.Params.Params;
-                    while (param != null)
-                    {
-                        pTypes.Add(param.Type.ToXirType());
-                        param = (VarStmt)param.SiblingAST;
-                    }
-                    methods.Add(Constructor.AddMethod(classType, funcStmt.Id,
-                        Constructor.AddMethodType(funcStmt.Type.ToXirType(), pTypes),
-                        funcStmt.AccessFlag));
-
-                    funcStmt = (FuncStmt)funcStmt.SiblingAST;
-                }
-
-                cur = cur.SiblingAST;
-            }
-
             // 最后一轮生成类方法和域的定义
-            classesEnumerator = classes.GetEnumerator();
-            List<ClassField>.Enumerator fieldEnumerator = fields.GetEnumerator();
-            List<Method>.Enumerator methodEnumerator = methods.GetEnumerator();
-            cur = root;
-            while (cur != null)
+            List<ClassType>.Enumerator classesEnumerator = Classes.GetEnumerator();
+            List<ClassField>.Enumerator fieldEnumerator = Fields.GetEnumerator();
+            List<Method>.Enumerator methodEnumerator = Methods.GetEnumerator();
+            while (root != null)
             {
-                classStmt = (ClassStmt)cur;
+                ClassStmt classStmt = (ClassStmt)root;
                 classesEnumerator.MoveNext();
-                classType = classesEnumerator.Current;
+                ClassType classType = classesEnumerator.Current;
 
                 // 正在生成静态构造函数
                 Constructor.CurrentBasicBlock = classType.StaticInitializer.BasicBlocks.First.Value;
 
-                varStmt = classStmt.Fields;
+                VarStmt varStmt = classStmt.Fields;
                 while (varStmt != null)
                 {
                     fieldEnumerator.MoveNext();
@@ -116,7 +69,7 @@ namespace XiLang.Pass
                         if (varStmt.Init != null)
                         {
                             Constructor.AddGetStaticFieldAddress(field);
-                            Constructor.AddLoadT(varStmt.Init.CodeGen());
+                            Constructor.AddLoadT(varStmt.Init.CodeGen(this));
                         }
                         // XiVM类变量默认全0的
                     }
@@ -134,7 +87,7 @@ namespace XiLang.Pass
                     Constructor.AddRet();
                 }
 
-                funcStmt = classStmt.Methods;
+                FuncStmt funcStmt = classStmt.Methods;
                 while (funcStmt != null)
                 {
                     methodEnumerator.MoveNext();
@@ -154,7 +107,7 @@ namespace XiLang.Pass
 
                     Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(method);
                     // 不要直接Body.CodeGen()，因为那样会新建一个NS
-                    AST.CodeGen(funcStmt.Body.Child);
+                    AST.CodeGen(this, funcStmt.Body.Child);
 
                     // 要检查XirGenPass.ModuleConstructor.CurrentBasicBlock最后一条Instruction是不是ret
                     if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsRet != true)
@@ -179,7 +132,7 @@ namespace XiLang.Pass
                     Constructor.CompleteMethodGeneration(method);
                 }
 
-                cur = cur.SiblingAST;
+                root = root.SiblingAST;
             }
 
             return null;

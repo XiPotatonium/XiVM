@@ -4,15 +4,15 @@ function Build-Module {
 }
 
 function Invoke-Module {
-    param ($path)
-    ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe $path
+    param ($moduleName)
+    ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe $moduleName
 }
 
 Build-Module Test0
-Invoke-Module Test0.xibc
+Invoke-Module Test0
 
-Build-Module GCD
-Invoke-Module GCD.xibc
+# Build-Module GCD
+# Invoke-Module GCD.xibc
 
-Build-Module HelloWorld
-Invoke-Module HelloWorld.xibc
+# Build-Module HelloWorld
+# Invoke-Module HelloWorld.xibc

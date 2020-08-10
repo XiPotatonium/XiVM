@@ -1,4 +1,6 @@
-﻿class Program {
+﻿import System;
+
+class Program {
 	static int a;
 
 	static void Main() {
@@ -14,6 +16,8 @@
 //		}
 //		putc(10);
 		x = gcd(x, 3 * 9);
+		System.IO.PutChar('A');
+		System.IO.PutChar(10);
 	}
 
 	static int gcd(int a, int b) {

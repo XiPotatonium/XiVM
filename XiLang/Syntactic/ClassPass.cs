@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using XiLang.Errors;
 using XiLang.Lexical;
-using XiLang.Pass;
 
 namespace XiLang.Syntactic
 {

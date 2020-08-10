@@ -27,6 +27,35 @@ namespace XiVM
         /// </summary>
         public static readonly VariableType AddressType = new VariableType(VariableTypeTag.ADDRESS);
 
+        #region Descriptor
+
+        public static VariableType GetType(string descriptor)
+        {
+            return descriptor switch
+            {
+                "B" => ByteType,
+                "I" => IntType,
+                "D" => DoubleType,
+                "L" => AddressType,
+                "V" => null,
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        public override string ToString()
+        {
+            return Tag switch
+            {
+                VariableTypeTag.BYTE => "B",
+                VariableTypeTag.INT => "I",
+                VariableTypeTag.DOUBLE => "D",
+                VariableTypeTag.ADDRESS => "L",
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        #endregion
+
 
         public VariableTypeTag Tag { private set; get; }
 
@@ -71,18 +100,6 @@ namespace XiVM
                 return false;
             }
             return Tag == b.Tag;
-        }
-
-        public override string ToString()
-        {
-            return Tag switch
-            {
-                VariableTypeTag.BYTE => "B",
-                VariableTypeTag.INT => "I",
-                VariableTypeTag.DOUBLE => "D",
-                VariableTypeTag.ADDRESS => "L",
-                _ => throw new NotImplementedException(),
-            };
         }
     }
 

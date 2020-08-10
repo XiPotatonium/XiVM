@@ -1,6 +1,6 @@
 ﻿namespace XiLang.AbstractSyntaxTree
 {
-    public abstract class Stmt : AST
+    internal abstract class Stmt : AST
     {
     }
 }

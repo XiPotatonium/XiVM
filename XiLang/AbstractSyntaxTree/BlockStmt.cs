@@ -1,9 +1,8 @@
-﻿using XiLang.Pass;
-using XiVM;
+﻿using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class BlockStmt : Stmt
+    internal class BlockStmt : Stmt
     {
         public Stmt Child { private set; get; }
 
@@ -22,11 +21,11 @@ namespace XiLang.AbstractSyntaxTree
             return "(Block)";
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
-            CodeGenPass.LocalSymbolTable.PushFrame();
-            CodeGen(Child);
-            CodeGenPass.LocalSymbolTable.PopFrame();
+            pass.LocalSymbolTable.PushFrame();
+            CodeGen(pass, Child);
+            pass.LocalSymbolTable.PopFrame();
             return null;
         }
     }

@@ -5,7 +5,7 @@ using XiLang.Lexical;
 
 namespace XiLang.Syntactic
 {
-    public partial class Parser
+    internal partial class Parser
     {
         /// <summary>
         /// TypeExpr

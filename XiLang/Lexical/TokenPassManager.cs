@@ -1,8 +1,19 @@
-﻿using System.Collections.Generic;
-using XiLang.Lexical;
+﻿using System;
+using System.Collections.Generic;
 
-namespace XiLang.Pass
+namespace XiLang.Lexical
 {
+    /// <summary>
+    /// 有AST之前的pass，处理Token流
+    /// ClassPass
+    /// ParsePass
+    /// </summary>
+    public interface ITokenPass
+    {
+        object Run(Func<Token> nextToken);
+    }
+
+
     /// <summary>
     /// 基于Token的PassManager
     /// </summary>

@@ -3,7 +3,7 @@ using XiVM.Xir;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class IfStmt : Stmt
+    internal class IfStmt : Stmt
     {
         public static IfStmt MakeIf(Expr cond, BlockStmt then, Stmt otherwise)
         {
@@ -29,34 +29,34 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Cond, Then, Otherwise };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
-            BasicBlock thenBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock otherwiseBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock thenBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock otherwiseBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock afterBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
 
             // cond
-            Cond.CodeGen();
-            Constructor.AddJCond(thenBB, otherwiseBB);
+            Cond.CodeGen(pass);
+            pass.Constructor.AddJCond(thenBB, otherwiseBB);
 
             // then
-            Constructor.CurrentBasicBlock = thenBB;
-            Then.CodeGen();
-            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
+            pass.Constructor.CurrentBasicBlock = thenBB;
+            Then.CodeGen(pass);
+            if (pass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
             {
-                Constructor.AddJmp(afterBB);
+                pass.Constructor.AddJmp(afterBB);
             }
 
             // otherwise
-            Constructor.CurrentBasicBlock = otherwiseBB;
-            Otherwise?.CodeGen();
-            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
+            pass.Constructor.CurrentBasicBlock = otherwiseBB;
+            Otherwise?.CodeGen(pass);
+            if (pass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
             {
-                Constructor.AddJmp(afterBB);
+                pass.Constructor.AddJmp(afterBB);
             }
 
             // after
-            Constructor.CurrentBasicBlock = afterBB;
+            pass.Constructor.CurrentBasicBlock = afterBB;
 
             return null;
         }

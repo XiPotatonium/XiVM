@@ -1,8 +1,11 @@
-﻿using XiLang.AbstractSyntaxTree;
-
-namespace XiLang.Pass
+﻿namespace XiLang.AbstractSyntaxTree
 {
-    public class ASTPassManager
+    internal interface IASTPass
+    {
+        object Run(AST root);
+    }
+
+    internal class ASTPassManager
     {
         public AST Root { get; }
 

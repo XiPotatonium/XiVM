@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using XiVM.Xir;
 
 namespace SystemLib
@@ -26,6 +28,8 @@ namespace SystemLib
 
             // 输出生成字节码
             ModuleConstructor.Dump(dirName);
+
+            Console.WriteLine($"System lib generated at {Path.GetFullPath(dirName)}.");
         }
     }
 }

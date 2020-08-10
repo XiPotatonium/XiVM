@@ -40,6 +40,9 @@ namespace XiVM.ConstantTable
         public int Class { private set; get; }
         public int Name { private set; get; }
         public int Type { private set; get; }
+        /// <summary>
+        /// 仅在函数生成完毕后有效
+        /// </summary>
         public int Local { set; get; }
 
         internal MethodConstantInfo(int classIndex, int nameIndex, int typeIndex)

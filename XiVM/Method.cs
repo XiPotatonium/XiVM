@@ -35,7 +35,25 @@ namespace XiVM
 
     public class MethodType : VariableType, IConstantPoolValue
     {
+        #region Descriptor
         public static string GetDescriptor(VariableType retType, List<VariableType> ps)
+        {
+            if (retType == null)
+            {
+                return $"{GetParamsDescriptor(ps)}V";
+            }
+            else
+            {
+                return $"{GetParamsDescriptor(ps)}{retType}";
+            }
+        }
+
+        /// <summary>
+        /// 因为调用的时候是看参数是否匹配的，所以给了一个生成参数描述的函数
+        /// </summary>
+        /// <param name="ps"></param>
+        /// <returns></returns>
+        public static string GetParamsDescriptor(List<VariableType> ps)
         {
             StringBuilder stringBuilder = new StringBuilder("(");
             foreach (VariableType p in ps)
@@ -43,9 +61,27 @@ namespace XiVM
                 stringBuilder.Append(p.ToString());
             }
             stringBuilder.Append(")");
-            stringBuilder.Append(retType == null ? "V" : retType.ToString());
             return stringBuilder.ToString();
         }
+
+        public static bool CallMatch(string methodDescriptor, string paramsDescriptor)
+        {
+            if (methodDescriptor.StartsWith(paramsDescriptor))
+            {
+                // 目前要求完全匹配，但是不区分地址类型
+                return true;
+            }
+            return false;
+        }
+
+        public static VariableType GetReturnType(string methodDescriptor)
+        {
+            methodDescriptor = methodDescriptor.Substring(methodDescriptor.LastIndexOf(')') + 1);
+            return VariableType.GetType(methodDescriptor);
+        }
+
+        #endregion
+
 
         /// <summary>
         /// 如果为null表示返回void

@@ -12,7 +12,7 @@ namespace XiVM
     /// 字节码中的Module
     /// </summary>
     [Serializable]
-    public class BinaryModule
+    public class BinaryModule : ModuleHeader
     {
         public static BinaryModule Load(string fileName)
         {
@@ -37,9 +37,23 @@ namespace XiVM
         public MethodConstantInfo[] MethodPool { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
         public byte[][] Code { set; get; }
+
+        public IList<string> StringPoolList => StringPool;
+        public IList<ClassConstantInfo> ClassPoolList => ClassPool;
+        public IList<MethodConstantInfo> MethodPoolList => MethodPool;
+        public IList<FieldConstantInfo> FieldPoolList => FieldPool;
     }
 
-    public class Module
+    public interface ModuleHeader
+    {
+        int ModuleNameIndex { get; }
+        IList<string> StringPoolList { get; }
+        IList<ClassConstantInfo> ClassPoolList { get; }
+        IList<MethodConstantInfo> MethodPoolList { get; }
+        IList<FieldConstantInfo> FieldPoolList { get; }
+    }
+
+    public class Module : ModuleHeader
     {
         public int ModuleNameIndex { private set; get; }
         public string Name => StringPool.ElementList[ModuleNameIndex - 1];
@@ -48,10 +62,15 @@ namespace XiVM
         /// 对methods的索引，仅仅为了导出为二进制方便，Methods和MethodPool对应
         /// </summary>
         public List<Method> Methods { private set; get; } = new List<Method>();
-        public ConstantTable<string> StringPool { get; } = new ConstantTable<string>();
-        public ConstantTable<ClassConstantInfo> ClassPool { get; } = new ConstantTable<ClassConstantInfo>();
-        public ConstantTable<MethodConstantInfo> MethodPool { get; } = new ConstantTable<MethodConstantInfo>();
-        public ConstantTable<FieldConstantInfo> FieldPool { get; } = new ConstantTable<FieldConstantInfo>();
+        public ConstantTable<string> StringPool { private set; get; } = new ConstantTable<string>();
+        public ConstantTable<ClassConstantInfo> ClassPool { private set; get; } = new ConstantTable<ClassConstantInfo>();
+        public ConstantTable<MethodConstantInfo> MethodPool { private set; get; } = new ConstantTable<MethodConstantInfo>();
+        public ConstantTable<FieldConstantInfo> FieldPool { private set; get; } = new ConstantTable<FieldConstantInfo>();
+
+        public IList<string> StringPoolList => StringPool.ElementList;
+        public IList<ClassConstantInfo> ClassPoolList => ClassPool.ElementList;
+        public IList<MethodConstantInfo> MethodPoolList => MethodPool.ElementList;
+        public IList<FieldConstantInfo> FieldPoolList => FieldPool.ElementList;
 
         public Module(string name)
         {

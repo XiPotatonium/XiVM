@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using XiLang.Errors;
-using XiLang.Pass;
 using XiVM;
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class Expr : AST
+    internal class Expr : AST
     {
         #region Static Make
 
@@ -317,7 +316,7 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Expr1, Expr2, Expr3 };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             VariableType expr1Type, expr2Type;
             string moduleName, className, memberName;
@@ -329,16 +328,16 @@ namespace XiLang.AbstractSyntaxTree
                 {
                     Value = EvaluateConstExpr()
                 };
-                return Expr1.CodeGen();
+                return Expr1.CodeGen(pass);
             }
 
             switch (OpType)
             {
                 case OpType.NEG:
-                    expr1Type = Expr1.CodeGen();
+                    expr1Type = Expr1.CodeGen(pass);
                     if (expr1Type.Tag == VariableTypeTag.INT)
                     {
-                        return Constructor.AddNegI();
+                        return pass.Constructor.AddNegI();
                     }
                     else
                     {
@@ -352,8 +351,8 @@ namespace XiLang.AbstractSyntaxTree
                 case OpType.SUB:
                 case OpType.MUL:
                 case OpType.DIV:
-                    expr1Type = Expr1.CodeGen();
-                    expr2Type = Expr2.CodeGen();
+                    expr1Type = Expr1.CodeGen(pass);
+                    expr2Type = Expr2.CodeGen(pass);
                     if (!expr1Type.Equivalent(expr2Type))
                     {
                         throw new TypeError($"{OpType}: {expr1Type} and {expr2Type} is not equivalent", Line);
@@ -363,10 +362,10 @@ namespace XiLang.AbstractSyntaxTree
                     {
                         return OpType switch
                         {
-                            OpType.ADD => Constructor.AddAddI(),
-                            OpType.SUB => Constructor.AddSubI(),
-                            OpType.MUL => Constructor.AddMulI(),
-                            OpType.DIV => Constructor.AddDivI(),
+                            OpType.ADD => pass.Constructor.AddAddI(),
+                            OpType.SUB => pass.Constructor.AddSubI(),
+                            OpType.MUL => pass.Constructor.AddMulI(),
+                            OpType.DIV => pass.Constructor.AddDivI(),
                             _ => throw new NotImplementedException(),
                         };
                     }
@@ -375,17 +374,17 @@ namespace XiLang.AbstractSyntaxTree
                         throw new NotImplementedException();
                     }
                 case OpType.MOD:
-                    expr1Type = Expr1.CodeGen();
+                    expr1Type = Expr1.CodeGen(pass);
                     if (!expr1Type.Equivalent(VariableType.IntType))
                     {
                         throw new TypeError($"{OpType} expect int type", Line);
                     }
-                    expr2Type = Expr2.CodeGen();
+                    expr2Type = Expr2.CodeGen(pass);
                     if (!expr2Type.Equivalent(VariableType.IntType))
                     {
                         throw new TypeError($"{OpType} expect int type", Line);
                     }
-                    return Constructor.AddMod();
+                    return pass.Constructor.AddMod();
                 case OpType.LOG_NOT:
                     throw new NotImplementedException();
                 case OpType.LOG_AND:
@@ -406,8 +405,8 @@ namespace XiLang.AbstractSyntaxTree
                 case OpType.GT:
                 case OpType.LE:
                 case OpType.LT:
-                    expr1Type = Expr1.CodeGen();
-                    expr2Type = Expr2.CodeGen();
+                    expr1Type = Expr1.CodeGen(pass);
+                    expr2Type = Expr2.CodeGen(pass);
                     if (!expr1Type.Equivalent(expr2Type))
                     {
                         throw new TypeError($"{OpType}: {expr1Type} and {expr2Type} is not equivalent", Line);
@@ -417,12 +416,12 @@ namespace XiLang.AbstractSyntaxTree
                     {
                         return OpType switch
                         {
-                            OpType.EQ => Constructor.AddSetEqI(),
-                            OpType.NE => Constructor.AddSetNeI(),
-                            OpType.GE => Constructor.AddSetGeI(),
-                            OpType.GT => Constructor.AddSetGtI(),
-                            OpType.LE => Constructor.AddSetLeI(),
-                            OpType.LT => Constructor.AddSetLtI(),
+                            OpType.EQ => pass.Constructor.AddSetEqI(),
+                            OpType.NE => pass.Constructor.AddSetNeI(),
+                            OpType.GE => pass.Constructor.AddSetGeI(),
+                            OpType.GT => pass.Constructor.AddSetGtI(),
+                            OpType.LE => pass.Constructor.AddSetLeI(),
+                            OpType.LT => pass.Constructor.AddSetLtI(),
                             _ => throw new NotImplementedException(),
                         };
                     }
@@ -432,10 +431,10 @@ namespace XiLang.AbstractSyntaxTree
                     }
                     throw new NotImplementedException();
                 case OpType.ASSIGN:
-                    expr2Type = Expr2.CodeGen();
-                    Constructor.AddDup(expr2Type);   // Assign的返回值
-                    Expr1.LeftValueCodeGen();
-                    Constructor.AddStoreT(expr2Type);
+                    expr2Type = Expr2.CodeGen(pass);
+                    pass.Constructor.AddDup(expr2Type);   // Assign的返回值
+                    Expr1.LeftValueCodeGen(pass);
+                    pass.Constructor.AddStoreT(expr2Type);
                     return expr2Type;
                 case OpType.ADD_ASSIGN:
                 case OpType.SUB_ASSIGN:
@@ -468,48 +467,37 @@ namespace XiLang.AbstractSyntaxTree
                     Expr3 = null;
 
                     // 查找潜在函数集
-                    (moduleName, className, memberName) = GetFullName(Expr1);
-                    if (!Program.TryGetMethod(moduleName, className, memberName, out List<MethodType> candidateMethods))
-                    {
-                        throw new XiLangError($"{moduleName}.{className}.{memberName} not found");
-                    }
-                    candidateMethods = candidateMethods.Where(m => m.Params.Count == ps.Count).ToList();
+                    (moduleName, className, memberName) = GetFullName(pass, Expr1);
+                    List<string> candidateMethods = Program.GetMethod(moduleName, className, memberName);
 
                     // 参数倒序进栈
                     List<VariableType> pTypes = new List<VariableType>();   // 正序
                     for (int i = ps.Count - 1; i >= 0; --i)
                     {
-                        pTypes.Add(ps[i].CodeGen());
+                        pTypes.Add(ps[i].CodeGen(pass));
                     }
 
                     // 确定对应函数
-                    MethodType methodType = null;
-                    foreach (MethodType candidate in candidateMethods)
+                    string methodDescriptor = null;
+                    string actualParamsDescriptor = MethodType.GetParamsDescriptor(pTypes);
+                    foreach (string candidate in candidateMethods)
                     {
-                        bool flag = true;
-                        foreach ((VariableType realType, VariableType actualType) in candidate.Params.Zip(pTypes))
+                        if (MethodType.CallMatch(candidate, actualParamsDescriptor))
                         {
-                            if (!realType.Equivalent(actualType))
-                            {
-                                flag = false;
-                                break;
-                            }
-                        }
-                        if (flag)
-                        {
-                            methodType = candidate;
+                            // 目前要求完全匹配，但是不区分地址类型
+                            methodDescriptor = candidate;
                         }
                     }
 
-                    if (methodType == null)
+                    if (methodDescriptor == null)
                     {
                         throw new XiLangError($"No matched method");
                     }
 
-                    Constructor.AddCall(Constructor.AddMethodPoolInfo(
-                        Constructor.AddClassPoolInfo(moduleName, className),
-                        memberName, methodType.ToString()));
-                    return methodType.ReturnType;
+                    pass.Constructor.AddCall(pass.Constructor.AddMethodPoolInfo(
+                        pass.Constructor.AddClassPoolInfo(moduleName, className),
+                        memberName, methodDescriptor));
+                    return MethodType.GetReturnType(methodDescriptor);
                 case OpType.CLASS_ACCESS:
                     throw new NotImplementedException();
                 case OpType.ARRAY_ACCESS:
@@ -524,18 +512,36 @@ namespace XiLang.AbstractSyntaxTree
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
-        private static (string, string, string) GetFullName(Expr expr)
+        private static (string, string, string) GetFullName(CodeGenPass pass, Expr expr)
         {
             string moduleName, className, memberName;
             if (expr is IdExpr)
             {
                 memberName = ((IdExpr)expr).Id;
-                className = Constructor.CurrentClass.Name;
-                moduleName = Constructor.Module.Name;
+                className = pass.Constructor.CurrentClass.Name;
+                moduleName = pass.Constructor.Module.Name;
             }
             else if (expr.OpType == OpType.CLASS_ACCESS)
             {
-                throw new NotImplementedException();
+                memberName = ((IdExpr)expr.Expr2).Id;
+                expr = expr.Expr1;
+                if (expr.OpType == OpType.CLASS_ACCESS)
+                {
+                    className = ((IdExpr)expr.Expr2).Id;
+                    expr = expr.Expr1;
+                    StringBuilder sb = new StringBuilder();
+                    while (expr.OpType == OpType.CLASS_ACCESS)
+                    {
+                        sb.Insert(0, ((IdExpr)expr.Expr2).Id);
+                        expr = expr.Expr1;
+                    }
+                    moduleName = ((IdExpr)expr).Id + sb.ToString();
+                }
+                else
+                {
+                    moduleName = pass.Constructor.Name;
+                    className = ((IdExpr)expr).Id;
+                }
             }
             else
             {
@@ -549,7 +555,7 @@ namespace XiLang.AbstractSyntaxTree
         /// 将表达式的结果的地址入栈
         /// 栈顶是一个Address，所以不需要返回值来区分
         /// </summary>
-        protected virtual void LeftValueCodeGen()
+        protected virtual void LeftValueCodeGen(CodeGenPass pass)
         {
             switch (OpType)
             {
@@ -563,7 +569,7 @@ namespace XiLang.AbstractSyntaxTree
         }
     }
 
-    public class ConstExpr : Expr
+    internal class ConstExpr : Expr
     {
         #region Static Make
 
@@ -649,24 +655,24 @@ namespace XiLang.AbstractSyntaxTree
             return Value;
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             switch (Value.Type)
             {
                 case ValueType.INT:
-                    Constructor.AddPushI(Value.IntValue);
+                    pass.Constructor.AddPushI(Value.IntValue);
                     return VariableType.IntType;
                 case ValueType.DOUBLE:
-                    Constructor.AddPushD(Value.DoubleValue);
+                    pass.Constructor.AddPushD(Value.DoubleValue);
                     return VariableType.DoubleType;
                 case ValueType.STRING:
-                    Constructor.AddConst(Constructor.StringPool.TryAdd(Value.StringValue));
+                    pass.Constructor.AddConst(pass.Constructor.StringPool.TryAdd(Value.StringValue));
                     return Program.StringType;
                 case ValueType.BOOL:
-                    Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
+                    pass.Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
                     return VariableType.ByteType;
                 case ValueType.NULL:
-                    Constructor.AddPushA(0);
+                    pass.Constructor.AddPushA(0);
                     return VariableType.AddressType;
                 default:
                     throw new NotImplementedException();
@@ -674,7 +680,7 @@ namespace XiLang.AbstractSyntaxTree
         }
     }
 
-    public class IdExpr : Expr
+    internal class IdExpr : Expr
     {
         public static IdExpr MakeId(string id, int line)
         {
@@ -699,20 +705,20 @@ namespace XiLang.AbstractSyntaxTree
             return $"(Id){Id}";
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
-            if (CodeGenPass.LocalSymbolTable.TryGetSymbol(Id, out Variable variable))
+            if (pass.LocalSymbolTable.TryGetSymbol(Id, out Variable variable))
             {
                 // 是一个局部变量
-                Constructor.AddLocal(variable.Offset);
-                Constructor.AddLoadT(variable.Type);
+                pass.Constructor.AddLocal(variable.Offset);
+                pass.Constructor.AddLoadT(variable.Type);
                 return variable.Type;
             }
-            else if (Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField field))
+            else if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField field))
             {
                 // static或者非static field
-                Constructor.AddGetStaticFieldAddress(field);
-                Constructor.AddLoadT(field.Type);
+                pass.Constructor.AddGetStaticFieldAddress(field);
+                pass.Constructor.AddLoadT(field.Type);
                 return field.Type;
             }
             else
@@ -722,17 +728,17 @@ namespace XiLang.AbstractSyntaxTree
             }
         }
 
-        protected override void LeftValueCodeGen()
+        protected override void LeftValueCodeGen(CodeGenPass pass)
         {
-            if (CodeGenPass.LocalSymbolTable.TryGetSymbol(Id, out Variable variable))
+            if (pass.LocalSymbolTable.TryGetSymbol(Id, out Variable variable))
             {
                 // 是一个局部变量
-                Constructor.AddLocal(variable.Offset);
+                pass.Constructor.AddLocal(variable.Offset);
             }
-            else if (Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField field))
+            else if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField field))
             {
                 // static或者非static field
-                Constructor.AddGetStaticFieldAddress(field);
+                pass.Constructor.AddGetStaticFieldAddress(field);
             }
             else
             {

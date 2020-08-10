@@ -2,7 +2,7 @@
 
 namespace XiLang.AbstractSyntaxTree
 {
-    public class ExprStmt : Stmt
+    internal class ExprStmt : Stmt
     {
         public Expr Expr { private set; get; }
 
@@ -21,16 +21,16 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Expr };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             AST ast = Expr;
             while (ast != null)
             {
-                VariableType type = ast.CodeGen();
+                VariableType type = ast.CodeGen(pass);
                 if (type != null)
                 {
                     // 表达式的值依然在栈中，要pop出去
-                    Constructor.AddPop(type);
+                    pass.Constructor.AddPop(type);
                 }
                 ast = ast.SiblingAST;
             }

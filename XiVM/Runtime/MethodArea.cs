@@ -73,7 +73,7 @@ namespace XiVM.Runtime
             }
 
             int methodIndex = 0;
-            foreach (var classInfo in binaryModule.ClassPool)
+            foreach (ConstantTable.ClassConstantInfo classInfo in binaryModule.ClassPool)
             {
                 VMClass vmClass = new VMClass()
                 {
@@ -81,12 +81,34 @@ namespace XiVM.Runtime
                     Methods = new Dictionary<uint, List<VMMethod>>()
                 };
 
-                foreach ((var methodInfo, var code) in binaryModule.MethodPool.Zip(binaryModule.Code))
+                foreach ((ConstantTable.MethodConstantInfo methodInfo, byte[] code) in binaryModule.MethodPool.Zip(binaryModule.Code))
                 {
                     if (code == null)
                     {
                         // 外部符号
-                        throw new NotImplementedException();
+                        // 为了支持互相依赖的模块，外部符号是否应该放到第二个pass
+                        uint moduleNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Module - 1];
+                        if (!Modules.ContainsKey(moduleNameAddress))
+                        {
+                            // 还未导入，执行导入
+                            AddModule(Program.LoadModule(binaryModule.StringPool[binaryModule.ClassPool[methodInfo.Class - 1].Module - 1]));
+                        }
+                        Modules.TryGetValue(moduleNameAddress, out VMModule importedModule);
+
+                        uint classNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Name - 1];
+                        uint descriptorAddress = module.StringPoolLink[methodInfo.Type - 1];
+                        foreach ((ConstantTable.MethodConstantInfo candidateMethodInfo, int candidateIndex) in importedModule.MethodPool.Zip(importedModule.MethodPoolLink))
+                        {
+                            //模块名类名描述符匹配
+                            if (moduleNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Module - 1] &&
+                                classNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Name - 1] &&
+                                descriptorAddress == importedModule.StringPoolLink[candidateMethodInfo.Type - 1])
+                            {
+                                // 建立Link
+                                module.MethodPoolLink.Add(candidateIndex);
+                                break;
+                            }
+                        }
                     }
                     else
                     {

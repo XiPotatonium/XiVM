@@ -1,5 +1,4 @@
 ﻿using System;
-using XiLang.Pass;
 using XiVM;
 using XiVM.Xir;
 
@@ -10,7 +9,7 @@ namespace XiLang.AbstractSyntaxTree
         WHILE, FOR
     }
 
-    public class LoopStmt : Stmt
+    internal class LoopStmt : Stmt
     {
         public static LoopStmt MakeFor(Stmt init, Expr cond, Expr step, BlockStmt body)
         {
@@ -59,15 +58,15 @@ namespace XiLang.AbstractSyntaxTree
             return new AST[] { Init, Cond, Step, Body };
         }
 
-        public override VariableType CodeGen()
+        public override VariableType CodeGen(CodeGenPass pass)
         {
             switch (Type)
             {
                 case LoopType.WHILE:
-                    WhileCodeGen();
+                    WhileCodeGen(pass);
                     break;
                 case LoopType.FOR:
-                    ForCodeGen();
+                    ForCodeGen(pass);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -75,86 +74,86 @@ namespace XiLang.AbstractSyntaxTree
             return null;
         }
 
-        private void ForCodeGen()
+        private void ForCodeGen(CodeGenPass pass)
         {
-            CodeGenPass.LocalSymbolTable.PushFrame();
-            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock stepBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            pass.LocalSymbolTable.PushFrame();
+            BasicBlock condBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock bodyBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock stepBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock afterBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
 
-            CodeGenPass.Breakable.Push(afterBB);
-            CodeGenPass.Continuable.Push(stepBB);
+            pass.Breakable.Push(afterBB);
+            pass.Continuable.Push(stepBB);
 
             // pre head
-            Init?.CodeGen();
-            Constructor.AddJmp(condBB);
+            Init?.CodeGen(pass);
+            pass.Constructor.AddJmp(condBB);
 
             // cond
-            Constructor.CurrentBasicBlock = condBB;
+            pass.Constructor.CurrentBasicBlock = condBB;
             if (Cond == null)
             {
-                Constructor.AddJmp(bodyBB);
+                pass.Constructor.AddJmp(bodyBB);
             }
             else
             {
-                Cond.CodeGen();
-                if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
+                Cond.CodeGen(pass);
+                if (pass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
                 {
-                    Constructor.AddJCond(bodyBB, afterBB);
+                    pass.Constructor.AddJCond(bodyBB, afterBB);
                 }
             }
 
             // body
-            Constructor.CurrentBasicBlock = bodyBB;
+            pass.Constructor.CurrentBasicBlock = bodyBB;
             if (Body != null)
             {
                 // 不要直接CodeGen Body，因为那样会新建一个NS
-                CodeGen(Body.Child);
+                CodeGen(pass, Body.Child);
             }
-            Constructor.AddJmp(stepBB);
+            pass.Constructor.AddJmp(stepBB);
 
             // step
-            Constructor.CurrentBasicBlock = stepBB;
-            CodeGen(Step);      // Step可能有好几个expr形成一个list
-            Constructor.AddJmp(condBB);
+            pass.Constructor.CurrentBasicBlock = stepBB;
+            CodeGen(pass, Step);      // Step可能有好几个expr形成一个list
+            pass.Constructor.AddJmp(condBB);
 
             // after
-            Constructor.CurrentBasicBlock = afterBB;
-            CodeGenPass.Breakable.Pop();
-            CodeGenPass.Continuable.Pop();
-            CodeGenPass.LocalSymbolTable.PopFrame();
+            pass.Constructor.CurrentBasicBlock = afterBB;
+            pass.Breakable.Pop();
+            pass.Continuable.Pop();
+            pass.LocalSymbolTable.PopFrame();
         }
 
-        private void WhileCodeGen()
+        private void WhileCodeGen(CodeGenPass pass)
         {
-            BasicBlock condBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock bodyBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
-            BasicBlock afterBB = Constructor.AddBasicBlock(Constructor.CurrentMethod);
+            BasicBlock condBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock bodyBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
+            BasicBlock afterBB = pass.Constructor.AddBasicBlock(pass.Constructor.CurrentMethod);
 
-            CodeGenPass.Breakable.Push(afterBB);
-            CodeGenPass.Continuable.Push(condBB);
+            pass.Breakable.Push(afterBB);
+            pass.Continuable.Push(condBB);
 
             // pre head
-            Constructor.AddJmp(condBB);
+            pass.Constructor.AddJmp(condBB);
 
             // cond
-            Constructor.CurrentBasicBlock = condBB;
-            Cond.CodeGen();
-            Constructor.AddJCond(bodyBB, afterBB);
+            pass.Constructor.CurrentBasicBlock = condBB;
+            Cond.CodeGen(pass);
+            pass.Constructor.AddJCond(bodyBB, afterBB);
 
             // body
-            Constructor.CurrentBasicBlock = bodyBB;
-            Body?.CodeGen();
-            if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
+            pass.Constructor.CurrentBasicBlock = bodyBB;
+            Body?.CodeGen(pass);
+            if (pass.Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsBranch != true)
             {
-                Constructor.AddJmp(afterBB);
+                pass.Constructor.AddJmp(afterBB);
             }
 
             // after
-            Constructor.CurrentBasicBlock = afterBB;
-            CodeGenPass.Breakable.Pop();
-            CodeGenPass.Continuable.Pop();
+            pass.Constructor.CurrentBasicBlock = afterBB;
+            pass.Breakable.Pop();
+            pass.Continuable.Pop();
         }
     }
 }
