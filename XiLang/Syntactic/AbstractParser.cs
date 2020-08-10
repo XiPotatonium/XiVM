@@ -11,27 +11,8 @@ namespace XiLang.Syntactic
     {
         protected Queue<Token> TokenBuf { get; } = new Queue<Token>();
         protected Func<Token> NextToken { set; get; } = null;
-        /// <summary>
-        /// 输入代码中的所有class的名字，用于Parse时判断Id是不是一个类型
-        /// </summary>
-        protected HashSet<string> Classes { set; get; }
 
         protected AbstractParser() { }
-
-        /// <summary>
-        /// 判断下一个token是不是一个TypeExpr的开头
-        /// </summary>
-        /// <returns>true表示接下来一定是一个TypeExpr</returns>
-        protected bool IsTypeExprPrefix(int index = 0)
-        {
-            Token t = Peek(index);
-            if (t.Type == TokenType.ID && Classes.Contains(t.Literal))
-            {
-                return true;
-            }
-
-            return LexicalRules.TypeTokens.Contains(t.Type);
-        }
 
         /// <summary>
         /// Lookahead N
@@ -79,6 +60,29 @@ namespace XiLang.Syntactic
         protected bool Check(params TokenType[] types)
         {
             return CheckAt(0, types);
+        }
+
+        /// <summary>
+        /// 在 ID (DOT ID)*之后下一个是什么
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="types"></param>
+        /// <returns>如果没有CompoundId，也返回false</returns>
+        protected bool CheckAfterCompoundId(int index, params TokenType[] types)
+        {
+            if (CheckAt(index, TokenType.ID))
+            {
+                while (CheckAt(++index, TokenType.DOT))
+                {
+                    if (!CheckAt(++index, TokenType.ID))
+                    {
+                        return false;
+                    }
+                }
+                return CheckAt(index, types);
+
+            }
+            return false;
         }
 
         protected bool CheckAt(int index, params TokenType[] types)

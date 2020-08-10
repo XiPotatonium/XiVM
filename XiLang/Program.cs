@@ -57,25 +57,22 @@ namespace XiLang
 
             TokenPassManager tokenPasses = new TokenPassManager(text);
 
-            // 1，获取所有类信息，我们的语法不允许分离类定义和声明
-            HashSet<string> classNames = (HashSet<string>)tokenPasses.Run(new ClassPass());
-
-            // 2，解析类信息之外的部分并生成AST
-            AST root = (AST)tokenPasses.Run(new Parser(classNames));
+            // 解析类信息之外的部分并生成AST
+            AST root = (AST)tokenPasses.Run(new Parser());
 
             Console.WriteLine("Parse done!");
 
 
             ASTPassManager astPasses = new ASTPassManager(root);
 
-            // 3，打印json文件
+            //, 打印json文件
             if (argumentParser.GetValue("verbose").IsSet)
             {
                 string json = (string)astPasses.Run(new JsonPass());
                 File.WriteAllText(fileName + ".ast.json", json);
             }
 
-            // 4，编译生成ir与字节码，编译阶段会完成常量表达式的估值
+            // 编译生成ir与字节码，编译阶段会完成常量表达式的估值
             ModuleConstructor constructor = new ModuleConstructor(moduleName);
             ModuleHeaders.Add(moduleName, constructor.Module);
             List<ClassType> classes = (List<ClassType>)astPasses.Run(new ClassDeclarationPass(constructor));

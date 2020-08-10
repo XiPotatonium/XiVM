@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using XiLang.AbstractSyntaxTree;
 using XiLang.Errors;
 using XiLang.Lexical;
@@ -9,16 +10,16 @@ namespace XiLang.Syntactic
     {
         /// <summary>
         /// TypeExpr
-        ///     (ANY_TYPE | ID) (LBRACKET RBRACKET)?
+        ///     (ANY_TYPE | ID (DOT ID)*) (LBRACKET RBRACKET)?
         /// </summary>
         /// <returns></returns>
         private TypeExpr ParseTypeExpr()
         {
             TypeExpr ret = new TypeExpr();
 
-            Token typeToken = Consume();
+            Token t = Consume();
 
-            switch (typeToken.Type)
+            switch (t.Type)
             {
                 case TokenType.BOOL:
                     ret.Type = SyntacticValueType.BOOL;
@@ -37,10 +38,16 @@ namespace XiLang.Syntactic
                     break;
                 case TokenType.ID:
                     ret.Type = SyntacticValueType.CLASS;
-                    ret.ClassName = typeToken.Literal;
+                    ret.ClassName = new List<string>() { t.Literal };
+                    while (Check(TokenType.DOT))
+                    {
+                        Consume(TokenType.DOT);
+                        t = Consume(TokenType.ID);
+                        ret.ClassName.Add(t.Literal);
+                    }
                     break;
                 default:
-                    throw new SyntaxError("Unknown type", typeToken);
+                    throw new SyntaxError("Unknown type", t);
             }
 
             if (Check(TokenType.LBRACKET))
@@ -320,7 +327,8 @@ namespace XiLang.Syntactic
         {
             // 注意UnaryExpr中存在括号表达式
             // 需要解决Cast和括号表达式的冲突，因此需要判断是否是TypeExpr
-            if (Check(TokenType.LPAREN) && IsTypeExprPrefix(1))
+            if (Check(TokenType.LPAREN) && 
+                ((CheckAt(1, LexicalRules.TypeTokens) && CheckAt(2, TokenType.RPAREN)) || CheckAfterCompoundId(1, TokenType.RPAREN)))
             {
                 Consume(TokenType.LPAREN);
                 Expr type = ParseTypeExpr();

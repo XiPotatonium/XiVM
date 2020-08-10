@@ -12,11 +12,6 @@ namespace XiLang.Syntactic
     /// </summary>
     internal partial class Parser : AbstractParser, ITokenPass
     {
-        public Parser(HashSet<string> classes)
-        {
-            Classes = classes;
-        }
-
         public object Run(Func<Token> nextToken)
         {
             NextToken = nextToken;
@@ -312,8 +307,9 @@ namespace XiLang.Syntactic
         {
             Stmt ret;
 
-            if (IsTypeExprPrefix())
+            if (Check(LexicalRules.TypeTokens) || CheckAfterCompoundId(0, TokenType.ID))
             {
+                // System.String str，表达式中不会出现这种情况
                 ret = ParseVarDeclarator(ParseTypeExpr());
             }
             else

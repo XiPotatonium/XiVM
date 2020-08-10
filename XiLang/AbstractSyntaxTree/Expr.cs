@@ -747,4 +747,71 @@ namespace XiLang.AbstractSyntaxTree
             }
         }
     }
+
+    internal class TypeExpr : Expr
+    {
+        public SyntacticValueType Type { set; get; }
+        public bool IsArray { set; get; }
+        public List<string> ClassName { set; get; }
+
+        public override string ASTLabel()
+        {
+            StringBuilder sb = new StringBuilder("<");
+
+            if (Type == SyntacticValueType.CLASS)
+            {
+                sb.Append(ClassName[0]);
+                for (int i = 1; i < ClassName.Count; ++i)
+                {
+                    sb.Append('.').Append(ClassName[i]);
+                }
+            }
+            else
+            {
+                sb.Append(Type switch
+                {
+                    SyntacticValueType.BOOL => "bool",
+                    SyntacticValueType.INT => "int",
+                    SyntacticValueType.DOUBLE => "float",
+                    SyntacticValueType.STRING => "string",
+                    SyntacticValueType.VOID => "void",
+                    _ => throw new NotImplementedException(),
+                });
+            }
+
+
+            sb.Append(IsArray ? "[]>" : ">");
+
+            return sb.ToString();
+        }
+
+        public VariableType ToXirType()
+        {
+            if (IsArray)
+            {
+                return Type switch
+                {
+                    SyntacticValueType.BOOL => ArrayType.IntArrayType,
+                    SyntacticValueType.INT => throw new NotImplementedException(),
+                    SyntacticValueType.DOUBLE => throw new NotImplementedException(),
+                    SyntacticValueType.STRING => throw new NotImplementedException(),
+                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else
+            {
+                return Type switch
+                {
+                    SyntacticValueType.BOOL => VariableType.IntType,
+                    SyntacticValueType.INT => VariableType.IntType,
+                    SyntacticValueType.DOUBLE => VariableType.DoubleType,
+                    SyntacticValueType.STRING => throw new NotImplementedException(),
+                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    SyntacticValueType.VOID => null,
+                    _ => throw new NotImplementedException(),
+                };
+            }
+        }
+    }
 }
