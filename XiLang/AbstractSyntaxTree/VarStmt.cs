@@ -47,7 +47,7 @@ namespace XiLang.AbstractSyntaxTree
         /// <returns></returns>
         public override VariableType CodeGen(CodeGenPass pass)
         {
-            Variable var = pass.Constructor.AddLocalVariable(Id, Type.ToXirType());
+            Variable var = pass.Constructor.AddLocalVariable(Id, Type.ToXirType(pass.Constructor));
             pass.LocalSymbolTable.AddSymbol(Id, var);
 
             // 初始化代码

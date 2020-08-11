@@ -53,7 +53,7 @@
 Program
     (ImportStmt)* (ClassStmt)*
 ImportStmt
-    IMPORT ID (DOT ID)* SEMICOLON
+    IMPORT ID SEMICOLON
 ClassStmt
     CLASS ID LBRACES DeclarationStmt* RBRACES
 DeclarationStmt
@@ -92,7 +92,7 @@ TypeExpr
 ListExpr
     Expr [COMMA Expr]*
 Expr
-    (ConditionalExpr | Id) (ANY_ASSIGN Expr)?
+    (ConditionalExpr | ID) (ANY_ASSIGN Expr)?
 ConditionalExpr
     LogicalOrExpr (QUESTION Expr COLON ConditionalExpr)?
 LogicalOrExpr
@@ -123,7 +123,7 @@ UnaryExpr
 CallExpr
     PrimaryExpr (LPAREN (Expr (COMMA Expr)*)? RPAREN | DOT ID | LBRACKET Expr RBRACKET)*
 PrimaryExpr
-    ConstExpr | ID | LPAREN Expr RPAREN | BASE DOT ID
+    ConstExpr | ID | LPAREN Expr RPAREN | BASE DOT ID | NEW TypeExpr
 ConstExpr
     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL
 ```

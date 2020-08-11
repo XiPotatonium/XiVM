@@ -6,10 +6,10 @@ namespace XiLang.AbstractSyntaxTree
 {
     internal class MemberDeclarationPass : IASTPass
     {
-        public List<ClassType> Classes { get; }
+        public List<Class> Classes { get; }
         public ModuleConstructor Constructor { get; }
 
-        public MemberDeclarationPass(ModuleConstructor constructor, List<ClassType> classes)
+        public MemberDeclarationPass(ModuleConstructor constructor, List<Class> classes)
         {
             Classes = classes;
             Constructor = constructor;
@@ -27,17 +27,17 @@ namespace XiLang.AbstractSyntaxTree
             List<Method> methods = new List<Method>();
 
             // 第二轮生成类方法和域的声明
-            List<ClassType>.Enumerator classesEnumerator = Classes.GetEnumerator();
+            List<Class>.Enumerator classesEnumerator = Classes.GetEnumerator();
             while (root != null)
             {
                 ClassStmt classStmt = (ClassStmt)root;
                 classesEnumerator.MoveNext();
-                ClassType classType = classesEnumerator.Current;
+                Class classType = classesEnumerator.Current;
 
                 VarStmt varStmt = classStmt.Fields;
                 while (varStmt != null)
                 {
-                    fields.Add(Constructor.AddClassField(classType, varStmt.Id, varStmt.Type.ToXirType(), varStmt.AccessFlag));
+                    fields.Add(Constructor.AddClassField(classType, varStmt.Id, varStmt.Type.ToXirType(Constructor), varStmt.AccessFlag));
                     varStmt = (VarStmt)varStmt.SiblingAST;
                 }
 
@@ -48,11 +48,11 @@ namespace XiLang.AbstractSyntaxTree
                     VarStmt param = funcStmt.Params.Params;
                     while (param != null)
                     {
-                        pTypes.Add(param.Type.ToXirType());
+                        pTypes.Add(param.Type.ToXirType(Constructor));
                         param = (VarStmt)param.SiblingAST;
                     }
                     methods.Add(Constructor.AddMethod(classType, funcStmt.Id,
-                        Constructor.AddMethodType(funcStmt.Type.ToXirType(), pTypes),
+                        Constructor.AddMethodType(funcStmt.Type.ToXirType(Constructor), pTypes),
                         funcStmt.AccessFlag));
 
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;

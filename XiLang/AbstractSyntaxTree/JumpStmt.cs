@@ -43,7 +43,7 @@ namespace XiLang.AbstractSyntaxTree
                     if (ReturnVal != null)
                     {
                         VariableType actualReturnType = ReturnVal.CodeGen(pass);
-                        VariableType returnType = pass.Constructor.CurrentMethod.Type.ReturnType;
+                        VariableType returnType = pass.Constructor.CurrentMethod.Declaration.ReturnType;
                         if (!returnType.Equivalent(actualReturnType))
                         {
                             throw new TypeError($"Expect return type {returnType}, actual return type {actualReturnType}", -1);

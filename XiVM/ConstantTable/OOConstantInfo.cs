@@ -8,9 +8,9 @@ namespace XiVM.ConstantTable
         public int Name { private set; get; }
         public int Module { private set; get; }
 
-        internal ClassConstantInfo(int module, int nameIndex)
+        public ClassConstantInfo(int moduleIndex, int nameIndex)
         {
-            Module = module;
+            Module = moduleIndex;
             Name = nameIndex;
         }
 
@@ -41,10 +41,6 @@ namespace XiVM.ConstantTable
         public int Class { private set; get; }
         public int Name { private set; get; }
         public int Type { private set; get; }
-        /// <summary>
-        /// 仅在函数生成完毕后有效
-        /// </summary>
-        public int Local { set; get; }
 
         internal MethodConstantInfo(int classIndex, int nameIndex, int typeIndex, uint flag)
         {
@@ -63,8 +59,7 @@ namespace XiVM.ConstantTable
             if (obj is MethodConstantInfo info)
             {
                 return Name == info.Name &&
-                    Class == info.Class &&
-                    Type == info.Type;
+                    Class == info.Class;
             }
             return false;
         }
@@ -100,8 +95,7 @@ namespace XiVM.ConstantTable
             if (obj is MethodConstantInfo info)
             {
                 return Name == info.Name &&
-                    Class == info.Class &&
-                    Type == info.Type;
+                    Class == info.Class;
             }
             return false;
         }

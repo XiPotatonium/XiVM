@@ -19,11 +19,6 @@ namespace XiLang.AbstractSyntaxTree
             AccessFlag = flag;
             Type = type;
             Id = id;
-            if (AccessFlag == null)
-            {
-                // 避免是null
-                AccessFlag = AccessFlag.DefaultFlag;
-            }
         }
     }
 }

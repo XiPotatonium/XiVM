@@ -18,24 +18,17 @@ namespace XiLang.AbstractSyntaxTree
             // Import
             while (root != null && root is ImportStmt importStmt)
             {
-                List<string> moduleName = new List<string>();
-                IdExpr curId = importStmt.Module;
-                while (curId != null)
-                {
-                    moduleName.Add(curId.Id);
-                    curId = (IdExpr)curId.SiblingAST;
-                }
-                Program.Import(moduleName);
+                Program.Import(importStmt.Module.Id);
 
                 root = root.SiblingAST;
             }
 
             // 声明缓存，免得再找一遍
-            List<ClassType> classes = new List<ClassType>();
+            List<Class> classes = new List<Class>();
 
             // 第一轮生成类的声明
             ClassStmt classStmt;
-            ClassType classType;
+            Class classType;
             while (root != null)
             {
                 classStmt = (ClassStmt)root;

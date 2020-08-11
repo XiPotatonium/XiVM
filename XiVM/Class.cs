@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using XiVM.Errors;
 
 namespace XiVM
 {
-    [Serializable]
-    public class BinaryClassType
-    {
-        public int ConstantPoolIndex { set; get; }
-        public BinaryMethod[] Methods { internal set; get; }
-    }
-
     internal class VMClass
     {
         public VMModule Parent { set; get; }
@@ -24,8 +16,10 @@ namespace XiVM
     /// <summary>
     /// 类的静态信息
     /// </summary>
-    public class ClassType : VariableType, IConstantPoolValue
+    public class Class : IConstantPoolValue
     {
+        // public ObjectType ObjectType { get; }
+
         public Module Parent { private set; get; }
 
         /// <summary>
@@ -42,11 +36,11 @@ namespace XiVM
         public int ConstantPoolIndex { get; set; }
         public string Name => Parent.StringPool.ElementList[Parent.ClassPool.ElementList[ConstantPoolIndex - 1].Name - 1];
 
-        internal ClassType(Module module, int index)
-            : base(VariableTypeTag.ADDRESS)
+        internal Class(Module module, int index)
         {
             Parent = module;
             ConstantPoolIndex = index;
+            // ObjectType = new ObjectType(this);
         }
 
         /// <summary>
@@ -77,7 +71,7 @@ namespace XiVM
         /// <param name="flag"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        internal Method AddMethod(string name, MethodType type, AccessFlag flag, int index)
+        internal Method AddMethod(string name, MethodDeclarationInfo type, AccessFlag flag, int index)
         {
             if (Fields.ContainsKey(name))
             {
@@ -89,7 +83,7 @@ namespace XiVM
             {
                 foreach (Method m in value)
                 {
-                    if (m.Type.Equivalent(type))
+                    if (m.Declaration.Equivalent(type))
                     {
                         // 重复定义
                         throw new XiVMError($"Duplicate definition for {Name}.{name}");
@@ -104,7 +98,7 @@ namespace XiVM
 
             // 添加参数
             int offset = 0;
-            foreach (VariableType paramType in function.Type.Params)
+            foreach (VariableType paramType in function.Declaration.Params)
             {
                 offset -= paramType.SlotSize;
                 function.Params.Add(new Variable(paramType) { Offset = offset });
@@ -113,15 +107,93 @@ namespace XiVM
             return function;
         }
 
+    }
+
+    public class ClassType : VariableType
+    {
+        /// <summary>
+        /// 其实信息有冗余
+        /// </summary>
+        public string ModuleName { set; get; }
+        public string ClassName { set; get; }
+        public int ClassPoolIndex { set; get; }
+        public ClassType(int classPoolIndex) : base(VariableTypeTag.INVALID)
+        {
+            ClassPoolIndex = classPoolIndex;
+        }
+
         public override bool Equivalent(VariableType b)
         {
+            if (b == null)
+            {
+                return false;
+            }
             if (b is ClassType bType)
             {
-                return (Name == bType.Name) && base.Equivalent(b);
+                return ClassPoolIndex == bType.ClassPoolIndex;
             }
             return false;
         }
+
+        public override string ToString()
+        {
+            return $"{ModuleName}.{ClassName}";
+        }
     }
+
+    public class MemberType : VariableType
+    {
+
+        public ClassType ClassType { private set; get; }
+        public string Name { set; get; }
+        /// <summary>
+        /// 即使IsField，也不排除有同名Method
+        /// </summary>
+        public bool IsField { set; get; }
+        public int FieldPoolIndex { set; get; }
+
+        public MemberType(ClassType classType) : base(VariableTypeTag.INVALID)
+        {
+            ClassType = classType;
+        }
+
+        public override bool Equivalent(VariableType b)
+        {
+            if (b == null)
+            {
+                return false;
+            }
+            if (b is MemberType bType)
+            {
+                return ClassType.Equivalent(bType.ClassType) &&
+                    Name == bType.Name;
+            }
+            return false;
+        }
+
+        public override string ToString()
+        {
+            return $"{ClassType}.{Name}";
+        }
+    }
+
+    //public class ObjectType : VariableType
+    //{
+    //    public Class Parent { private set; get; }
+    //    internal ObjectType(Class parent)
+    //        : base(VariableTypeTag.ADDRESS)
+    //    {
+    //        Parent = parent;
+    //    }
+    //    public override bool Equivalent(VariableType b)
+    //    {
+    //        if (b is ObjectType bType)
+    //        {
+    //            return Parent == bType.Parent;
+    //        }
+    //        return false;
+    //    }
+    //}
 
     /// <summary>
     /// 类对象的信息
@@ -155,13 +227,13 @@ namespace XiVM
     //    }
     //}
 
-    public class AccessFlag
+    public struct AccessFlag
     {
         public static readonly AccessFlag DefaultFlag = new AccessFlag();
 
         private static readonly uint StaticFlag = 0x01;
 
-        public uint Flag { set; get; } = 0;
+        public uint Flag { set; get; }
 
         public bool IsStatic
         {
@@ -182,7 +254,7 @@ namespace XiVM
 
     public interface IClassMember : IConstantPoolValue
     {
-        ClassType Parent { set; get; }
+        Class Parent { set; get; }
         AccessFlag AccessFlag { set; get; }
     }
 

@@ -61,25 +61,15 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// ImportStmt
-        ///     IMPORT ID (DOT ID)* SEMICOLON
+        ///     IMPORT ID SEMICOLON
         /// </summary>
         /// <returns></returns>
         private ImportStmt ParseImport()
         {
             Consume(TokenType.IMPORT);
-            Token t = Consume(TokenType.ID);
-            IdExpr root = IdExpr.MakeId(t.Literal, t.Line);
-            IdExpr cur = root;
-
-            while (Check(TokenType.DOT))
-            {
-                Consume(TokenType.DOT);
-                t = Consume(TokenType.ID);
-                AppendASTLinkedList(ref root, ref cur, IdExpr.MakeId(t.Literal, t.Line));
-            }
-
+            IdExpr id = ParseId();
             Consume(TokenType.SEMICOLON);
-            return new ImportStmt(root);
+            return new ImportStmt(id);
         }
 
         /// <summary>
@@ -193,7 +183,7 @@ namespace XiLang.Syntactic
         /// <param name="flag"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        private VarStmt ParseVarDeclarator(TypeExpr type, AccessFlag flag = null)
+        private VarStmt ParseVarDeclarator(TypeExpr type, AccessFlag flag)
         {
             Expr declarator = ParseExpr(true);
             VarStmt vars;
@@ -208,7 +198,7 @@ namespace XiLang.Syntactic
             if (Check(TokenType.COMMA))
             {
                 Consume(TokenType.COMMA);
-                vars.SiblingAST = ParseVarDeclarator(type);
+                vars.SiblingAST = ParseVarDeclarator(type, flag);
             }
             return vars;
         }
@@ -239,7 +229,7 @@ namespace XiLang.Syntactic
         {
             TypeExpr type = ParseTypeExpr();
             IdExpr id = ParseId();
-            VarStmt vars = new VarStmt(null, type, id.Id, null);
+            VarStmt vars = new VarStmt(AccessFlag.DefaultFlag, type, id.Id, null);
 
             if (Check(TokenType.COMMA))
             {
@@ -309,7 +299,7 @@ namespace XiLang.Syntactic
             if (Check(LexicalRules.TypeTokens) || CheckAfterCompoundId(0, TokenType.ID))
             {
                 // System.String str，表达式中不会出现这种情况
-                ret = ParseVarDeclarator(ParseTypeExpr());
+                ret = ParseVarDeclarator(ParseTypeExpr(), AccessFlag.DefaultFlag);
             }
             else
             {

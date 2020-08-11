@@ -8,7 +8,7 @@ namespace SystemLib
     {
         protected static ModuleConstructor Constructor => Program.ModuleConstructor;
 
-        public ClassType ClassType { private set; get; }
+        public Class ClassType { private set; get; }
         public List<AbstractMethod> Methods { protected set; get; }
 
         public AbstractClass(string name)

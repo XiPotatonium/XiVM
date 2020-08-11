@@ -138,7 +138,7 @@ namespace XiVM.Runtime
 
             // Method
             int methodIndex = 0;
-            foreach ((MethodConstantInfo methodInfo, byte[] code) in module.MethodPool.Zip(binaryModule.Code))
+            foreach ((MethodConstantInfo methodInfo, BinaryMethod binaryMethod) in module.MethodPool.Zip(binaryModule.Code))
             {
                 int moduleNameIndex = module.ClassPool[methodInfo.Class - 1].Module;
                 if (moduleNameIndex != binaryModule.ModuleNameIndex)
@@ -165,9 +165,8 @@ namespace XiVM.Runtime
                         Parent = vmClass,
                         MethodIndex = methodIndex,
                         DescriptorAddress = module.StringPoolLink[methodInfo.Type - 1],
-                        LocalDescriptorAddress = methodInfo.Local == 0 ?
-                            MemoryMap.NullAddress : module.StringPoolLink[methodInfo.Local - 1],
-                        CodeBlock = Malloc(code)
+                        LocalDescriptorAddress = binaryMethod.LocalDescriptorIndex.Select(i => module.StringPoolLink[i - 1]).ToList(),
+                        CodeBlock = Malloc(binaryMethod.Instructions)
                     };
 
                     MethodIndexTable[methodIndex] = vmMethod;

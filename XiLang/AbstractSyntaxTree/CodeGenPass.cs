@@ -24,9 +24,9 @@ namespace XiLang.AbstractSyntaxTree
 
         private List<ClassField> Fields { get; }
         private List<Method> Methods { get; }
-        private List<ClassType> Classes { get; }
+        private List<Class> Classes { get; }
 
-        public CodeGenPass(ModuleConstructor constructor, List<ClassType> classes, List<ClassField> fields, List<Method> methods)
+        public CodeGenPass(ModuleConstructor constructor, List<Class> classes, List<ClassField> fields, List<Method> methods)
         {
             Constructor = constructor;
             Classes = classes;
@@ -46,14 +46,14 @@ namespace XiLang.AbstractSyntaxTree
             }
 
             // 最后一轮生成类方法和域的定义
-            List<ClassType>.Enumerator classesEnumerator = Classes.GetEnumerator();
+            List<Class>.Enumerator classesEnumerator = Classes.GetEnumerator();
             List<ClassField>.Enumerator fieldEnumerator = Fields.GetEnumerator();
             List<Method>.Enumerator methodEnumerator = Methods.GetEnumerator();
             while (root != null)
             {
                 ClassStmt classStmt = (ClassStmt)root;
                 classesEnumerator.MoveNext();
-                ClassType classType = classesEnumerator.Current;
+                Class classType = classesEnumerator.Current;
 
                 // 正在生成静态构造函数
                 Constructor.CurrentBasicBlock = classType.StaticInitializer.BasicBlocks.First.Value;
@@ -115,7 +115,7 @@ namespace XiLang.AbstractSyntaxTree
                     if (Constructor.CurrentBasicBlock.Instructions.Last?.Value.IsRet != true)
                     {
                         // 如果最后一条不是return
-                        if (method.Type.ReturnType == null)
+                        if (method.Declaration.ReturnType == null)
                         {
                             // 如果函数返回void，自动补上ret
                             Constructor.AddRet();
@@ -131,7 +131,6 @@ namespace XiLang.AbstractSyntaxTree
                     LocalSymbolTable = null;
 
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;
-                    Constructor.CompleteMethodGeneration(method);
                 }
 
                 root = root.SiblingAST;

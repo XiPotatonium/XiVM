@@ -424,7 +424,7 @@ namespace XiLang.Syntactic
 
         /// <summary>
         /// PrimaryExpr
-        ///     ConstExpr | Id | LPAREN Expr RPAREN | BASE DOT Id
+        ///     ConstExpr | Id | LPAREN Expr RPAREN | BASE DOT Id | NEW TypeExpr
         /// </summary>
         /// <returns></returns>
         private Expr ParsePrimaryExpr()
@@ -446,6 +446,11 @@ namespace XiLang.Syntactic
                 Consume(TokenType.DOT);
                 // TODO Base
                 throw new NotImplementedException();
+            }
+            if (Check(TokenType.NEW))
+            {
+                Token t = Consume(TokenType.NEW);
+                return Expr.MakeOp(OpType.NEW, ParseTypeExpr(), t.Line);
             }
             return ParseConstExpr();
         }

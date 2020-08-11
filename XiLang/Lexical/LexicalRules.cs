@@ -11,7 +11,7 @@ namespace XiLang.Lexical
         // 类型
         BOOL, INT, DOUBLE, VOID, STRING,
         // OO关键词
-        CLASS, BASE,
+        CLASS, BASE, NEW,
         // Access flag
         STATIC,
         // 其他关键词
@@ -47,10 +47,11 @@ namespace XiLang.Lexical
             { "int", TokenType.INT },
             { "double", TokenType.DOUBLE },
             { "void", TokenType.VOID },
-            { "string", TokenType.STRING },
+            { "String", TokenType.STRING },
 
             { "class", TokenType.CLASS },
             { "base", TokenType.BASE },
+            { "new", TokenType.NEW },
 
             { "static", TokenType.STATIC },
 

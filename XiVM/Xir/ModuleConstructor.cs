@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using XiVM.ConstantTable;
 using XiVM.Runtime;
 
@@ -12,11 +11,11 @@ namespace XiVM.Xir
     {
         public Module Module { private set; get; }
         public string Name => Module.Name;
-        public List<ClassType> Classes => Module.Classes;
+        public List<Class> Classes => Module.Classes;
 
         public BasicBlock CurrentBasicBlock { set; get; }
         public Method CurrentMethod => CurrentBasicBlock?.Function;
-        public ClassType CurrentClass => CurrentMethod?.Parent;
+        public Class CurrentClass => CurrentMethod?.Parent;
         private LinkedList<Instruction> CurrentInstructions => CurrentBasicBlock?.Instructions;
 
         public ConstantTable<string> StringPool => Module.StringPool;
@@ -69,17 +68,17 @@ namespace XiVM.Xir
                     for (int i = 0; i < binaryModule.MethodPool.Length; ++i)
                     {
                         sw.WriteLine($"#{i + 1}: {binaryModule.MethodPool[i].Class} {binaryModule.MethodPool[i].Name}" +
-                            $" {binaryModule.MethodPool[i].Type} {binaryModule.MethodPool[i].Local}");
+                            $" {binaryModule.MethodPool[i].Type} {binaryModule.MethodPool[i].Flag}");
                     }
 
                     sw.WriteLine($"\n.FieldPool");
                     for (int i = 0; i < binaryModule.FieldPool.Length; ++i)
                     {
-                        sw.WriteLine($"#{i + 1}: {binaryModule.FieldPool[i].Class}" +
-                            $" {binaryModule.FieldPool[i].Name} {binaryModule.FieldPool[i].Type}");
+                        sw.WriteLine($"#{i + 1}: {binaryModule.FieldPool[i].Class} {binaryModule.FieldPool[i].Name}" +
+                            $" {binaryModule.FieldPool[i].Type} {binaryModule.FieldPool[i].Flag}");
                     }
 
-                    foreach (ClassType classType in Classes)
+                    foreach (Class classType in Classes)
                     {
                         sw.WriteLine($"\n.Class {classType.Name} {{\n\t#{classType.ConstantPoolIndex}");
                         foreach (KeyValuePair<string, List<Method>> methodGroup in classType.Methods)
@@ -110,9 +109,9 @@ namespace XiVM.Xir
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public ClassType AddClassType(string name)
+        public Class AddClassType(string name)
         {
-            ClassType ret = new ClassType(Module, ClassPool.Add(
+            Class ret = new Class(Module, ClassPool.Add(
                 new ClassConstantInfo(Module.ModuleNameIndex, StringPool.TryAdd(name))));
             Classes.Add(ret);
 
@@ -124,13 +123,13 @@ namespace XiVM.Xir
             return ret;
         }
 
-        public MethodType AddMethodType(VariableType retType, List<VariableType> ps)
+        public MethodDeclarationInfo AddMethodType(VariableType retType, List<VariableType> ps)
         {
-            int index = StringPool.TryAdd(MethodType.GetDescriptor(retType, ps));
-            return new MethodType(retType, ps, index);
+            int index = StringPool.TryAdd(MethodDeclarationInfo.GetDescriptor(retType, ps));
+            return new MethodDeclarationInfo(retType, ps, index);
         }
 
-        public ClassField AddClassField(ClassType classType, string name, VariableType type, AccessFlag flag)
+        public ClassField AddClassField(Class classType, string name, VariableType type, AccessFlag flag)
         {
             int index = FieldPool.Add(new FieldConstantInfo(
                 classType.ConstantPoolIndex,
@@ -140,7 +139,7 @@ namespace XiVM.Xir
             return classType.AddField(name, type, flag, index);
         }
 
-        public Method AddMethod(ClassType classType, string name, MethodType type, AccessFlag flag)
+        public Method AddMethod(Class classType, string name, MethodDeclarationInfo type, AccessFlag flag)
         {
             int index = MethodPool.Add(new MethodConstantInfo(
                 classType.ConstantPoolIndex,
@@ -150,26 +149,6 @@ namespace XiVM.Xir
             Method method = classType.AddMethod(name, type, flag, index);
             Methods.Add(method);
             return method;
-        }
-
-        /// <summary>
-        /// 完成函数生成，会将局部变量信息保存
-        /// </summary>
-        /// <param name="method"></param>
-        public void CompleteMethodGeneration(Method method)
-        {
-            MethodConstantInfo info = MethodPool.ElementList[method.ConstantPoolIndex - 1];
-            if (method.Locals.Count == 0)
-            {
-                info.Local = 0;
-                return;
-            }
-            StringBuilder sb = new StringBuilder();
-            foreach (Variable v in method.Locals)
-            {
-                sb.Append(v.Type.ToString());
-            }
-            info.Local = StringPool.TryAdd(sb.ToString());
         }
 
         /// <summary>
@@ -202,6 +181,20 @@ namespace XiVM.Xir
                 Methods.Add(null);
             }
             return index;
+        }
+
+        /// <summary>
+        /// 在构造成员的时候不需要手动调用这个函数
+        /// 是在方法代码生成过程中遇到（可能是其他module的field）时使用
+        /// </summary>
+        /// <param name="classIndex"></param>
+        /// <param name="name"></param>
+        /// <param name="descriptor"></param>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public int AddFieldPoolInfo(int classIndex, string name, string descriptor, uint flag)
+        {
+            return FieldPool.TryAdd(new FieldConstantInfo(classIndex, StringPool.TryAdd(name), StringPool.TryAdd(descriptor), flag));
         }
 
         #endregion

@@ -12,8 +12,7 @@ namespace XiVM
     [Serializable]
     public class BinaryMethod
     {
-        public int ConstantPoolIndex { set; get; }
-        public int LocalDescriptorIndex { set; get; }
+        public int[] LocalDescriptorIndex { set; get; }
 
         public byte[] Instructions { set; get; }
     }
@@ -25,7 +24,7 @@ namespace XiVM
         /// 描述符在常量池中的地址
         /// </summary>
         public uint DescriptorAddress { set; get; }
-        public uint LocalDescriptorAddress { set; get; }
+        public List<uint> LocalDescriptorAddress { set; get; }
         /// <summary>
         /// VMMethod在MethodArea的MethodIndexTable中的Index
         /// </summary>
@@ -33,7 +32,7 @@ namespace XiVM
         public LinkedListNode<HeapData> CodeBlock { set; get; }
     }
 
-    public class MethodType : VariableType, IConstantPoolValue
+    public class MethodDeclarationInfo : IConstantPoolValue
     {
         #region Descriptor
         public static string GetDescriptor(VariableType retType, List<VariableType> ps)
@@ -90,44 +89,11 @@ namespace XiVM
         public List<VariableType> Params { set; get; }
         public int ConstantPoolIndex { get; set; }
 
-        internal MethodType(VariableType retType, List<VariableType> ps, int index)
-            : base(VariableTypeTag.ADDRESS)
+        internal MethodDeclarationInfo(VariableType retType, List<VariableType> ps, int index)
         {
             ReturnType = retType;
             Params = ps;
             ConstantPoolIndex = index;
-        }
-
-        /// <summary>
-        /// 要求都是函数，以及返回值类型相等，以及参数类型相等
-        /// </summary>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        public override bool Equivalent(VariableType b)
-        {
-            if (b is MethodType functionType)
-            {
-                if ((ReturnType == null && functionType.ReturnType == null) ||
-                    ReturnType.Equivalent(functionType.ReturnType) && Params.Count == functionType.Params.Count)
-                {
-                    foreach ((VariableType p1, VariableType p2) in Params.Zip(functionType.Params))
-                    {
-                        if (!p1.Equivalent(p2))
-                        {
-                            return false;
-                        }
-                    }
-                    return base.Equivalent(b);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
         }
 
         /// <summary>
@@ -138,17 +104,38 @@ namespace XiVM
         {
             return GetDescriptor(ReturnType, Params);
         }
+
+        public bool Equivalent(MethodDeclarationInfo info)
+        {
+            if ((ReturnType == null && info.ReturnType == null) ||
+                ReturnType.Equivalent(info.ReturnType) && Params.Count == info.Params.Count)
+            {
+                foreach ((VariableType p1, VariableType p2) in Params.Zip(info.Params))
+                {
+                    if (!p1.Equivalent(p2))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
+
 
     public class Method : IClassMember
     {
-        public MethodType Type { set; get; }
+        public MethodDeclarationInfo Declaration { set; get; }
         public LinkedList<BasicBlock> BasicBlocks { get; } = new LinkedList<BasicBlock>();
 
         public List<Variable> Locals { get; } = new List<Variable>();
         public List<Variable> Params { get; } = new List<Variable>();
 
-        public ClassType Parent { get; set; }
+        public Class Parent { get; set; }
         public AccessFlag AccessFlag { get; set; }
         public int ConstantPoolIndex { get; set; }
         public string Name => Parent.Parent.StringPool.ElementList[
@@ -156,15 +143,15 @@ namespace XiVM
         public string Descriptor => Parent.Parent.StringPool.ElementList[
             Parent.Parent.MethodPool.ElementList[ConstantPoolIndex - 1].Type - 1];
 
-        internal Method(MethodType type, ClassType parent, AccessFlag flag, int index)
+        internal Method(MethodDeclarationInfo type, Class parent, AccessFlag flag, int index)
         {
             Parent = parent;
             AccessFlag = flag;
-            Type = type;
+            Declaration = type;
             ConstantPoolIndex = index;
         }
 
-        internal byte[] ToBinary()
+        internal BinaryMethod ToBinary()
         {
             // 检查每个BB最后是不是br
             foreach (BasicBlock basicBlock in BasicBlocks)
@@ -221,11 +208,18 @@ namespace XiVM
                 instStream.WriteByte((byte)inst.OpCode);
                 instStream.Write(inst.Params);
             }
-            byte[] insts = new byte[instStream.Length];
-            instStream.Seek(0, SeekOrigin.Begin);
-            instStream.Read(insts);
 
-            return insts;
+            BinaryMethod ret = new BinaryMethod
+            {
+                Instructions = new byte[instStream.Length]
+            };
+            instStream.Seek(0, SeekOrigin.Begin);
+            instStream.Read(ret.Instructions);
+
+            // 局部变量信息
+            ret.LocalDescriptorIndex = Locals.Select(v => Parent.Parent.StringPool.TryAdd(v.Type.ToString())).ToArray();
+
+            return ret;
         }
     }
 }

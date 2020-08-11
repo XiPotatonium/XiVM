@@ -5,10 +5,11 @@ namespace XiVM
 {
     public enum VariableTypeTag
     {
-        BYTE = 0x00,
-        INT = 0x01,
-        DOUBLE = 0x02,
-        ADDRESS = 0x03
+        INVALID,
+        BYTE,
+        INT,
+        DOUBLE,
+        ADDRESS
     }
 
     /// <summary>
@@ -120,11 +121,11 @@ namespace XiVM
 
     public class ClassField : Variable, IClassMember
     {
-        public ClassType Parent { get; set; }
+        public Class Parent { get; set; }
         public AccessFlag AccessFlag { get; set; }
         public int ConstantPoolIndex { get; set; }
 
-        internal ClassField(AccessFlag flag, ClassType parent, VariableType type, int index)
+        internal ClassField(AccessFlag flag, Class parent, VariableType type, int index)
             : base(type)
         {
             Parent = parent;

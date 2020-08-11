@@ -442,35 +442,32 @@ namespace XiVM.Runtime
 
         private void PushLocals()
         {
-            switch (MemoryMap.MapToOffset(CurrentMethod.LocalDescriptorAddress, out uint addr))
+            foreach (uint descriptorAddress in CurrentMethod.LocalDescriptorAddress)
             {
-                case MemoryTag.NULL:
-                    // 没有局部变量
-                    return;
-                case MemoryTag.METHOD:
-                    break;
-                default:
-                    throw new XiVMError("Descriptor should be in method area");
-            }
-
-            byte[] descriptorData = MethodArea.GetData(addr);
-            string descriptor = Encoding.UTF8.GetString(descriptorData,
-                MethodArea.StringMiscDataSize,
-                descriptorData.Length - MethodArea.StringMiscDataSize);
-
-            for (int i = 0; i < descriptor.Length; ++i)
-            {
-                // Warning Hardcoding
-                switch (descriptor[i])
+                switch (MemoryMap.MapToOffset(descriptorAddress, out uint addr))
                 {
-                    case 'B':
-                    case 'I':
+                    case MemoryTag.METHOD:
+                        break;
+                    default:
+                        throw new XiVMError("Descriptor should be in method area");
+                }
+
+
+                byte[] descriptorData = MethodArea.GetData(addr);
+                string descriptor = Encoding.UTF8.GetString(descriptorData,
+                    MethodArea.StringMiscDataSize,
+                    descriptorData.Length - MethodArea.StringMiscDataSize);
+
+                switch (descriptor)
+                {
+                    case "B":
+                    case "I":
                         Stack.PushInt();
                         break;
-                    case 'D':
+                    case "D":
                         Stack.PushDouble();
                         break;
-                    case 'L':
+                    case "L":
                         Stack.PushAddress();
                         break;
                     default:

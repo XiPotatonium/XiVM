@@ -8,6 +8,8 @@ function Invoke-Module {
     ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe $moduleName
 }
 
+Copy-Item ../../SystemLib/bin/Debug/netcoreapp3.1/System.xibc System.xibc
+
 Build-Module Test0
 Invoke-Module Test0
 

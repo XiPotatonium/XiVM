@@ -36,7 +36,7 @@ namespace XiVM
         public ClassConstantInfo[] ClassPool { set; get; }
         public MethodConstantInfo[] MethodPool { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
-        public byte[][] Code { set; get; }
+        public BinaryMethod[] Code { set; get; }
 
         public IList<string> StringPoolList => StringPool;
         public IList<ClassConstantInfo> ClassPoolList => ClassPool;
@@ -53,11 +53,33 @@ namespace XiVM
         IList<FieldConstantInfo> FieldPoolList { get; }
     }
 
+    public class ModuleType : VariableType
+    {
+        public string ModuleName { set; get; }
+        public ModuleType() : base(VariableTypeTag.INVALID)
+        {
+
+        }
+
+        public override bool Equivalent(VariableType b)
+        {
+            if (b == null)
+            {
+                return false;
+            }
+            if (b is ModuleType bType)
+            {
+                return ModuleName == bType.ModuleName;
+            }
+            return false;
+        }
+    }
+
     public class Module : ModuleHeader
     {
         public int ModuleNameIndex { private set; get; }
         public string Name => StringPool.ElementList[ModuleNameIndex - 1];
-        public List<ClassType> Classes { private set; get; } = new List<ClassType>();
+        public List<Class> Classes { private set; get; } = new List<Class>();
         /// <summary>
         /// 对methods的索引，仅仅为了导出为二进制方便，Methods和MethodPool对应
         /// </summary>

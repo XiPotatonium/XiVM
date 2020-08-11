@@ -19,6 +19,34 @@ namespace XiVM.Xir
             });
         }
 
+        /// <summary>
+        /// 请自行保证是static
+        /// </summary>
+        /// <param name="poolIndex"></param>
+        public void AddGetStaticFieldAddress(int poolIndex)
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.STATIC,
+                Params = BitConverter.GetBytes(poolIndex)
+            });
+        }
+
+        public void AddGetFieldAddress(ClassField field)
+        {
+            if (field.AccessFlag.IsStatic)
+            {
+                throw new XiVMError("AddGetFieldAddress only accept non-static field");
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public void AddGetFieldAddress(int poolIndex)
+        {
+            throw new NotImplementedException();
+        }
+
         public void AddLocal(int offset)
         {
             CurrentInstructions.AddLast(new Instruction()
