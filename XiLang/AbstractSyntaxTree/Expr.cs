@@ -270,25 +270,18 @@ namespace XiLang.AbstractSyntaxTree
                     //expr2Type = Expr2.CodeGen();
                     throw new NotImplementedException();
                 case OpType.CALL:
-                    List<Expr> ps = new List<Expr>();
-                    Expr3 = Expr2;  // 借用Expr3作临时变量
-                    while (Expr3 != null)
-                    {
-                        ps.Add(Expr3);
-                        Expr3 = (Expr)Expr3.SiblingAST;
-                    }
-                    Expr3 = null;
-
                     // 查找潜在函数集
                     MemberType methodType = (MemberType)Expr1.CodeGen(pass);
                     List<(string descriptor, uint flag)> candidateMethods = Program.GetMethod(methodType);
 
-                    // 参数倒序进栈
                     List<VariableType> pTypes = new List<VariableType>();   // 正序
-                    for (int i = ps.Count - 1; i >= 0; --i)
+                    Expr3 = Expr2;  // 借用Expr3作临时变量
+                    while (Expr3 != null)
                     {
-                        pTypes.Add(ExpectLocalOrField(pass.Constructor, ps[i].CodeGen(pass)));
+                        pTypes.Add(ExpectLocalOrField(pass.Constructor, Expr3.CodeGen(pass)));
+                        Expr3 = (Expr)Expr3.SiblingAST;
                     }
+                    Expr3 = null;
 
                     // 确定对应函数
                     string methodDescriptor = null;

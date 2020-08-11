@@ -52,7 +52,7 @@ namespace XiLang.AbstractSyntaxTree
                         param = (VarStmt)param.SiblingAST;
                     }
                     methods.Add(Constructor.AddMethod(classType, funcStmt.Id,
-                        Constructor.AddMethodType(funcStmt.Type.ToXirType(Constructor), pTypes),
+                        funcStmt.Type.ToXirType(Constructor), pTypes,
                         funcStmt.AccessFlag));
 
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;

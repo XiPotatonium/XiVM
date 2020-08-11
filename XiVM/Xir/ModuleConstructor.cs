@@ -117,16 +117,10 @@ namespace XiVM.Xir
 
             // 静态构造函数
             ret.StaticInitializer = AddMethod(ret, "(sinit)",
-                AddMethodType(null, new List<VariableType>()),
+                null, new List<VariableType>(),
                 AccessFlag.DefaultFlag);
             AddBasicBlock(ret.StaticInitializer);
             return ret;
-        }
-
-        public MethodDeclarationInfo AddMethodType(VariableType retType, List<VariableType> ps)
-        {
-            int index = StringPool.TryAdd(MethodDeclarationInfo.GetDescriptor(retType, ps));
-            return new MethodDeclarationInfo(retType, ps, index);
         }
 
         public ClassField AddClassField(Class classType, string name, VariableType type, AccessFlag flag)
@@ -139,14 +133,16 @@ namespace XiVM.Xir
             return classType.AddField(name, type, flag, index);
         }
 
-        public Method AddMethod(Class classType, string name, MethodDeclarationInfo type, AccessFlag flag)
+        public Method AddMethod(Class classType, string name, VariableType retType, List<VariableType> ps, AccessFlag flag)
         {
+            MethodDeclarationInfo declarationInfo = new MethodDeclarationInfo(retType, ps, 
+                StringPool.TryAdd(MethodDeclarationInfo.GetDescriptor(retType, ps)));
             int index = MethodPool.Add(new MethodConstantInfo(
                 classType.ConstantPoolIndex,
                 StringPool.TryAdd(name),
-                StringPool.TryAdd(type.ToString()),
+                StringPool.TryAdd(declarationInfo.ToString()),
                 flag.Flag));
-            Method method = classType.AddMethod(name, type, flag, index);
+            Method method = classType.AddMethod(name, declarationInfo, flag, index);
             Methods.Add(method);
             return method;
         }

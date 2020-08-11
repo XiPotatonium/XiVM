@@ -131,7 +131,7 @@ namespace XiLang.AbstractSyntaxTree
             {
                 // 非静态有一个this
                 LocalSymbolTable.AddSymbol("this", method.Params[0]);
-                for (int i = 1; i < method.Params.Count; ++i)
+                for (int i = 1; i < method.Params.Length; ++i)
                 {
                     LocalSymbolTable.AddSymbol(param.Id, method.Params[i]);
                     param = (VarStmt)param.SiblingAST;

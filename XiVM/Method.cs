@@ -136,7 +136,7 @@ namespace XiVM
         /// <summary>
         /// 如果是非静态，会比Declaration里多一个this
         /// </summary>
-        public List<Variable> Params { get; } = new List<Variable>();
+        public Variable[] Params { internal set; get; }
 
         public Class Parent { get; set; }
         public AccessFlag AccessFlag { get; set; }

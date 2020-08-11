@@ -465,10 +465,10 @@ UTF字符串
 
 #### 参数传递
 
-函数Call之前，计算栈如下, 参数应当倒序进入计算栈
+函数Call之前，计算栈如下
 
 ```
-... | ... | argN | ... | arg0 |
+... | ... | arg0 | ... | argN |
     ^                         ^
     FP                        SP
 ```
@@ -478,7 +478,7 @@ UTF字符串
 Call执行之后，会创建函数栈帧，局部变量空间会被创建，修改FP和SP。
 
 ```
-... | argN | ... | arg0 | MiscData | ...Local Vars... |
+... | arg0 | ... | argN | MiscData | ...Local Vars... |
                         ^                             ^
                         FP                            SP
 ```
@@ -494,7 +494,7 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 栈式虚拟机的计算栈就在堆栈顶，因此临时变量的出现会导致SP不断变化
 
 ```
-... | argN | ... | arg0 | MiscData | ...Local Vars... | tmp0 | ... |
+... | arg0 | ... | argN | MiscData | ...Local Vars... | tmp0 | ... |
                         ^                                          ^
                         FP                                         SP
 ```
@@ -504,7 +504,7 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 函数返回前，临时变量空间（计算栈）必须只能有返回值（如果无返回值，计算栈为空）
 
 ```
-... | argN | ... | arg0 | MiscData | ...Local Vars... | value(RETT) |
+... | arg0 | ... | argN | MiscData | ...Local Vars... | value(RETT) |
                         ^                                           ^
                         FP                                          SP
 ```

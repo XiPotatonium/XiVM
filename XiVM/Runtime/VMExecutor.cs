@@ -128,6 +128,9 @@ namespace XiVM.Runtime
                         Stack.PushAddress(CurrentModule.ClassPoolLink[CurrentModule.FieldPool[index - 1].Class - 1].StaticFieldAddress);
                         Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
                         break;
+                    case InstructionType.NONSTATIC:
+                    case InstructionType.NEW:
+                        throw new NotImplementedException();
                     case InstructionType.LOADB:
                     case InstructionType.LOADI:
                         addr = Stack.PopAddress();
@@ -479,7 +482,7 @@ namespace XiVM.Runtime
 
         private void PopParams(string paramsDescriptor)
         {
-            for (int i = 0; i < paramsDescriptor.Length; ++i)
+            for (int i = paramsDescriptor.Length - 1; i >= 0; --i)
             {
                 // Warning Hardcoding
                 switch (paramsDescriptor[i])

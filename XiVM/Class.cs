@@ -68,23 +68,23 @@ namespace XiVM
         /// API使用这个函数添加method
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="type"></param>
+        /// <param name="decl"></param>
         /// <param name="flag"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        internal Method AddMethod(string name, MethodDeclarationInfo type, AccessFlag flag, int index)
+        internal Method AddMethod(string name, MethodDeclarationInfo decl, AccessFlag flag, int index)
         {
             if (Fields.ContainsKey(name))
             {
                 throw new XiVMError($"Dupilcate Name {name} in class {Name}");
             }
 
-            Method function = new Method(type, this, flag, index);
+            Method function = new Method(decl, this, flag, index);
             if (Methods.TryGetValue(name, out List<Method> value))
             {
                 foreach (Method m in value)
                 {
-                    if (m.Declaration.Equivalent(type))
+                    if (m.Declaration.Equivalent(decl))
                     {
                         // 重复定义
                         throw new XiVMError($"Duplicate definition for {Name}.{name}");
@@ -99,16 +99,33 @@ namespace XiVM
 
             // 添加参数
             int offset = 0;
-            if (!flag.IsStatic)
+            if (flag.IsStatic)
             {
+                function.Params = new Variable[function.Declaration.Params.Count];
+                for (int i = function.Declaration.Params.Count - 1; i >= 0; --i)
+                {
+                    offset -= function.Declaration.Params[i].SlotSize;
+                    function.Params[i] = new Variable(function.Declaration.Params[i])
+                    {
+                        Offset = offset
+                    };
+                }
+            }
+            else
+            {
+                function.Params = new Variable[function.Declaration.Params.Count + 1];
+                for (int i = function.Declaration.Params.Count - 1; i >= 0; --i)
+                {
+                    offset -= function.Declaration.Params[i].SlotSize;
+                    function.Params[i + 1] = new Variable(function.Declaration.Params[i])
+                    {
+                        Offset = offset
+                    };
+                }
                 // 成员方法默认参数this
                 offset -= VariableType.AddressType.SlotSize;
-                function.Params.Add(new Variable(ObjectType) { Offset = offset });
-            }
-            foreach (VariableType paramType in function.Declaration.Params)
-            {
-                offset -= paramType.SlotSize;
-                function.Params.Add(new Variable(paramType) { Offset = offset });
+                function.Params[0] = new Variable(ObjectType) { Offset = offset };
+
             }
 
             return function;
