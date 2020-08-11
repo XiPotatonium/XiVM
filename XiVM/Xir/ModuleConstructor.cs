@@ -54,46 +54,59 @@ namespace XiVM.Xir
                     sw.WriteLine($"\n.StringPool");
                     for (int i = 0; i < binaryModule.StringPool.Length; ++i)
                     {
-                        sw.WriteLine($"#{i + 1}: {binaryModule.StringPool[i]}");
+                        sw.WriteLine("{0, 8}{1}", $"#{i + 1}: ", binaryModule.StringPool[i]);
                     }
 
                     sw.WriteLine($"\n.ClassPool");
                     for (int i = 0; i < binaryModule.ClassPool.Length; ++i)
                     {
-                        sw.WriteLine($"#{i + 1}: {binaryModule.ClassPool[i].Module}" +
-                            $" {binaryModule.ClassPool[i].Name}");
+                        sw.WriteLine("{0, 8}{1} {2}", $"#{i + 1}: ", 
+                            binaryModule.ClassPool[i].Module,
+                            binaryModule.ClassPool[i].Name);
                     }
 
                     sw.WriteLine($"\n.MethodPool");
                     for (int i = 0; i < binaryModule.MethodPool.Length; ++i)
                     {
-                        sw.WriteLine($"#{i + 1}: {binaryModule.MethodPool[i].Class} {binaryModule.MethodPool[i].Name}" +
-                            $" {binaryModule.MethodPool[i].Type} {binaryModule.MethodPool[i].Flag}");
+                        sw.WriteLine("{0, 8}{1} {2} {3} {4}", $"#{i + 1}: ",
+                            binaryModule.MethodPool[i].Class,
+                            binaryModule.MethodPool[i].Name,
+                            binaryModule.MethodPool[i].Type,
+                            binaryModule.MethodPool[i].Flag);
                     }
 
                     sw.WriteLine($"\n.FieldPool");
                     for (int i = 0; i < binaryModule.FieldPool.Length; ++i)
                     {
-                        sw.WriteLine($"#{i + 1}: {binaryModule.FieldPool[i].Class} {binaryModule.FieldPool[i].Name}" +
-                            $" {binaryModule.FieldPool[i].Type} {binaryModule.FieldPool[i].Flag}");
+                        sw.WriteLine("{0, 8}{1} {2} {3} {4}", $"#{i + 1}: ",
+                            binaryModule.FieldPool[i].Class,
+                            binaryModule.FieldPool[i].Name,
+                            binaryModule.FieldPool[i].Type,
+                            binaryModule.FieldPool[i].Flag);
                     }
 
                     foreach (Class classType in Classes)
                     {
-                        sw.WriteLine($"\n.Class {classType.Name} {{\n\t#{classType.ConstantPoolIndex}");
+                        sw.WriteLine($"\n.Class {classType.Name} {{\n    #{classType.ConstantPoolIndex}");
                         foreach (KeyValuePair<string, List<Method>> methodGroup in classType.Methods)
                         {
                             foreach (Method method in methodGroup.Value)
                             {
-                                sw.WriteLine($"\n\t.Method {method.Name} {method.Descriptor} {{\n\t\t#{method.ConstantPoolIndex}");
+                                sw.WriteLine($"\n    .Method {method.Name} {method.Descriptor} {{\n        #{method.ConstantPoolIndex}");
+                                int pc = 0;
                                 foreach (BasicBlock bb in method.BasicBlocks)
                                 {
                                     foreach (Instruction inst in bb.Instructions)
                                     {
-                                        sw.WriteLine($"\t\t{inst}");
+                                        sw.WriteLine("{0, 8}{1}", $"{pc}: ", inst);
+                                        pc += 1;
+                                        if (inst.Params != null)
+                                        {
+                                            pc += inst.Params.Length;
+                                        }
                                     }
                                 }
-                                sw.WriteLine($"\t}} // {method.Name} {method.Descriptor}");
+                                sw.WriteLine($"    }} // {method.Name} {method.Descriptor}");
                             }
                         }
                         sw.WriteLine($"}} // {classType.Name}");

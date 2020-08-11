@@ -378,21 +378,19 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.JMP:
                         iValue = ConsumeInt();
-                        IP += iValue;
+                        IP = iValue;
                         break;
                     case InstructionType.JCOND:
                         iValue = Stack.PopInt();
                         if (iValue != 0)
                         {   // if
-                            iValue = ConsumeInt();
-                            IP += sizeof(int);
+                            IP = ConsumeInt();
                         }
                         else
                         {   // else
                             IP += sizeof(int);
-                            iValue = ConsumeInt();
+                            IP = ConsumeInt();
                         }
-                        IP += iValue;
                         break;
                     case InstructionType.CALL:
                         index = ConsumeInt();

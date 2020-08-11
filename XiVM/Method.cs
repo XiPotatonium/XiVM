@@ -190,17 +190,17 @@ namespace XiVM
             {
                 if (bb.Instructions.Last.Value.OpCode == InstructionType.JMP)
                 {
-                    // offset是目的地的地址减Next IP
+                    // offset是目的地的地址
                     BitConverter.TryWriteBytes(bb.Instructions.Last.Value.Params,
-                        bb.JmpTargets[0].Offset - (bb.Offset + bb.InstLength));
+                        bb.JmpTargets[0].Offset);
                 }
                 else if (bb.Instructions.Last.Value.OpCode == InstructionType.JCOND)
                 {
-                    // offset是目的地的地址减Next IP
+                    // offset是目的地的地址
                     BitConverter.TryWriteBytes(new Span<byte>(bb.Instructions.Last.Value.Params, 0, sizeof(int)),
-                        bb.JmpTargets[0].Offset - (bb.Offset + bb.InstLength));
+                        bb.JmpTargets[0].Offset);
                     BitConverter.TryWriteBytes(new Span<byte>(bb.Instructions.Last.Value.Params, sizeof(int), sizeof(int)),
-                        bb.JmpTargets[1].Offset - (bb.Offset + bb.InstLength));
+                        bb.JmpTargets[1].Offset);
                 }
             }
 
