@@ -116,7 +116,7 @@ namespace XiLang.Syntactic
         {
             AccessFlag flag = ParserAccessFlag();
             TypeExpr type = ParseTypeExpr();
-            if (CheckAt(1, TokenType.LPAREN))
+            if (Check(TokenType.LPAREN) || CheckAt(1, TokenType.LPAREN))
             {
                 FuncStmt ret = ParseFuncDeclarator(type, flag);
                 ret.Body = ParseBlockStmt();
@@ -158,16 +158,24 @@ namespace XiLang.Syntactic
         }
 
         /// <summary>
-        /// 参数中不能出现void
+        /// 参数中不能出现void，构造函数没有ID
         /// FuncDeclarator
-        ///     ID LPAREN ParamsAST RPAREN
+        ///     ID? LPAREN ParamsAST RPAREN
         /// </summary>
         /// <param name="retType"></param>
         /// <param name="flag"></param>
         /// <returns></returns>
         private FuncStmt ParseFuncDeclarator(TypeExpr retType, AccessFlag flag)
         {
-            string id = Consume(TokenType.ID).Literal;
+            string id;
+            if (Check(TokenType.LPAREN))
+            {
+                id = "(init)";
+            }
+            else
+            {
+                id = Consume(TokenType.ID).Literal;
+            }
             Consume(TokenType.LPAREN);
             ParamsAst ps = null;
             ps = ParseParamsAST();

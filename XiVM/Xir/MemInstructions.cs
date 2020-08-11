@@ -39,12 +39,20 @@ namespace XiVM.Xir
                 throw new XiVMError("AddGetFieldAddress only accept non-static field");
             }
 
-            throw new NotImplementedException();
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.NONSTATIC,
+                Params = BitConverter.GetBytes(field.ConstantPoolIndex)
+            });
         }
 
         public void AddGetFieldAddress(int poolIndex)
         {
-            throw new NotImplementedException();
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.NONSTATIC,
+                Params = BitConverter.GetBytes(poolIndex)
+            });
         }
 
         public void AddLocal(int offset)

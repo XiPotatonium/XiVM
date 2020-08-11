@@ -116,7 +116,7 @@ namespace XiLang
             }
 
             List<(string descriptor, uint flag)> methodDescriptors = new List<(string descriptor, uint flag)>();
-            foreach (XiVM.ConstantTable.MethodConstantInfo candidate in header.MethodPoolList)
+            foreach (MethodConstantInfo candidate in header.MethodPoolList)
             {
                 if (header.StringPoolList[header.ClassPoolList[candidate.Class - 1].Name - 1] == methodType.ClassType.ClassName &&
                     header.StringPoolList[candidate.Name - 1] == methodType.Name)
@@ -165,11 +165,6 @@ namespace XiLang
             }
             index = -1;
             return false;
-        }
-
-        public static bool CheckMethodExistence(ModuleConstructor constructor, string moduleName, string className, string methodName)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -133,6 +133,9 @@ namespace XiVM
         public LinkedList<BasicBlock> BasicBlocks { get; } = new LinkedList<BasicBlock>();
 
         public List<Variable> Locals { get; } = new List<Variable>();
+        /// <summary>
+        /// 如果是非静态，会比Declaration里多一个this
+        /// </summary>
         public List<Variable> Params { get; } = new List<Variable>();
 
         public Class Parent { get; set; }

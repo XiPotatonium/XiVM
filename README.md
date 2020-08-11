@@ -60,7 +60,7 @@ DeclarationStmt
     ACCESS_FLAG* TypeExpr FuncDeclarator BlockStmt
     ACCESS_FLAG* TypeExpr VarDeclarator SEMICOLON
 FuncDeclarator
-    ID LPAREN ParamsAST RPAREN
+    ID? LPAREN ParamsAST RPAREN
 VarDeclarator
     ID (ASSIGN Expr)? (COMMA VarDeclarator)?
 ParamsAST

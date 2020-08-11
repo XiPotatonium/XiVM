@@ -66,11 +66,11 @@ namespace XiVM.Runtime
                 StringPoolLink = new List<uint>(),
                 Classes = new Dictionary<uint, VMClass>(),
                 ClassPool = binaryModule.ClassPool,
-                ClassPoolLink = new List<uint>(),
+                ClassPoolLink = new List<VMClass>(),
                 FieldPool = binaryModule.FieldPool,
                 FieldPoolLink = new List<int>(),
                 MethodPool = binaryModule.MethodPool,
-                MethodPoolLink = new List<int>()
+                MethodPoolLink = new List<VMMethod>()
             };
             HashSet<int> externalModuleNameIndexes = new HashSet<int>();
 
@@ -85,16 +85,28 @@ namespace XiVM.Runtime
             // 类
             foreach (ClassConstantInfo classInfo in module.ClassPool)
             {
-                VMClass vmClass = new VMClass()
+                int moduleNameIndex = classInfo.Module;
+                if (moduleNameIndex != binaryModule.ModuleNameIndex)
                 {
-                    Parent = module,
-                    Methods = new Dictionary<uint, List<VMMethod>>(),
-                    StaticFields = new List<VMClassField>(),
-                    StaticFieldSize = 0,
-                    Fields = new List<VMClassField>(),
-                    FieldSize = 0
-                };
-                module.Classes.Add(module.StringPoolLink[classInfo.Name - 1], vmClass);
+                    // 外部域
+                    externalModuleNameIndexes.Add(moduleNameIndex);
+                    // 占位
+                    module.ClassPoolLink.Add(null);
+                }
+                else
+                {
+                    VMClass vmClass = new VMClass()
+                    {
+                        Parent = module,
+                        Methods = new Dictionary<uint, List<VMMethod>>(),
+                        StaticFields = new List<VMClassField>(),
+                        StaticFieldSize = 0,
+                        Fields = new List<VMClassField>(),
+                        FieldSize = 0
+                    };
+                    module.Classes.Add(module.StringPoolLink[classInfo.Name - 1], vmClass);
+                    module.ClassPoolLink.Add(vmClass);
+                }
             }
 
             // Field
@@ -130,10 +142,12 @@ namespace XiVM.Runtime
             }
 
             // 完成静态空间分配
-            foreach (ClassConstantInfo classInfo in module.ClassPool)
+            foreach (var vmClass in module.ClassPoolLink)
             {
-                module.Classes.TryGetValue(module.StringPoolLink[classInfo.Name - 1], out VMClass vmClass);
-                module.ClassPoolLink.Add(MemoryMap.MapToAbsolute(Malloc(vmClass.StaticFieldSize), MemoryTag.METHOD));
+                if (vmClass != null)
+                {
+                    vmClass.StaticFieldAddress = MemoryMap.MapToAbsolute(Malloc(vmClass.StaticFieldSize), MemoryTag.METHOD);
+                }
             }
 
             // Method
@@ -146,7 +160,7 @@ namespace XiVM.Runtime
                     // 外部方法
                     externalModuleNameIndexes.Add(moduleNameIndex);
                     // 占位
-                    module.MethodPoolLink.Add(-1);
+                    module.MethodPoolLink.Add(null);
                 }
                 else
                 {
@@ -183,7 +197,7 @@ namespace XiVM.Runtime
                     }
 
                     // 建立Link
-                    module.MethodPoolLink.Add(methodIndex);
+                    module.MethodPoolLink.Add(vmMethod);
                 }
             }
 
@@ -214,7 +228,7 @@ namespace XiVM.Runtime
 
                 uint classNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Name - 1];
                 uint descriptorAddress = module.StringPoolLink[methodInfo.Type - 1];
-                foreach ((MethodConstantInfo candidateMethodInfo, int candidateIndex) in importedModule.MethodPool.Zip(importedModule.MethodPoolLink))
+                foreach ((MethodConstantInfo candidateMethodInfo, VMMethod vmMethod) in importedModule.MethodPool.Zip(importedModule.MethodPoolLink))
                 {
                     // 模块名类名描述符匹配
                     if (moduleNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Module - 1] &&
@@ -222,7 +236,7 @@ namespace XiVM.Runtime
                         descriptorAddress == importedModule.StringPoolLink[candidateMethodInfo.Type - 1])
                     {
                         // 建立Link
-                        module.MethodPoolLink[i] = candidateIndex;
+                        module.MethodPoolLink[i] = vmMethod;
                         break;
                     }
                 }

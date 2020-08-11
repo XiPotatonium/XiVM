@@ -22,7 +22,8 @@ namespace XiVM
         LOCAL = 0x18,
         CONST = 0x19,
         STATIC = 0x1A,
-        NEW = 0x1B,
+        NONSTATIC = 0x1B,
+        NEW = 0x1C,
 
         LOADB = 0x20,
         LOADI = 0x21,
@@ -112,6 +113,7 @@ namespace XiVM
                 InstructionType.LOCAL => $"LOCAL {BitConverter.ToInt32(Params)}",
                 InstructionType.CONST => $"CONST {BitConverter.ToInt32(Params)}",
                 InstructionType.STATIC => $"STATIC {BitConverter.ToInt32(Params)}",
+                InstructionType.NONSTATIC => $"NONSTATIC {BitConverter.ToInt32(Params)}",
                 InstructionType.NEW => throw new NotImplementedException(),
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",

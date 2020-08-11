@@ -8,6 +8,7 @@ namespace XiVM
         public VMModule Parent { set; get; }
         public Dictionary<uint, List<VMMethod>> Methods { set; get; }
         public List<VMClassField> StaticFields { set; get; }
+        public uint StaticFieldAddress { set; get; }
         public int StaticFieldSize { set; get; }
         public List<VMClassField> Fields { set; get; }
         public int FieldSize { set; get; }
@@ -18,7 +19,7 @@ namespace XiVM
     /// </summary>
     public class Class : IConstantPoolValue
     {
-        // public ObjectType ObjectType { get; }
+        public ObjectType ObjectType { get; }
 
         public Module Parent { private set; get; }
 
@@ -40,7 +41,7 @@ namespace XiVM
         {
             Parent = module;
             ConstantPoolIndex = index;
-            // ObjectType = new ObjectType(this);
+            ObjectType = new ObjectType(this);
         }
 
         /// <summary>
@@ -98,6 +99,12 @@ namespace XiVM
 
             // 添加参数
             int offset = 0;
+            if (!flag.IsStatic)
+            {
+                // 成员方法默认参数this
+                offset -= VariableType.AddressType.SlotSize;
+                function.Params.Add(new Variable(ObjectType) { Offset = offset });
+            }
             foreach (VariableType paramType in function.Declaration.Params)
             {
                 offset -= paramType.SlotSize;
@@ -177,23 +184,27 @@ namespace XiVM
         }
     }
 
-    //public class ObjectType : VariableType
-    //{
-    //    public Class Parent { private set; get; }
-    //    internal ObjectType(Class parent)
-    //        : base(VariableTypeTag.ADDRESS)
-    //    {
-    //        Parent = parent;
-    //    }
-    //    public override bool Equivalent(VariableType b)
-    //    {
-    //        if (b is ObjectType bType)
-    //        {
-    //            return Parent == bType.Parent;
-    //        }
-    //        return false;
-    //    }
-    //}
+    /// <summary>
+    /// 不知道有没有用
+    /// </summary>
+    public class ObjectType : VariableType
+    {
+        public Class Parent { private set; get; }
+        internal ObjectType(Class parent)
+            : base(VariableTypeTag.ADDRESS)
+        {
+            Parent = parent;
+        }
+
+        public override bool Equivalent(VariableType b)
+        {
+            if (b is ObjectType bType)
+            {
+                return Parent == bType.Parent;
+            }
+            return false;
+        }
+    }
 
     /// <summary>
     /// 类对象的信息

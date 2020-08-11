@@ -119,17 +119,14 @@ namespace XiVM
         /// address，指向方法区字符串常量池中的字符串
         /// </summary>
         public List<uint> StringPoolLink { set; get; }
+        /// <summary>
+        /// 类名地址->VMClass
+        /// </summary>
         public Dictionary<uint, VMClass> Classes { set; get; }
         public ClassConstantInfo[] ClassPool { set; get; }
-        /// <summary>
-        /// address，指向方法区类的静态field空间
-        /// </summary>
-        public List<uint> ClassPoolLink { set; get; }
+        public List<VMClass> ClassPoolLink { set; get; }
         public MethodConstantInfo[] MethodPool { set; get; }
-        /// <summary>
-        /// 指向MethodIndexTable中的Method
-        /// </summary>
-        public List<int> MethodPoolLink { set; get; }
+        public List<VMMethod> MethodPoolLink { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
         /// <summary>
         /// offset，是field在该类的静态field空间的offset

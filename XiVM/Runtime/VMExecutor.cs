@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using XiVM.ConstantTable;
 using XiVM.Errors;
 
 namespace XiVM.Runtime
@@ -27,12 +28,12 @@ namespace XiVM.Runtime
 
         public void ExecuteStaticConstructor()
         {
-            foreach ((ConstantTable.MethodConstantInfo methodInfo, int index) in Module.MethodPool.Zip(Module.MethodPoolLink))
+            foreach ((MethodConstantInfo methodInfo, var method) in Module.MethodPool.Zip(Module.MethodPoolLink))
             {
                 if (Module.StringPoolLink[methodInfo.Name - 1] == MethodArea.StaticConstructorNameAddress)
                 {
                     // 静态构造
-                    CurrentMethod = MethodArea.MethodIndexTable[index];
+                    CurrentMethod = method;
                     Execute();
                 }
             }
@@ -124,7 +125,7 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.STATIC:
                         index = ConsumeInt();
-                        Stack.PushAddress(CurrentModule.ClassPoolLink[CurrentModule.FieldPool[index - 1].Class - 1]);
+                        Stack.PushAddress(CurrentModule.ClassPoolLink[CurrentModule.FieldPool[index - 1].Class - 1].StaticFieldAddress);
                         Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
                         break;
                     case InstructionType.LOADB:
@@ -395,7 +396,7 @@ namespace XiVM.Runtime
 
                         Stack.PushFrame(MethodIndex, IP);
 
-                        CurrentMethod = MethodArea.MethodIndexTable[CurrentModule.MethodPoolLink[index - 1]];
+                        CurrentMethod = CurrentModule.MethodPoolLink[index - 1];
 
                         IP = 0;
                         PushLocals();
