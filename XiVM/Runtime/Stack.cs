@@ -10,10 +10,6 @@ namespace XiVM.Runtime
         /// </summary>
         public static readonly int MaxSize = 0x100000;
         /// <summary>
-        /// 最小1K个slot
-        /// </summary>
-        public static readonly int MinSize = 0x400;
-        /// <summary>
         /// 函数栈中用于储存调用返回信息的MiscData是FP后的3个Slot
         /// </summary>
         public static readonly int MiscDataSize = 3;
@@ -34,7 +30,7 @@ namespace XiVM.Runtime
 
         public Stack()
         {
-            Capacity = MinSize;
+            Capacity = MaxSize;
             Slots = new Slot[Capacity];
             FP = 0;
             SP = 0;
@@ -84,18 +80,7 @@ namespace XiVM.Runtime
         {
             if (SP + slots > Capacity)
             {
-                Slot[] old = Slots;
-                while (Capacity < SP + slots)
-                {
-                    Capacity *= 2;
-                }
-                if (Capacity > MaxSize)
-                {
-                    throw new XiVMError("Stack overflow");
-                }
-                Slots = new Slot[Capacity];
-                System.Array.Copy(old, Slots, SP);
-
+                throw new XiVMError("Stack overflow");
             }
 
             // 默认tag为other
@@ -107,24 +92,7 @@ namespace XiVM.Runtime
         }
 
         /// <summary>
-        /// 回收多余的空间
-        /// </summary>
-        private void Shrink()
-        {
-            if (SP < 4 * Capacity && Capacity > MinSize)
-            {
-                Slot[] old = Slots;
-                while (SP < 4 * Capacity && Capacity > MinSize)
-                {
-                    Capacity /= 2;
-                }
-                Slots = new Slot[Capacity];
-                System.Array.Copy(old, Slots, SP);
-            }
-        }
-
-        /// <summary>
-        /// 出栈，不会进行Shrink
+        /// 出栈
         /// </summary>
         /// <param name="n">单位为slot</param>
         private void PopN(int n)

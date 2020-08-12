@@ -5,7 +5,7 @@
 * XiVM数组(数组要放到系统库吗?)
 * 未定义构造函数要生成一个默认的构造函数
 * 条件表达式不再有短路作用，这是一个bug
-* 栈的Shrink(需要吗？)，堆的GC
+* 堆的GC
 * 似乎寻址可以仅使用addr + offset的形式，这样的话堆空间的管理可以使用哈希表，查找就是O(1)了
 * ref
 * XiLang中char字面量和string字面量中的转义字符问题
@@ -487,15 +487,15 @@ UTF字符串
 
 #### 域常量池
 
-类名Index、域名Index、类型Index、修饰符Flag
+类Index、域名Index、类型Index、修饰符Flag
 
 #### 方法常量池
 
-类名Index、方法名Index、类型Index、局部变量类型Index、修饰符Flag
+类Index、方法名Index、类型Index、修饰符Flag
 
 #### 代码
 
-代码区和方法常量池一一对应。对于模块内方法，存放byte[]的指令，对于模块外的方法，存一个null。
+代码区和方法常量池一一对应。对于模块内方法，存放byte[]的指令，以及局部变量类型Index列表，对于模块外的方法，存一个null。
 
 ### 函数调用规范
 
