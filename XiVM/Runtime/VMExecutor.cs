@@ -118,7 +118,8 @@ namespace XiVM.Runtime
                         Stack.DupN(2);
                         break;
                     case InstructionType.LOCAL:
-                        Stack.PushAddress((uint)(Stack.FP + ConsumeInt()));
+                        iValue = ConsumeInt();
+                        Stack.PushAddress((uint)(Stack.FP + iValue));
                         break;
                     case InstructionType.CONST:
                         Stack.PushAddress(StringConstants[ConsumeInt() - 1]);
@@ -129,8 +130,14 @@ namespace XiVM.Runtime
                         Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
                         break;
                     case InstructionType.NONSTATIC:
+                        index = ConsumeInt();
+                        Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
+                        break;
                     case InstructionType.NEW:
-                        throw new NotImplementedException();
+                        iValue = ConsumeInt();
+                        Stack.PushAddress(MemoryMap.MapToAbsolute(
+                            Heap.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize), MemoryTag.HEAP));
+                        break;
                     case InstructionType.LOADB:
                     case InstructionType.LOADI:
                         addr = Stack.PopAddress();
@@ -236,6 +243,10 @@ namespace XiVM.Runtime
                         addr = Stack.PopAddress();
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                Stack.PushInt(BitConverter.ToInt32(data, index));
+                                break;
                             case MemoryTag.METHOD:
                                 data = MethodArea.GetData(addr);
                                 Stack.PushInt(BitConverter.ToInt32(data, index));
@@ -290,6 +301,10 @@ namespace XiVM.Runtime
                         iValue = Stack.TopInt;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(int)), iValue);
+                                break;
                             case MemoryTag.METHOD:
                                 data = MethodArea.GetData(addr);
                                 BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(int)), iValue);
@@ -411,6 +426,10 @@ namespace XiVM.Runtime
                         iValue = Stack.PopInt();
                         Console.Write((char)iValue);
                         break;
+                    case InstructionType.PUTI:
+                        iValue = Stack.PopInt();
+                        Console.Write(iValue);
+                        break;
                     case InstructionType.PUTS:
                         // 这个地址应该指向一个StringType
                         addr = Stack.PopAddress();
@@ -419,18 +438,14 @@ namespace XiVM.Runtime
                             case MemoryTag.STACK:
                                 throw new XiVMError("String should located on the heap");
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr, out uValue);
-                                if (uValue != 0)
-                                {
-                                    throw new XiVMError("Address of PUTS should point to the head of a string");
-                                }
-                                // TODO 检查MiscData是不是StringType
-                                Console.Write(Encoding.UTF8.GetString(data, Heap.MiscDataSize, data.Length - Heap.MiscDataSize));
+                                data = Heap.GetData(addr);
+                                // TODO 检查是不是StringType
+                                Console.Write(HeapData.GetString(data));
                                 break;
                             case MemoryTag.METHOD:
                                 data = MethodArea.GetData(addr);
-                                // TODO 检查MiscData是不是StringType
-                                Console.Write(Encoding.UTF8.GetString(data, MethodArea.StringMiscDataSize, data.Length - MethodArea.StringMiscDataSize));
+                                // TODO 检查是不是StringType
+                                Console.Write(HeapData.GetString(data));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -456,20 +471,18 @@ namespace XiVM.Runtime
 
 
                 byte[] descriptorData = MethodArea.GetData(addr);
-                string descriptor = Encoding.UTF8.GetString(descriptorData,
-                    MethodArea.StringMiscDataSize,
-                    descriptorData.Length - MethodArea.StringMiscDataSize);
+                string descriptor = HeapData.GetString(descriptorData);
 
-                switch (descriptor)
+                switch (descriptor[0])
                 {
-                    case "B":
-                    case "I":
+                    case 'B':
+                    case 'I':
                         Stack.PushInt();
                         break;
-                    case "D":
+                    case 'D':
                         Stack.PushDouble();
                         break;
-                    case "L":
+                    case 'L':
                         Stack.PushAddress();
                         break;
                     default:
@@ -478,8 +491,9 @@ namespace XiVM.Runtime
             }
         }
 
-        private void PopParams(string paramsDescriptor)
+        private void PopParams(string paramsDescriptor, bool isStatic)
         {
+            // 后来的参数在栈顶
             for (int i = paramsDescriptor.Length - 1; i >= 0; --i)
             {
                 // Warning Hardcoding
@@ -492,12 +506,24 @@ namespace XiVM.Runtime
                     case 'D':
                         Stack.PopDouble();
                         break;
-                    case 'L':
+                    case ';':
                         Stack.PopAddress();
+                        while (!(paramsDescriptor[i] == 'L' && 
+                            (i == 0 || paramsDescriptor[i - 1] == 'B' || paramsDescriptor[i - 1] == 'I' ||
+                                paramsDescriptor[i] == 'D' || paramsDescriptor[i] == ';')))
+                        {
+                            --i;
+                        }
                         break;
                     default:
                         throw new NotImplementedException();
                 }
+            }
+
+            if (!isStatic)
+            {
+                // non-static method，多pop一个this
+                Stack.PopAddress();
             }
         }
 
@@ -512,9 +538,7 @@ namespace XiVM.Runtime
             }
 
             byte[] descriptorData = MethodArea.GetData(addr);
-            string descriptor = Encoding.UTF8.GetString(descriptorData,
-                MethodArea.StringMiscDataSize,
-                descriptorData.Length - MethodArea.StringMiscDataSize).Substring(1);
+            string descriptor = HeapData.GetString(descriptorData).Substring(1);
             string[] vs = descriptor.Split(')');
 
             switch (vs[1][0])
@@ -523,28 +547,29 @@ namespace XiVM.Runtime
                 case 'I':
                     int iValue = Stack.PopInt();
                     Stack.PopFrame(out index, out ip);
-                    PopParams(vs[0]);
+                    PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     Stack.PushInt(iValue);
                     break;
                 case 'D':
                     double dValue = Stack.PopDouble();
                     Stack.PopFrame(out index, out ip);
-                    PopParams(vs[0]);
+                    PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     Stack.PushDouble(dValue);
                     break;
                 case 'L':
                     uint aValue = Stack.PopAddress();
                     Stack.PopFrame(out index, out ip);
-                    PopParams(vs[0]);
+                    PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     Stack.PushAddress(aValue);
                     break;
                 case 'V':
                     Stack.PopFrame(out index, out ip);
-                    PopParams(vs[0]);
+                    PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     break;
                 default:
                     throw new NotImplementedException();
             }
+
         }
 
         private uint ConsumeUint()

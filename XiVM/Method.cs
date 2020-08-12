@@ -20,6 +20,7 @@ namespace XiVM
     internal class VMMethod
     {
         public VMClass Parent { set; get; }
+        public AccessFlag Flag { set; get; }
         /// <summary>
         /// 描述符在常量池中的地址
         /// </summary>
@@ -43,7 +44,7 @@ namespace XiVM
             }
             else
             {
-                return $"{GetParamsDescriptor(ps)}{retType}";
+                return $"{GetParamsDescriptor(ps)}{retType.GetDescriptor()}";
             }
         }
 
@@ -57,7 +58,7 @@ namespace XiVM
             StringBuilder stringBuilder = new StringBuilder("(");
             foreach (VariableType p in ps)
             {
-                stringBuilder.Append(p.ToString());
+                stringBuilder.Append(p.GetDescriptor());
             }
             stringBuilder.Append(")");
             return stringBuilder.ToString();
@@ -100,7 +101,7 @@ namespace XiVM
         /// Descriptor形式和JVM相同
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public string GetDescriptor()
         {
             return GetDescriptor(ReturnType, Params);
         }
@@ -144,7 +145,7 @@ namespace XiVM
         public string Name => Parent.Parent.StringPool.ElementList[
             Parent.Parent.MethodPool.ElementList[ConstantPoolIndex - 1].Name - 1];
         public string Descriptor => Parent.Parent.StringPool.ElementList[
-            Parent.Parent.MethodPool.ElementList[ConstantPoolIndex - 1].Type - 1];
+            Parent.Parent.MethodPool.ElementList[ConstantPoolIndex - 1].Descriptor - 1];
 
         internal Method(MethodDeclarationInfo type, Class parent, AccessFlag flag, int index)
         {
@@ -220,7 +221,7 @@ namespace XiVM
             instStream.Read(ret.Instructions);
 
             // 局部变量信息
-            ret.LocalDescriptorIndex = Locals.Select(v => Parent.Parent.StringPool.TryAdd(v.Type.ToString())).ToArray();
+            ret.LocalDescriptorIndex = Locals.Select(v => Parent.Parent.StringPool.TryAdd(v.Type.GetDescriptor())).ToArray();
 
             return ret;
         }

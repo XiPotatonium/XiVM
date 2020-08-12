@@ -32,7 +32,7 @@ namespace XiLang.AbstractSyntaxTree
             while (root != null)
             {
                 classStmt = (ClassStmt)root;
-                classType = Constructor.AddClassType(classStmt.Id);
+                classType = Constructor.AddClass(classStmt.Id);
                 classes.Add(classType);
                 root = root.SiblingAST;
             }

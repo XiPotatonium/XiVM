@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using XiVM.Errors;
+using XiVM.Xir;
 
 namespace XiVM
 {
@@ -7,9 +9,15 @@ namespace XiVM
     {
         public VMModule Parent { set; get; }
         public Dictionary<uint, List<VMMethod>> Methods { set; get; }
+        /// <summary>
+        /// GC信息
+        /// </summary>
         public List<VMClassField> StaticFields { set; get; }
         public uint StaticFieldAddress { set; get; }
         public int StaticFieldSize { set; get; }
+        /// <summary>
+        /// GC信息
+        /// </summary>
         public List<VMClassField> Fields { set; get; }
         public int FieldSize { set; get; }
     }
@@ -19,6 +27,7 @@ namespace XiVM
     /// </summary>
     public class Class : IConstantPoolValue
     {
+        public ClassType ClassType { get; }
         public ObjectType ObjectType { get; }
 
         public Module Parent { private set; get; }
@@ -41,7 +50,8 @@ namespace XiVM
         {
             Parent = module;
             ConstantPoolIndex = index;
-            ObjectType = new ObjectType(this);
+            ClassType = new ClassType(Parent.Name, Name);
+            ObjectType = new ObjectType(ClassType);
         }
 
         /// <summary>
@@ -135,15 +145,14 @@ namespace XiVM
 
     public class ClassType : VariableType
     {
-        /// <summary>
-        /// 其实信息有冗余
-        /// </summary>
-        public string ModuleName { set; get; }
-        public string ClassName { set; get; }
-        public int ClassPoolIndex { set; get; }
-        public ClassType(int classPoolIndex) : base(VariableTypeTag.INVALID)
+        public string ModuleName { get; }
+        public string ClassName { get; }
+
+        public ClassType(string moduleName, string className) 
+            : base(VariableTypeTag.INVALID)
         {
-            ClassPoolIndex = classPoolIndex;
+            ModuleName = moduleName;
+            ClassName = className;
         }
 
         public override bool Equivalent(VariableType b)
@@ -154,31 +163,90 @@ namespace XiVM
             }
             if (b is ClassType bType)
             {
-                return ClassPoolIndex == bType.ClassPoolIndex;
+                return ModuleName == bType.ModuleName &&
+                    ClassName == bType.ClassName;
             }
             return false;
         }
 
-        public override string ToString()
+
+    }
+
+    public class ObjectType : VariableType
+    {
+        public static ObjectType GetObjectType(string descriptor)
         {
-            return $"{ModuleName}.{ClassName}";
+            if (descriptor[0] != 'L' || descriptor[^1] != ';')
+            {
+                throw new XiVMError($"{descriptor} is not a class descriptor");
+            }
+            descriptor = descriptor[1..^1];
+            string[] domains = descriptor.Split('.');
+            if (domains.Length != 2)
+            {
+                throw new XiVMError($"Class descriptor {descriptor} is not in ModuleName.ClassName form");
+            }
+            return new ObjectType(new ClassType(domains[0], domains[1]));
+        }
+
+        /// <summary>
+        /// 其实信息有冗余
+        /// </summary>
+        public string ModuleName => ClassType.ModuleName;
+        public string ClassName => ClassType.ClassName;
+        public ClassType ClassType { get; }
+
+        public ObjectType(ClassType classType)
+            : base(VariableTypeTag.ADDRESS)
+        {
+            ClassType = classType;
+        }
+
+        public override bool Equivalent(VariableType b)
+        {
+            if (b == null)
+            {
+                return false;
+            }
+            if (b is ObjectType bType)
+            {
+                return ClassType.Equivalent(bType.ClassType);
+            }
+            return false;
+        }
+
+        public override string GetDescriptor()
+        {
+            return $"L{ModuleName}.{ClassName};";
         }
     }
 
     public class MemberType : VariableType
     {
 
-        public ClassType ClassType { private set; get; }
-        public string Name { set; get; }
+        public ClassType ClassType { set; get; }
+        public string Name {  get; }
+        /// <summary>
+        /// 是否来自一个隐式的this.
+        /// </summary>
+        public bool FromThis { get; }
+        /// <summary>
+        /// 是否来自一个object.
+        /// </summary>
+        public bool FromObject { get; }
         /// <summary>
         /// 即使IsField，也不排除有同名Method
         /// </summary>
         public bool IsField { set; get; }
         public int FieldPoolIndex { set; get; }
 
-        public MemberType(ClassType classType) : base(VariableTypeTag.INVALID)
+        public MemberType(ClassType classType, string name, bool fromThis, bool fromObject) 
+            : base(VariableTypeTag.INVALID)
         {
             ClassType = classType;
+            Name = name;
+            FromThis = fromThis;
+            FromObject = fromObject;
         }
 
         public override bool Equivalent(VariableType b)
@@ -194,66 +262,7 @@ namespace XiVM
             }
             return false;
         }
-
-        public override string ToString()
-        {
-            return $"{ClassType}.{Name}";
-        }
     }
-
-    /// <summary>
-    /// 不知道有没有用
-    /// </summary>
-    public class ObjectType : VariableType
-    {
-        public Class Parent { private set; get; }
-        internal ObjectType(Class parent)
-            : base(VariableTypeTag.ADDRESS)
-        {
-            Parent = parent;
-        }
-
-        public override bool Equivalent(VariableType b)
-        {
-            if (b is ObjectType bType)
-            {
-                return Parent == bType.Parent;
-            }
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 类对象的信息
-    /// </summary>
-    //public class ClassInstance : Variable
-    //{
-    //    public ClassType ClassType => (ClassType)Type;
-    //    public int InstanceSize { private set; get; } = 0;
-
-    //    /// <summary>
-    //    /// Offset 对于Class Instance无意义
-    //    /// 注意类定义完成之前是可以创建对象的，因此在构造函数里不要对ClassType产生任何依赖
-    //    /// </summary>
-    //    /// <param name="classType"></param>
-    //    public ClassInstance(ClassType classType)
-    //        : base(classType, 0)
-    //    {
-
-    //    }
-
-    //    /// <summary>
-    //    /// 调用这个之前务必保证ClassType已经建立完毕
-    //    /// 为ClassInstance确定堆上要分配多大空间
-    //    /// 对于一般对象而言，就是成员变量空间
-    //    /// 但是为了支持数组这样的特殊数据，允许分配额外空间
-    //    /// </summary>
-    //    /// <param name="additionalSize">局部变量外的额外空间, 单位byte</param>
-    //    public void SetSize(int additionalSize = 0)
-    //    {
-
-    //    }
-    //}
 
     public struct AccessFlag
     {

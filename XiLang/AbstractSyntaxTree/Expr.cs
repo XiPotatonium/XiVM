@@ -44,17 +44,36 @@ namespace XiLang.AbstractSyntaxTree
 
         #endregion
 
-        private static VariableType ExpectLocalOrField(ModuleConstructor constructor, VariableType raw)
+        private static VariableType ExpectLocalOrField(CodeGenPass pass, VariableType raw)
         {
             if (raw is MemberType memberType)
             {
                 if (memberType.IsField)
                 {
-                    FieldConstantInfo fieldConstantInfo = constructor.FieldPool.Get(memberType.FieldPoolIndex);
-                    constructor.AddGetStaticFieldAddress(memberType.FieldPoolIndex);
+                    FieldConstantInfo fieldConstantInfo = pass.Constructor.FieldPool.Get(memberType.FieldPoolIndex);
+                    AccessFlag flag = new AccessFlag() { Flag = fieldConstantInfo.Flag };
+                    if (flag.IsStatic)
+                    {
+                        if (memberType.FromObject)
+                        {
+                            // 多余的object地址要pop
+                            pass.Constructor.AddPop(new ObjectType(memberType.ClassType));
+                        }
+                        pass.Constructor.AddGetStaticFieldAddress(memberType.FieldPoolIndex);
+                    }
+                    else
+                    {
+                        if (memberType.FromThis)
+                        {
+                            // 隐式的this.bar
+                            pass.Constructor.AddLocal(pass.Constructor.CurrentMethod.Params[0].Offset);
+                            pass.Constructor.AddLoadT(pass.Constructor.CurrentMethod.Params[0].Type);
+                        }
+                        pass.Constructor.AddGetFieldAddress(memberType.FieldPoolIndex);
+                    }
                     VariableType ret = VariableType.GetType(
-                        constructor.StringPool.Get(fieldConstantInfo.Type));
-                    constructor.AddALoadT(ret);
+                        pass.Constructor.StringPool.Get(fieldConstantInfo.Descriptor));
+                    pass.Constructor.AddALoadT(ret);
                     return ret;
                 }
                 else
@@ -133,6 +152,7 @@ namespace XiLang.AbstractSyntaxTree
         public override VariableType CodeGen(CodeGenPass pass)
         {
             VariableType expr1Type, expr2Type;
+            ObjectType objectType;
 
             if (IsConst())
             {
@@ -147,7 +167,7 @@ namespace XiLang.AbstractSyntaxTree
             switch (OpType)
             {
                 case OpType.NEG:
-                    expr1Type = ExpectLocalOrField(pass.Constructor, Expr1.CodeGen(pass));
+                    expr1Type = ExpectLocalOrField(pass, Expr1.CodeGen(pass));
                     if (expr1Type.Tag == VariableTypeTag.INT)
                     {
                         return pass.Constructor.AddNegI();
@@ -164,8 +184,8 @@ namespace XiLang.AbstractSyntaxTree
                 case OpType.SUB:
                 case OpType.MUL:
                 case OpType.DIV:
-                    expr1Type = ExpectLocalOrField(pass.Constructor, Expr1.CodeGen(pass));
-                    expr2Type = ExpectLocalOrField(pass.Constructor, Expr2.CodeGen(pass));
+                    expr1Type = ExpectLocalOrField(pass, Expr1.CodeGen(pass));
+                    expr2Type = ExpectLocalOrField(pass, Expr2.CodeGen(pass));
                     if (!expr1Type.Equivalent(expr2Type))
                     {
                         throw new TypeError($"{OpType}: {expr1Type} and {expr2Type} is not equivalent", Line);
@@ -187,12 +207,12 @@ namespace XiLang.AbstractSyntaxTree
                         throw new NotImplementedException();
                     }
                 case OpType.MOD:
-                    expr1Type = ExpectLocalOrField(pass.Constructor, Expr1.CodeGen(pass));
+                    expr1Type = ExpectLocalOrField(pass, Expr1.CodeGen(pass));
                     if (!expr1Type.Equivalent(VariableType.IntType))
                     {
                         throw new TypeError($"{OpType} expect int type", Line);
                     }
-                    expr2Type = ExpectLocalOrField(pass.Constructor, Expr2.CodeGen(pass));
+                    expr2Type = ExpectLocalOrField(pass, Expr2.CodeGen(pass));
                     if (!expr2Type.Equivalent(VariableType.IntType))
                     {
                         throw new TypeError($"{OpType} expect int type", Line);
@@ -218,8 +238,8 @@ namespace XiLang.AbstractSyntaxTree
                 case OpType.GT:
                 case OpType.LE:
                 case OpType.LT:
-                    expr1Type = ExpectLocalOrField(pass.Constructor, Expr1.CodeGen(pass));
-                    expr2Type = ExpectLocalOrField(pass.Constructor, Expr2.CodeGen(pass));
+                    expr1Type = ExpectLocalOrField(pass, Expr1.CodeGen(pass));
+                    expr2Type = ExpectLocalOrField(pass, Expr2.CodeGen(pass));
                     if (!expr1Type.Equivalent(expr2Type))
                     {
                         throw new TypeError($"{OpType}: {expr1Type} and {expr2Type} is not equivalent", Line);
@@ -244,10 +264,9 @@ namespace XiLang.AbstractSyntaxTree
                     }
                     throw new NotImplementedException();
                 case OpType.ASSIGN:
-                    expr2Type = ExpectLocalOrField(pass.Constructor, Expr2.CodeGen(pass));
+                    expr2Type = ExpectLocalOrField(pass, Expr2.CodeGen(pass));
+                    expr1Type = Expr1.LeftValueCodeGen(pass);   // LeftValueCodeGen的时候应该就把Store或者AStore写好
                     // TODO 赋值检查
-                    expr1Type = Expr1.LeftValueCodeGen(pass);
-                    pass.Constructor.AddStoreT(expr2Type);
                     return expr2Type;
                 case OpType.ADD_ASSIGN:
                 case OpType.SUB_ASSIGN:
@@ -278,7 +297,7 @@ namespace XiLang.AbstractSyntaxTree
                     Expr3 = Expr2;  // 借用Expr3作临时变量
                     while (Expr3 != null)
                     {
-                        pTypes.Add(ExpectLocalOrField(pass.Constructor, Expr3.CodeGen(pass)));
+                        pTypes.Add(ExpectLocalOrField(pass, Expr3.CodeGen(pass)));
                         Expr3 = (Expr)Expr3.SiblingAST;
                     }
                     Expr3 = null;
@@ -303,20 +322,16 @@ namespace XiLang.AbstractSyntaxTree
                     }
 
                     pass.Constructor.AddCall(pass.Constructor.AddMethodPoolInfo(
-                        methodType.ClassType.ClassPoolIndex,
-                        methodType.Name, methodDescriptor, methodFlag));
+                        methodType, methodDescriptor, methodFlag));
                     return MethodDeclarationInfo.GetReturnType(methodDescriptor);
                 case OpType.CLASS_ACCESS:
                     expr1Type = Expr1.CodeGen(pass);
+                    MemberType ret;
                     if (expr1Type is ModuleType moduleType)
                     {
                         // 必然是Module.Class
                         Program.AssertClassExistence(moduleType.ModuleName, ((IdExpr)Expr2).Id);
-                        return new ClassType(pass.Constructor.AddClassPoolInfo(moduleType.ModuleName, ((IdExpr)Expr2).Id))
-                        {
-                            ModuleName = moduleType.ModuleName,
-                            ClassName = ((IdExpr)Expr2).Id
-                        };
+                        return new ClassType(moduleType.ModuleName, ((IdExpr)Expr2).Id);
                     }
                     else if (expr1Type is ClassType classType)
                     {
@@ -324,9 +339,8 @@ namespace XiLang.AbstractSyntaxTree
 
                         IdExpr name = (IdExpr)Expr2;
 
-                        MemberType ret = new MemberType(classType)
+                        ret = new MemberType(classType, name.Id, false, false)
                         {
-                            Name = name.Id,
                             IsField = false
                         };
 
@@ -341,11 +355,39 @@ namespace XiLang.AbstractSyntaxTree
 
                         return ret;
                     }
+                    else if (expr1Type is ObjectType)
+                    {
+                        objectType = (ObjectType)expr1Type;
+                        IdExpr name = (IdExpr)Expr2;
+                        ret = new MemberType(objectType.ClassType, name.Id, false, true)
+                        {
+                            IsField = false
+                        };
+
+                        if (Program.CheckFieldExistence(pass.Constructor, objectType.ClassType, name.Id,
+                            out int fieldPoolIndex))
+                        {
+                            ret.IsField = true;
+                            ret.FieldPoolIndex = fieldPoolIndex;
+                        }
+                        return ret;
+                    }
                     throw new NotImplementedException();
                 case OpType.ARRAY_ACCESS:
                     throw new NotImplementedException();
                 case OpType.NEW:
-                    throw new NotImplementedException();
+                    expr1Type = ((TypeExpr)Expr1).ToXirType(pass.Constructor);
+                    if (expr1Type is ObjectType)
+                    {
+                        objectType = (ObjectType)expr1Type;
+                        pass.Constructor.AddNew(Program.AssertClassExistence(objectType.ModuleName, objectType.ClassName));
+                        pass.Constructor.AddDup(objectType);
+                        return new MemberType(objectType.ClassType, "(init)", false, true);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -353,7 +395,7 @@ namespace XiLang.AbstractSyntaxTree
 
         /// <summary>
         /// 期望获得一个左值
-        /// 将表达式的结果的地址入栈
+        /// LeftValueCodeGen的时候应该就把Store或者AStore写好
         /// </summary>
         protected virtual VariableType LeftValueCodeGen(CodeGenPass pass)
         {
@@ -405,45 +447,26 @@ namespace XiLang.AbstractSyntaxTree
             }
 
 
-            ClassType classType = new ClassType(pass.Constructor.CurrentClass.ConstantPoolIndex)
+            ClassType classType = new ClassType(pass.Constructor.Module.Name, pass.Constructor.CurrentClass.Name);
+
+            MemberType member = new MemberType(classType, Id, true, false)
             {
-                ModuleName = pass.Constructor.Module.Name,
-                ClassName = pass.Constructor.CurrentClass.Name
-            };
-            MemberType member = new MemberType(classType)
-            {
-                Name = Id,
                 IsField = false
             };
 
 
             if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField classField))
             {
-                //// static或者非static field
-                //if (field.AccessFlag.IsStatic)
-                //{
-                //    pass.Constructor.AddGetStaticFieldAddress(field);
-                //}
-                //else
-                //{
-                //    pass.Constructor.AddGetFieldAddress(field);
-                //}
-                //pass.Constructor.AddALoadT(field.Type);
-                // return field.Type;
                 member.IsField = true;
                 member.FieldPoolIndex = classField.ConstantPoolIndex;
             }
             else if (!pass.Constructor.CurrentClass.Methods.ContainsKey(Id))
-            {
+            { 
                 // 不是域和方法，有可能是类或模块
                 Class classInfo = pass.Constructor.Classes.Find(c => c.Name == Id);
                 if (classInfo != null)
                 {
-                    return new ClassType(classInfo.ConstantPoolIndex)
-                    {
-                        ModuleName = pass.Constructor.Module.Name,
-                        ClassName = Id
-                    };
+                    return new ClassType(pass.Constructor.Module.Name, Id);
                 }
                 else if (Program.ModuleHeaders.ContainsKey(Id))
                 {
@@ -469,6 +492,7 @@ namespace XiLang.AbstractSyntaxTree
             {
                 // 是一个局部变量
                 pass.Constructor.AddLocal(variable.Offset);
+                pass.Constructor.AddStoreT(variable.Type);
                 return variable.Type;
             }
             else if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField field))
@@ -480,8 +504,12 @@ namespace XiLang.AbstractSyntaxTree
                 }
                 else
                 {
+                    pass.LocalSymbolTable.TryGetSymbol("this", out Variable thisVariable); 
+                    pass.Constructor.AddLocal(thisVariable.Offset);
+                    pass.Constructor.AddLoadT(thisVariable.Type);
                     pass.Constructor.AddGetFieldAddress(field);
                 }
+                pass.Constructor.AddAStoreT(field.Type);
                 return field.Type;
             }
             else
@@ -551,7 +579,7 @@ namespace XiLang.AbstractSyntaxTree
                     SyntacticValueType.INT => VariableType.IntType,
                     SyntacticValueType.DOUBLE => VariableType.DoubleType,
                     SyntacticValueType.STRING => throw new NotImplementedException(),
-                    SyntacticValueType.CLASS => ToClassType(constructor),
+                    SyntacticValueType.CLASS => new ObjectType(ToClassType(constructor)),
                     SyntacticValueType.VOID => null,
                     _ => throw new NotImplementedException(),
                 };
@@ -565,11 +593,7 @@ namespace XiLang.AbstractSyntaxTree
                 Class classInfo = constructor.Classes.Find(c => c.Name == ClassName[0]);
                 if (classInfo != null)
                 {
-                    return new ClassType(classInfo.ConstantPoolIndex)
-                    {
-                        ModuleName = constructor.Module.Name,
-                        ClassName = ClassName[0]
-                    };
+                    return new ClassType(constructor.Module.Name, ClassName[0]);
                 }
                 else
                 {
@@ -579,16 +603,22 @@ namespace XiLang.AbstractSyntaxTree
             else if (ClassName.Count == 2)
             {
                 Program.AssertClassExistence(ClassName[0], ClassName[1]);
-                return new ClassType(constructor.AddClassPoolInfo(ClassName[0], ClassName[1]))
-                {
-                    ModuleName = ClassName[0],
-                    ClassName = ClassName[1]
-                };
+                return new ClassType(ClassName[0], ClassName[1]);
             }
             else
             {
                 throw new NotImplementedException();
             }
+        }
+
+        /// <summary>
+        /// Type不应该参与Const表达式
+        /// 为了防止NEW表达式被估值，Type不是const
+        /// </summary>
+        /// <returns></returns>
+        public override bool IsConst()
+        {
+            return false;
         }
     }
 

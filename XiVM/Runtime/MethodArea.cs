@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using XiVM.ConstantTable;
 using XiVM.Errors;
@@ -10,7 +11,6 @@ namespace XiVM.Runtime
     internal static class MethodArea
     {
         public static readonly int MaxSize = 0x1000000;
-        public static int StringMiscDataSize => Heap.MiscDataSize;
 
 
 
@@ -36,19 +36,18 @@ namespace XiVM.Runtime
         {
             // 预先加入这些常量
             // Warning Hardcoding
-            StringProgramAddress = TryAddConstantString("Program");
-            StringMainAddress = TryAddConstantString("Main");
-            StringMainDescriptorAddress = TryAddConstantString("()V");
-            StaticConstructorNameAddress = TryAddConstantString("(sinit)");
-            ConstructorNameAddress = TryAddConstantString("(init)");
+            StringProgramAddress = AddConstantString("Program");
+            StringMainAddress = AddConstantString("Main");
+            StringMainDescriptorAddress = AddConstantString("()V");
+            StaticConstructorNameAddress = AddConstantString("(sinit)");
+            ConstructorNameAddress = AddConstantString("(init)");
         }
 
-        private static uint TryAddConstantString(string value)
+        private static uint AddConstantString(string value)
         {
             if (!StringPool.TryGetValue(value, out LinkedListNode<HeapData> data))
             {
-                byte[] vs = new byte[StringMiscDataSize + Encoding.UTF8.GetByteCount(value)];
-                Encoding.UTF8.GetBytes(value, new Span<byte>(vs, StringMiscDataSize, vs.Length - StringMiscDataSize));
+                byte[] vs = HeapData.StoreString(value);
                 data = new LinkedListNode<HeapData>(new HeapData(
                     Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
                     vs));
@@ -78,7 +77,7 @@ namespace XiVM.Runtime
             foreach (string stringConstant in binaryModule.StringPool)
             {
                 // 建立映射
-                module.StringPoolLink.Add(TryAddConstantString(stringConstant));
+                module.StringPoolLink.Add(AddConstantString(stringConstant));
             }
             Modules.Add(module.StringPoolLink[binaryModule.ModuleNameIndex - 1], module);
 
@@ -102,7 +101,7 @@ namespace XiVM.Runtime
                         StaticFields = new List<VMClassField>(),
                         StaticFieldSize = 0,
                         Fields = new List<VMClassField>(),
-                        FieldSize = 0
+                        FieldSize = HeapData.MiscDataSize       // 头部信息
                     };
                     module.Classes.Add(module.StringPoolLink[classInfo.Name - 1], vmClass);
                     module.ClassPoolLink.Add(vmClass);
@@ -127,7 +126,7 @@ namespace XiVM.Runtime
                         out VMClass vmClass);
                     // 分配方法区空间并且链接地址
                     accessFlag.Flag = fieldInfo.Flag;
-                    VariableType fieldType = VariableType.GetType(binaryModule.StringPool[fieldInfo.Type - 1]);
+                    VariableType fieldType = VariableType.GetType(binaryModule.StringPool[fieldInfo.Descriptor - 1]);
                     if (accessFlag.IsStatic)
                     {
                         module.FieldPoolLink.Add(vmClass.StaticFieldSize);
@@ -136,7 +135,9 @@ namespace XiVM.Runtime
                     }
                     else
                     {
-                        // TODO 记录非静态field，便于生成对象
+                        module.FieldPoolLink.Add(vmClass.FieldSize);
+                        vmClass.Fields.Add(new VMClassField(fieldInfo.Flag, fieldType, vmClass.FieldSize));
+                        vmClass.FieldSize += fieldType.Size;
                     }
                 }
             }
@@ -152,7 +153,7 @@ namespace XiVM.Runtime
 
             // Method
             int methodIndex = 0;
-            foreach ((MethodConstantInfo methodInfo, BinaryMethod binaryMethod) in module.MethodPool.Zip(binaryModule.Code))
+            foreach ((MethodConstantInfo methodInfo, BinaryMethod binaryMethod) in module.MethodPool.Zip(binaryModule.Methods))
             {
                 int moduleNameIndex = module.ClassPool[methodInfo.Class - 1].Module;
                 if (moduleNameIndex != binaryModule.ModuleNameIndex)
@@ -177,8 +178,9 @@ namespace XiVM.Runtime
                     VMMethod vmMethod = new VMMethod()
                     {
                         Parent = vmClass,
+                        Flag = new AccessFlag() { Flag = methodInfo.Flag },
                         MethodIndex = methodIndex,
-                        DescriptorAddress = module.StringPoolLink[methodInfo.Type - 1],
+                        DescriptorAddress = module.StringPoolLink[methodInfo.Descriptor - 1],
                         LocalDescriptorAddress = binaryMethod.LocalDescriptorIndex.Select(i => module.StringPoolLink[i - 1]).ToList(),
                         CodeBlock = Malloc(binaryMethod.Instructions)
                     };
@@ -219,21 +221,31 @@ namespace XiVM.Runtime
 
         private static void ExternalSymbolResolution(VMModule module)
         {
+            // TODO 外部类和外部域
+
             // 外部函数符号
             for (int i = 0; i < module.MethodPool.Length; ++i)
             {
+                if (module.MethodPoolLink[i] != null)
+                {
+                    // 已经填上了
+                    continue;
+                }
+
                 MethodConstantInfo methodInfo = module.MethodPool[i];
                 uint moduleNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Module - 1];
                 Modules.TryGetValue(moduleNameAddress, out VMModule importedModule);
 
                 uint classNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Name - 1];
-                uint descriptorAddress = module.StringPoolLink[methodInfo.Type - 1];
+                uint nameAddress = module.StringPoolLink[methodInfo.Name - 1];
+                uint descriptorAddress = module.StringPoolLink[methodInfo.Descriptor - 1];
                 foreach ((MethodConstantInfo candidateMethodInfo, VMMethod vmMethod) in importedModule.MethodPool.Zip(importedModule.MethodPoolLink))
                 {
-                    // 模块名类名描述符匹配
+                    // 模块名类名函数名描述符匹配
                     if (moduleNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Module - 1] &&
                         classNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Name - 1] &&
-                        descriptorAddress == importedModule.StringPoolLink[candidateMethodInfo.Type - 1])
+                        nameAddress == importedModule.StringPoolLink[candidateMethodInfo.Name - 1] &&
+                        descriptorAddress == importedModule.StringPoolLink[candidateMethodInfo.Descriptor - 1])
                     {
                         // 建立Link
                         module.MethodPoolLink[i] = vmMethod;

@@ -2,26 +2,19 @@
 
 namespace SystemLib.System.IO
 {
-    internal class IO : AbstractClass
+    public class IO : AbstractClass
     {
-        public IO() : base("IO")
+        public static readonly string ClassName = "IO";
+
+        internal IO() : base(ClassName)
         {
-            Methods = new List<AbstractMethod>()
-            {
-                new PutChar(this),
-                new Write(this)
-            };
         }
 
-        public override void ClassGen()
+        internal override void DeclarationGen()
         {
-            Constructor.CurrentBasicBlock = ClassType.StaticInitializer.BasicBlocks.First.Value;
-            Constructor.AddRet();
-
-            foreach (AbstractMethod method in Methods)
-            {
-                method.MethodGen();
-            }
+            Methods.Add(new PutChar(this));
+            Methods.Add(new WriteInt(this));
+            Methods.Add(new WriteString(this));
         }
     }
 }

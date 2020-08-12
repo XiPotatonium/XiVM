@@ -105,6 +105,8 @@ namespace XiLang.AbstractSyntaxTree
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;
                 }
 
+                // TODO 如果没有构造函数，默认生成一个
+
                 root = root.SiblingAST;
             }
 
@@ -147,6 +149,8 @@ namespace XiLang.AbstractSyntaxTree
                     if (varStmt.Init != null)
                     {
                         VariableType variableType = varStmt.Init.CodeGen(this);
+                        Constructor.AddLocal(method.Params[0].Offset);
+                        Constructor.AddLoadT(method.Params[0].Type);
                         Constructor.AddGetFieldAddress(field);
                         Constructor.AddAStoreT(variableType);
                         Constructor.AddPop(variableType);

@@ -5,6 +5,15 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
+        public void AddNew(int index)
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.NEW,
+                Params = BitConverter.GetBytes(index)
+            });
+        }
+
         public void AddGetStaticFieldAddress(ClassField field)
         {
             if (!field.AccessFlag.IsStatic)

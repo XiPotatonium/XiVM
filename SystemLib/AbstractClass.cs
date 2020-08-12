@@ -4,18 +4,29 @@ using XiVM.Xir;
 
 namespace SystemLib
 {
-    internal abstract class AbstractClass
+    public abstract class AbstractClass
     {
         protected static ModuleConstructor Constructor => Program.ModuleConstructor;
 
-        public Class ClassType { private set; get; }
-        public List<AbstractMethod> Methods { protected set; get; }
+        public Class Class { get; }
+        public List<AbstractMethod> Methods { get; } = new List<AbstractMethod>();
 
-        public AbstractClass(string name)
+        protected AbstractClass(string name)
         {
-            ClassType = Constructor.AddClassType(name);
+            Class = Constructor.AddClass(name);
         }
 
-        public abstract void ClassGen();
+        internal abstract void DeclarationGen();
+
+        internal virtual void CodeGen()
+        {
+            Constructor.CurrentBasicBlock = Class.StaticInitializer.BasicBlocks.First.Value;
+            Constructor.AddRet();
+
+            foreach (AbstractMethod method in Methods)
+            {
+                method.MethodGen();
+            }
+        }
     }
 }

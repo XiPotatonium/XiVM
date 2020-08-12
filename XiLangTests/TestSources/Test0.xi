@@ -1,27 +1,37 @@
-﻿import System;
+﻿// 集成测试
+
+import System;
 
 class Program {
 	static int AValue = 9;
-	static int BValue = 3 * 6;
+	static int BValue = 4 * 3;
 
 	static void Main() {
 		int x = AValue * 3;
-		for (int i = 0; i < 10; ) {
-			if (i == 2) {
-				i = i + 2;
-			} else if (i == 5) {
-				i = i + 3;
-			} else {
-				i = i + 1;
-			}
-			DispNumber(x + i);
-			System.IO.Write(' ');
-		}
-		System.IO.Write(10);
-		x = Gcd(x, BValue);
-		Program.DispNumber(x);
-		System.IO.Write(10);
+		Demo d = new Demo(1, BValue);
+		System.IO.Write(d.Foo(5));
+		System.IO.PutChar(10);
+		x = Gcd(x, d.Foo(5));		// Gcd(27, 18)
+		System.IO.Write(x);
+		System.IO.PutChar(10);
+		System.IO.Write(d.Value);
+		System.IO.PutChar(10);
 	}
+
+//	static void LoopTest() {
+//		for (int i = 0; i < 10; ) {
+//			if (i == 2) {
+//				i = i + 2;
+//			} else if (i == 5) {
+//				i = i + 3;
+//			} else {
+//				i = i + 1;
+//			}
+//			DispNumber(AValue + i);
+//			System.IO.PutChar(' ');
+//		}
+//		System.IO.PutChar(10);
+//	}
 
 	static int Gcd(int a, int b) {
 		if (b == 0) {
@@ -29,16 +39,19 @@ class Program {
 		}
 		return Gcd(b, a % b);
 	}
+}
 
-	static void DispNumber(int n) {
-		if (n < 0) {
-			n = -n;
-			System.IO.Write('-');
-		} else if (n == 0) {
-			return;
-		}
-	
-		DispNumber(n / 10);
-		System.IO.Write(n % 10 + '0');
+class Demo {
+	static int Tag;
+	int Id;
+	int Value = 20;
+
+	Demo(int id, int val) {
+		Id = id;
+		Value = val;
+	}
+
+	int Foo(int a) {
+		return Value + a + Id;
 	}
 }

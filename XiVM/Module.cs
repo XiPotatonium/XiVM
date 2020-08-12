@@ -36,7 +36,7 @@ namespace XiVM
         public ClassConstantInfo[] ClassPool { set; get; }
         public MethodConstantInfo[] MethodPool { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
-        public BinaryMethod[] Code { set; get; }
+        public BinaryMethod[] Methods { set; get; }
 
         public IList<string> StringPoolList => StringPool;
         public IList<ClassConstantInfo> ClassPoolList => ClassPool;
@@ -101,6 +101,8 @@ namespace XiVM
 
         public BinaryModule ToBinary()
         {
+            // 生成methods的时候可能依然会修改常量池，因此先做
+            BinaryMethod[] binaryMethods = Methods.Select(m => m?.ToBinary()).ToArray();
             return new BinaryModule
             {
                 ModuleNameIndex = ModuleNameIndex,
@@ -108,7 +110,7 @@ namespace XiVM
                 ClassPool = ClassPool.ToArray(),
                 MethodPool = MethodPool.ToArray(),
                 FieldPool = FieldPool.ToArray(),
-                Code = Methods.Select(m => m?.ToBinary()).ToArray()
+                Methods = binaryMethods
             };
         }
     }
@@ -129,7 +131,8 @@ namespace XiVM
         public List<VMMethod> MethodPoolLink { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
         /// <summary>
-        /// offset，是field在该类的静态field空间的offset
+        /// offset，是static field在该类的静态field空间的offset
+        /// 是非static field在该类对象空间中的offset
         /// </summary>
         public List<int> FieldPoolLink { set; get; }
     }

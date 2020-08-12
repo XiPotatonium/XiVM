@@ -21,6 +21,14 @@ namespace XiVM.Xir
             });
         }
 
+        public void AddPutI()
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.PUTI
+            });
+        }
+
         public void AddPutS()
         {
             CurrentInstructions.AddLast(new Instruction()

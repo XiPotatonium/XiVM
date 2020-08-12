@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using XiLang.Errors;
 using XiVM;
 using XiVM.Xir;
 
@@ -32,12 +33,12 @@ namespace XiLang.AbstractSyntaxTree
             {
                 ClassStmt classStmt = (ClassStmt)root;
                 classesEnumerator.MoveNext();
-                Class classType = classesEnumerator.Current;
+                Class currentClass = classesEnumerator.Current;
 
                 VarStmt varStmt = classStmt.Fields;
                 while (varStmt != null)
                 {
-                    fields.Add(Constructor.AddClassField(classType, varStmt.Id, varStmt.Type.ToXirType(Constructor), varStmt.AccessFlag));
+                    fields.Add(Constructor.AddClassField(currentClass, varStmt.Id, varStmt.Type.ToXirType(Constructor), varStmt.AccessFlag));
                     varStmt = (VarStmt)varStmt.SiblingAST;
                 }
 
@@ -51,9 +52,28 @@ namespace XiLang.AbstractSyntaxTree
                         pTypes.Add(param.Type.ToXirType(Constructor));
                         param = (VarStmt)param.SiblingAST;
                     }
-                    methods.Add(Constructor.AddMethod(classType, funcStmt.Id,
-                        funcStmt.Type.ToXirType(Constructor), pTypes,
-                        funcStmt.AccessFlag));
+
+                    VariableType retType = funcStmt.Type.ToXirType(Constructor);
+                    if (funcStmt.Id == "(init)")
+                    {
+                        // AST上缺少了函数名，检查是否符合构造函数条件
+                        if (retType is ObjectType objectType &&
+                            objectType.ClassName == currentClass.Name && objectType.ModuleName == currentClass.Parent.Name)
+                        {
+                            // 确实是构造函数，返回值改为void
+                            methods.Add(Constructor.AddMethod(currentClass, funcStmt.Id,
+                                null, pTypes, funcStmt.AccessFlag));
+                        }
+                        else
+                        {
+                            throw new XiLangError("Missing return type or mis-spelled constructor");
+                        }
+                    }
+                    else
+                    {
+                        methods.Add(Constructor.AddMethod(currentClass, funcStmt.Id,
+                            retType, pTypes, funcStmt.AccessFlag));
+                    }
 
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;
                 }

@@ -14,11 +14,6 @@ namespace XiLang
 {
     public class Program
     {
-        /// <summary>
-        /// TODO
-        /// </summary>
-        public static Class StringType { private set; get; }
-
         public static Dictionary<string, ModuleHeader> ModuleHeaders { private set; get; } = new Dictionary<string, ModuleHeader>();
         public static string DirName { private set; get; } = ".";
 
@@ -60,9 +55,6 @@ namespace XiLang
 
             // 解析类信息之外的部分并生成AST
             AST root = (AST)tokenPasses.Run(new Parser());
-
-            Console.WriteLine("Parse done!");
-
 
             ASTPassManager astPasses = new ASTPassManager(root);
 
@@ -121,20 +113,20 @@ namespace XiLang
                 if (header.StringPoolList[header.ClassPoolList[candidate.Class - 1].Name - 1] == methodType.ClassType.ClassName &&
                     header.StringPoolList[candidate.Name - 1] == methodType.Name)
                 {
-                    methodDescriptors.Add((header.StringPoolList[candidate.Type - 1], candidate.Flag));
+                    methodDescriptors.Add((header.StringPoolList[candidate.Descriptor - 1], candidate.Flag));
                 }
             }
             return methodDescriptors;
         }
 
-        public static void AssertClassExistence(string moduleName, string className)
+        public static int AssertClassExistence(string moduleName, string className)
         {
             ModuleHeaders.TryGetValue(moduleName, out ModuleHeader header);
-            foreach (ClassConstantInfo classInfo in header.ClassPoolList)
+            for (int i = 0; i < header.ClassPoolList.Count; ++i)
             {
-                if (header.StringPoolList[classInfo.Name - 1] == className)
+                if (header.StringPoolList[header.ClassPoolList[i].Name - 1] == className)
                 {
-                    return;
+                    return i + 1;
                 }
             }
             throw new XiLangError($"{moduleName}.{className} not found");
@@ -158,8 +150,8 @@ namespace XiLang
             {
                 if (fieldInfo.Class == classInfoIndex && header.StringPoolList[fieldInfo.Name - 1] == fieldName)
                 {
-                    index = constructor.AddFieldPoolInfo(classType.ClassPoolIndex, fieldName,
-                        header.StringPoolList[fieldInfo.Type], fieldInfo.Flag);
+                    index = constructor.AddFieldPoolInfo(classType, fieldName,
+                        header.StringPoolList[fieldInfo.Descriptor - 1], fieldInfo.Flag);
                     return true;
                 }
             }

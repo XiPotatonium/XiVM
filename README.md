@@ -2,12 +2,13 @@
 
 ## TODO
 
-* XiVM字符串类和数组(字符串和数组要放到系统库吗?)
-* new
+* XiVM数组(数组要放到系统库吗?)
+* 未定义构造函数要生成一个默认的构造函数
+* 条件表达式不再有短路作用，这是一个bug
 * ref
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiVM的浮点数运算
-* 条件表达式不再有短路作用，这是feature还是bug？
+* 似乎寻址可以仅使用addr + offset的形式，这样的话堆空间的管理可以使用哈希表，查找就是O(1)了
 * 为了支持动态绑定的函数调用，可能需要另一种Call
 * 目前import都是线性依赖的，互相依赖的模块编译以及执行还没有实现
 
@@ -40,8 +41,8 @@
     * while，body必须被花括号包围，或者是空
     * for：可以在init中定义变量，body必须被花括号包围，或者是空
 * 类
-    * 静态域
-    * 静态方法：支持重载
+    * 静态和非静态域
+    * 静态和非静态方法：支持重载
 * 禁止隐式类型提升，8.0 / 4这样的表达式也是非法的
 * import，目前仅支持线性依赖，会自动查找同一文件夹下的.xibc。
 
@@ -220,13 +221,35 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 
 #### STATIC
 
-* STATIC index(int) 0x19
+* STATIC index(int) 0x1A
 
 获取当前Module的Field常量池中下标为index的字符串常量的地址，地址为res[offset]。
 
 ```
 ... |
 ... | res(addr) | offset(int) |
+```
+
+#### NONSTATIC
+
+* NONSTATIC index(int) 0x1B
+
+获取当前Module的Field常量池中下标为index的字符串常量的offset。配合实现加载的对象地址，可以实现非静态域查找
+
+```
+... |
+... | offset(int) |
+```
+
+#### NEW
+
+* NEW index(int) 0x1C
+
+在堆上分配一个当前Module的Class常量池中下标为index的类的对象，返回对象地址
+
+```
+... |
+... | res(addr) |
 ```
 
 #### LOADT
@@ -413,7 +436,18 @@ Index是模块常量池中MethodPool的index，
 
 * PUTC 0XA0
 
-将int类型值以字符形式输出到控制台，仅支持UTF8
+将int类型值以字符形式输出到控制台，仅支持ASCII
+
+```
+... | value(int) |
+... |
+```
+
+#### PUTI
+
+* PUTC 0XAA
+
+输出int
 
 ```
 ... | value(int) |
@@ -422,7 +456,7 @@ Index是模块常量池中MethodPool的index，
 
 #### PUTS
 
-* PUTS 0XA1
+* PUTS 0XA2
 
 通过地址，获取字符串，取其中的数据转化为UTF8格式字符串输出到控制台
 
@@ -513,7 +547,7 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 
 1. 返回值出栈
 2. 依据MiscData恢复调用前的状态
-3. 依据Callee的函数，可以知道参数的大小，清空参数部分，堆栈恢复到参数未被eval之前的状态
+3. 依据Callee的函数，可以知道参数的大小，清空参数部分，堆栈恢复到参数未被eval之前的状态，注意如果是non-static的函数要多pop一个this
 4. 返回值重新入栈
 
 ```
@@ -560,3 +594,12 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 ```
 void System.IO.PutChar(int ch);
 ```
+
+#### Write
+
+```
+void System.IO.Write(int val);
+void System.IO.Write(System.String val);
+```
+
+### String

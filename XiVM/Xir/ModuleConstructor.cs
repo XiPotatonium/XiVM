@@ -71,7 +71,7 @@ namespace XiVM.Xir
                         sw.WriteLine("{0, 8}{1} {2} {3} {4}", $"#{i + 1}: ",
                             binaryModule.MethodPool[i].Class,
                             binaryModule.MethodPool[i].Name,
-                            binaryModule.MethodPool[i].Type,
+                            binaryModule.MethodPool[i].Descriptor,
                             binaryModule.MethodPool[i].Flag);
                     }
 
@@ -81,18 +81,25 @@ namespace XiVM.Xir
                         sw.WriteLine("{0, 8}{1} {2} {3} {4}", $"#{i + 1}: ",
                             binaryModule.FieldPool[i].Class,
                             binaryModule.FieldPool[i].Name,
-                            binaryModule.FieldPool[i].Type,
+                            binaryModule.FieldPool[i].Descriptor,
                             binaryModule.FieldPool[i].Flag);
                     }
 
                     foreach (Class classType in Classes)
                     {
-                        sw.WriteLine($"\n.Class {classType.Name} {{\n    #{classType.ConstantPoolIndex}");
+                        sw.WriteLine($"\n.Class {classType.Name} {{");
+                        sw.WriteLine($"    # ClassPoolIndex {classType.ConstantPoolIndex}");
                         foreach (KeyValuePair<string, List<Method>> methodGroup in classType.Methods)
                         {
                             foreach (Method method in methodGroup.Value)
                             {
-                                sw.WriteLine($"\n    .Method {method.Name} {method.Descriptor} {{\n        #{method.ConstantPoolIndex}");
+                                sw.WriteLine($"\n    .Method {method.Name} {method.Descriptor} {{");
+                                sw.WriteLine($"        # MethodPoolIndex {method.ConstantPoolIndex}");
+                                sw.WriteLine($"        # LocalTypeIndexTable: ");
+                                foreach (var localInfo in binaryModule.Methods[method.ConstantPoolIndex - 1].LocalDescriptorIndex)
+                                {
+                                    sw.WriteLine($"            # {localInfo}");
+                                }
                                 int pc = 0;
                                 foreach (BasicBlock bb in method.BasicBlocks)
                                 {
@@ -106,10 +113,10 @@ namespace XiVM.Xir
                                         }
                                     }
                                 }
-                                sw.WriteLine($"    }} // {method.Name} {method.Descriptor}");
+                                sw.WriteLine($"    }} \t// {method.Name}");
                             }
                         }
-                        sw.WriteLine($"}} // {classType.Name}");
+                        sw.WriteLine($"}} \t// {classType.Name}");
                     }
                 }
             }
@@ -122,7 +129,7 @@ namespace XiVM.Xir
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public Class AddClassType(string name)
+        public Class AddClass(string name)
         {
             Class ret = new Class(Module, ClassPool.Add(
                 new ClassConstantInfo(Module.ModuleNameIndex, StringPool.TryAdd(name))));
@@ -131,7 +138,7 @@ namespace XiVM.Xir
             // 静态构造函数
             ret.StaticInitializer = AddMethod(ret, "(sinit)",
                 null, new List<VariableType>(),
-                AccessFlag.DefaultFlag);
+                new AccessFlag() { IsStatic = true });
             AddBasicBlock(ret.StaticInitializer);
             return ret;
         }
@@ -141,7 +148,7 @@ namespace XiVM.Xir
             int index = FieldPool.Add(new FieldConstantInfo(
                 classType.ConstantPoolIndex,
                 StringPool.TryAdd(name),
-                StringPool.TryAdd(type.ToString()),
+                StringPool.TryAdd(type.GetDescriptor()),
                 flag.Flag));
             return classType.AddField(name, type, flag, index);
         }
@@ -153,7 +160,7 @@ namespace XiVM.Xir
             int index = MethodPool.Add(new MethodConstantInfo(
                 classType.ConstantPoolIndex,
                 StringPool.TryAdd(name),
-                StringPool.TryAdd(declarationInfo.ToString()),
+                StringPool.TryAdd(declarationInfo.GetDescriptor()),
                 flag.Flag));
             Method method = classType.AddMethod(name, declarationInfo, flag, index);
             Methods.Add(method);
@@ -161,29 +168,29 @@ namespace XiVM.Xir
         }
 
         /// <summary>
-        /// 在构造类的时候不需要手动调用这个函数
-        /// 是在方法代码生成过程中遇到（可能是其他module的类）时使用
+        /// 在构造class的时候不需要手动调用这个函数
+        /// 是在方法代码生成过程中遇到（可能是其他module的class）时使用
         /// </summary>
-        /// <param name="moduleName"></param>
-        /// <param name="className"></param>
+        /// <param name="classType"></param>
         /// <returns></returns>
-        public int AddClassPoolInfo(string moduleName, string className)
+        public int AddClassPoolInfo(ClassType classType)
         {
-            return ClassPool.TryAdd(new ClassConstantInfo(StringPool.TryAdd(moduleName), StringPool.TryAdd(className)));
+            return ClassPool.TryAdd(new ClassConstantInfo(
+                StringPool.TryAdd(classType.ModuleName), StringPool.TryAdd(classType.ClassName)));
         }
 
         /// <summary>
         /// 在构造成员的时候不需要手动调用这个函数
         /// 是在方法代码生成过程中遇到（可能是其他module的method）时使用
         /// </summary>
-        /// <param name="classIndex"></param>
-        /// <param name="name"></param>
+        /// <param name="methodType"></param>
         /// <param name="descriptor"></param>
         /// <param name="flag"></param>
         /// <returns></returns>
-        public int AddMethodPoolInfo(int classIndex, string name, string descriptor, uint flag)
+        public int AddMethodPoolInfo(MemberType methodType, string descriptor, uint flag)
         {
-            int index = MethodPool.TryAdd(new MethodConstantInfo(classIndex, StringPool.TryAdd(name), StringPool.TryAdd(descriptor), flag));
+            int index = MethodPool.TryAdd(new MethodConstantInfo(AddClassPoolInfo(methodType.ClassType), 
+                StringPool.TryAdd(methodType.Name), StringPool.TryAdd(descriptor), flag));
             if (index > Methods.Count)
             {
                 // 是新创建的，为了Methods和MethodPool可以匹配，要添加null
@@ -196,14 +203,28 @@ namespace XiVM.Xir
         /// 在构造成员的时候不需要手动调用这个函数
         /// 是在方法代码生成过程中遇到（可能是其他module的field）时使用
         /// </summary>
-        /// <param name="classIndex"></param>
+        /// <param name="fieldType"></param>
+        /// <param name="descriptor"></param>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public int AddFieldPoolInfo(MemberType fieldType, string descriptor, uint flag)
+        {
+            return FieldPool.TryAdd(new FieldConstantInfo(AddClassPoolInfo(fieldType.ClassType), 
+                StringPool.TryAdd(fieldType.Name), StringPool.TryAdd(descriptor), flag));
+        }
+        /// <summary>
+        /// 在构造成员的时候不需要手动调用这个函数
+        /// 是在方法代码生成过程中遇到（可能是其他module的field）时使用
+        /// </summary>
+        /// <param name="classType"></param>
         /// <param name="name"></param>
         /// <param name="descriptor"></param>
         /// <param name="flag"></param>
         /// <returns></returns>
-        public int AddFieldPoolInfo(int classIndex, string name, string descriptor, uint flag)
+        public int AddFieldPoolInfo(ClassType classType, string name, string descriptor, uint flag)
         {
-            return FieldPool.TryAdd(new FieldConstantInfo(classIndex, StringPool.TryAdd(name), StringPool.TryAdd(descriptor), flag));
+            return FieldPool.TryAdd(new FieldConstantInfo(AddClassPoolInfo(classType),
+                StringPool.TryAdd(name), StringPool.TryAdd(descriptor), flag));
         }
 
         #endregion

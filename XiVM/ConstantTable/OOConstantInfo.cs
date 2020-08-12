@@ -40,13 +40,13 @@ namespace XiVM.ConstantTable
         public uint Flag { private set; get; }
         public int Class { private set; get; }
         public int Name { private set; get; }
-        public int Type { private set; get; }
+        public int Descriptor { private set; get; }
 
         internal MethodConstantInfo(int classIndex, int nameIndex, int typeIndex, uint flag)
         {
             Class = classIndex;
             Name = nameIndex;
-            Type = typeIndex;
+            Descriptor = typeIndex;
             Flag = flag;
         }
 
@@ -59,14 +59,15 @@ namespace XiVM.ConstantTable
             if (obj is MethodConstantInfo info)
             {
                 return Name == info.Name &&
-                    Class == info.Class;
+                    Class == info.Class &&
+                    Descriptor == info.Descriptor;
             }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Class, Name, Type);
+            return HashCode.Combine(Class, Name, Descriptor);
         }
     }
 
@@ -75,14 +76,14 @@ namespace XiVM.ConstantTable
     {
         public int Class { private set; get; }
         public int Name { private set; get; }
-        public int Type { private set; get; }
+        public int Descriptor { private set; get; }
         public uint Flag { private set; get; }
 
         internal FieldConstantInfo(int classIndex, int nameIndex, int typeIndex, uint flag)
         {
             Class = classIndex;
             Name = nameIndex;
-            Type = typeIndex;
+            Descriptor = typeIndex;
             Flag = flag;
         }
 
@@ -92,7 +93,7 @@ namespace XiVM.ConstantTable
             {
                 return false;
             }
-            if (obj is MethodConstantInfo info)
+            if (obj is FieldConstantInfo info)
             {
                 return Name == info.Name &&
                     Class == info.Class;
@@ -102,7 +103,7 @@ namespace XiVM.ConstantTable
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Class, Name, Type);
+            return HashCode.Combine(Class, Name);
         }
     }
 }

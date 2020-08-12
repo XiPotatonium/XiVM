@@ -4,19 +4,20 @@ using XiVM.Xir;
 
 namespace SystemLib
 {
-    internal abstract class AbstractMethod
+    public abstract class AbstractMethod
     {
         protected static ModuleConstructor Constructor => Program.ModuleConstructor;
 
-        public AbstractClass Parent { private set; get; }
-        public Method Method { private set; get; }
+        public AbstractClass Parent { get; }
+        public Method Method { protected set; get; }
 
-        public AbstractMethod(AbstractClass parent, string name, VariableType retType, List<VariableType> paramsType, AccessFlag flag)
+        protected AbstractMethod(AbstractClass parent)
         {
-            Method = Constructor.AddMethod(parent.ClassType, name,
-                Constructor.AddMethodType(retType, paramsType), flag);
+            Parent = parent;
         }
 
-        public abstract void MethodGen();
+        internal abstract void DeclarationGen();
+
+        internal abstract void MethodGen();
     }
 }

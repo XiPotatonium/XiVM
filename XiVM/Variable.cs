@@ -1,5 +1,6 @@
 ﻿using System;
 using XiVM.Runtime;
+using XiVM.Xir;
 
 namespace XiVM
 {
@@ -30,27 +31,33 @@ namespace XiVM
 
         #region Descriptor
 
+
         public static VariableType GetType(string descriptor)
         {
-            return descriptor switch
+            switch (descriptor[0])
             {
-                "B" => ByteType,
-                "I" => IntType,
-                "D" => DoubleType,
-                "L" => AddressType,
-                "V" => null,
-                _ => throw new NotImplementedException(),
-            };
+                case 'B':
+                    return ByteType;
+                case 'I':
+                    return IntType;
+                case 'D':
+                    return DoubleType;
+                case 'L':
+                    return ObjectType.GetObjectType(descriptor);
+                case 'V':
+                    return null;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
-        public override string ToString()
+        public virtual string GetDescriptor()
         {
             return Tag switch
             {
                 VariableTypeTag.BYTE => "B",
                 VariableTypeTag.INT => "I",
                 VariableTypeTag.DOUBLE => "D",
-                VariableTypeTag.ADDRESS => "L",
                 _ => throw new NotImplementedException(),
             };
         }

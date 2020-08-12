@@ -74,7 +74,8 @@ namespace XiVM
         RET = 0x94,
 
         PUTC = 0xA0,
-        PUTS = 0xA1,
+        PUTI = 0xA1,
+        PUTS = 0xA2,
     }
 
     [Serializable]
@@ -114,7 +115,7 @@ namespace XiVM
                 InstructionType.CONST => $"CONST {BitConverter.ToInt32(Params)}",
                 InstructionType.STATIC => $"STATIC {BitConverter.ToInt32(Params)}",
                 InstructionType.NONSTATIC => $"NONSTATIC {BitConverter.ToInt32(Params)}",
-                InstructionType.NEW => throw new NotImplementedException(),
+                InstructionType.NEW => $"NEW {BitConverter.ToInt32(Params)}",
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",
                 InstructionType.LOADD => "LOADD",
@@ -150,6 +151,7 @@ namespace XiVM
                 InstructionType.JMP => $"JMP {BitConverter.ToInt32(Params)}",
                 InstructionType.JCOND => $"JCOND {BitConverter.ToInt32(Params)} {BitConverter.ToInt32(Params, sizeof(int))}",
                 InstructionType.PUTC => "PUTC",
+                InstructionType.PUTI => "PUTI",
                 InstructionType.PUTS => "PUTS",
                 _ => throw new NotImplementedException(),
             };

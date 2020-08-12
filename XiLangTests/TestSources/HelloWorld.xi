@@ -3,6 +3,6 @@
 class Program {
 	static void Main() {
 		System.IO.Write("Hello world");
-		System.IO.Write(10);
+		System.IO.PutChar(10);
 	}
 }
