@@ -447,7 +447,7 @@ Index是模块常量池中MethodPool的index，
 
 #### PUTI
 
-* PUTC 0XAA
+* PUTC 0XA1
 
 输出int
 
