@@ -169,7 +169,7 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 
 ```
 ... |
-... | value(N) |
+... | value(T) |
 ```
 
 #### POP(N)
@@ -182,7 +182,7 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 将栈中指定类型的数据Pop出去
 
 ```
-... | value(N) |
+... | value(T) |
 ... |
 ```
 
@@ -191,7 +191,7 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 * DUP 0X10
 * DUP2 0X11
 
-将计算栈中大小为N的空间复制并Push进计算栈，DUP的N就是1
+将计算栈中大小为N的空间复制并Push进计算栈
 
 ```
 ... | value(N) |
@@ -406,15 +406,15 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### JMP
 
-* JMP offset(int) 0X80
+* JMP target(int) 0X80
 
-栈不改变。IP += sizeof(int) + offset
+栈不改变。IP = target
 
 #### JCOND
 
-* JCOND offset(int) offset1(int) 0X81
+* JCOND if-target(int) else-target(int) 0X81
 
-如果cond为0，IP += 2 * sizeof(int) + offset1，否则，IP += 2 * sizeof(int) + offset
+如果cond不为0，IP = if-target，否则，IP = else-target
 
 ```
 ... | cond(byte) |
