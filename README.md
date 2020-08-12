@@ -5,10 +5,11 @@
 * XiVM数组(数组要放到系统库吗?)
 * 未定义构造函数要生成一个默认的构造函数
 * 条件表达式不再有短路作用，这是一个bug
+* 栈的Shrink(需要吗？)，堆的GC
+* 似乎寻址可以仅使用addr + offset的形式，这样的话堆空间的管理可以使用哈希表，查找就是O(1)了
 * ref
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiVM的浮点数运算
-* 似乎寻址可以仅使用addr + offset的形式，这样的话堆空间的管理可以使用哈希表，查找就是O(1)了
 * 为了支持动态绑定的函数调用，可能需要另一种Call
 * 目前import都是线性依赖的，互相依赖的模块编译以及执行还没有实现
 
@@ -134,6 +135,7 @@ ConstExpr
 * 栈式虚拟机
 * Stack Based Runtime Environment without Local Procedure
 * 支持生成.xibc字节码和.xir文本中间码，字节码参考了JVM
+* 字节码生成API设计参考了LLVM-C，使用BasicBlock的思想，代码中unreachable code不会再生成
 
 ### 堆栈
 
