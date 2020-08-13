@@ -2,8 +2,7 @@
 
 ## TODO
 
-* XiVM数组
-* 外部模块的类和域的链接
+* 外部模块的类和域的链接, System.String的构造函数
 * 未定义构造函数要生成一个默认的构造函数
 * 复杂条件表达式，注意短路作用
 * 堆的GC
@@ -151,21 +150,33 @@ N为大小（单位为Slot）。
 注意计算栈中的byte, int, double, addr均指对应类型的slot。
 byte和int的slot实际上不区分，所以byte类型指令和int类型指令在处理栈上数据是完全一样的。
 
-单个指令的使用说明格式: 
-```[指令] ([参数(参数的C#类型)] ...) [指令编码]```
+单个指令的使用说明格式(具体编码见enum InstructionType): 
+```[指令] ([参数(参数的C#类型)] ...)```
 
 #### NOP
 
-* NOP   0X00
+* NOP
 
  无任何操作
 
+#### DUP(N)
+
+* DUP
+* DUP2
+
+将计算栈中大小为N的空间复制并Push进计算栈
+
+```
+... | value(N) |
+... | value(N) | value(N) |
+```
+
 #### PUSHT
 
-* PUSHB value(byte) 0X01
-* PUSHI value(int) 0X02
-* PUSHD value(double) 0X03
-* PUSHA value(uint) 0X04
+* PUSHB value(byte)
+* PUSHI value(int)
+* PUSHD value(double)
+* PUSHA value(uint)
 
 将参数value push进计算栈
 
@@ -176,10 +187,10 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 
 #### POP(N)
 
-* POPB 0X08
-* POPI 0X09
-* POPD 0X0A
-* POPA 0X0B
+* POPB
+* POPI
+* POPD
+* POPA
 
 将栈中指定类型的数据Pop出去
 
@@ -188,82 +199,14 @@ byte和int的slot实际上不区分，所以byte类型指令和int类型指令�
 ... |
 ```
 
-#### DUP(N)
-
-* DUP 0X10
-* DUP2 0X11
-
-将计算栈中大小为N的空间复制并Push进计算栈
-
-```
-... | value(N) |
-... | value(N) | value(N) |
-```
-
-#### LOCAL
-
-* LOCALA offset(int) 0x18
-
-获取当前栈帧的某个栈地址并Push进计算栈。offset的为目标地址与FP的距离
-
-```
-... |
-... | res(addr) |
-```
-
-#### CONST
-
-* CONST index(int) 0x19
-
-获取当前Module字符串常量池中下标为index的字符串常量的地址.
-字符串常量参考[字符串常量池](#字符串常量池)
-
-```
-... |
-... | res(addr) |
-```
-
-#### STATIC
-
-* STATIC index(int) 0x1A
-
-获取当前Module的Field常量池中下标为index的字符串常量的地址，地址为res[offset]。
-
-```
-... |
-... | res(addr) | offset(int) |
-```
-
-#### NONSTATIC
-
-* NONSTATIC index(int) 0x1B
-
-获取当前Module的Field常量池中下标为index的字符串常量的offset。配合实现加载的对象地址，可以实现非静态域查找
-
-```
-... |
-... | offset(int) |
-```
-
-#### NEW
-
-* NEW index(int) 0x1C
-
-在堆上分配一个当前Module的Class常量池中下标为index的类的对象，返回对象地址
-
-```
-... |
-... | res(addr) |
-```
-
 #### LOADT
 
-* LOADB 0X20
-* LOADI 0X21
-* LOADD 0X22
-* LOADA 0X23
+* LOADB
+* LOADI
+* LOADD
+* LOADA
 
-load会从src指向的位置加载一个T类型的值，Push进计算栈
+value = *src
 
 ```
 ... | src(addr) |
@@ -272,12 +215,12 @@ load会从src指向的位置加载一个T类型的值，Push进计算栈
 
 #### STORET
 
-* STOREB 0X28
-* STOREI 0X29
-* STORED 0X2A
-* STOREA 0X2B
+* STOREB
+* STOREI
+* STORED
+* STOREA
 
-store会将T类型的value存储到dest这个地址，注意value并不会被pop
+*dest = value
 
 ```
 ... | value(T) | dest(addr) |
@@ -286,35 +229,35 @@ store会将T类型的value存储到dest这个地址，注意value并不会被pop
 
 #### ALOADT
 
-* ALOADB 0X20
-* ALOADI 0X21
-* ALOADD 0X22
-* ALOADA 0X23
+* ALOADB
+* ALOADI
+* ALOADD
+* ALOADA
 
-load会从src[offset]位置加载一个T类型的值，Push进计算栈
+value = arr[index]，暂不清楚是否要兼容string
 
 ```
-... | src(addr) | offset(int) |
+... | arr(addr) | index(int) |
 ... | value(T) |
 ```
 
 #### ASTORET
 
-* ASTOREB 0X28
-* ASTOREI 0X29
-* ASTORED 0X2A
-* ASTOREA 0X2B
+* ASTOREB
+* ASTOREI
+* ASTORED
+* ASTOREA
 
-store会将T类型的value存储到dest[offset]位置，注意value并不会被pop
+arr[index] = value，暂不清楚是否要兼容string
 
 ```
-... | value(T) | dest(addr) | offset(int) |
+... | value(T) | arr(addr) | index(int) |
 ... | value(T) |
 ```
 
 #### ADDT
 
-* ADDI 0X40
+* ADDI
 
 加法
 
@@ -325,7 +268,7 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### SUBT
 
-* SUBI 0X44
+* SUBI
 
 减法
 
@@ -336,7 +279,7 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### MULT
 
-* MULI 0X48
+* MULI
 
 乘法
 
@@ -347,7 +290,7 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### DIVT
 
-* DIVI 0X4C
+* DIVI
 
 除法
 
@@ -358,7 +301,7 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### MOD
 
-* MOD 0X50
+* MOD
 
 模运算
 
@@ -369,7 +312,7 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### NEGT
 
-* NEGI 0X54
+* NEGI
 
 取反
 
@@ -380,8 +323,8 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### TIN2TOUT
 
-* I2D 0X60
-* D2I 0X61
+* I2D
+* D2I
 
 类型转换
 
@@ -392,12 +335,12 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### SET(COND)(T)
 
-* SETEQI 0X70
-* SETNEI 0X71
-* SETLTI 0X72
-* SETLEI 0X73
-* SETGTI 0X74
-* SETGEI 0X75
+* SETEQI
+* SETNEI
+* SETLTI
+* SETLEI
+* SETGTI
+* SETGEI
 
 比较。如果cond成立，res为1，否则res为1
 
@@ -408,7 +351,7 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### JMP
 
-* JMP target(int) 0X80
+* JMP target(int)
 
 栈不改变。IP = target
 
@@ -425,31 +368,135 @@ store会将T类型的value存储到dest[offset]位置，注意value并不会被p
 
 #### CALL
 
-* CALL index(int) 0X90
+* CALL index(int)
 
 Index是模块常量池中MethodPool的index，
 行为参考[发起调用](#发起调用)
 
 #### RET(T)
 
-* RET 0X94
+* RET
 
 行为参考[函数返回](#函数返回)
 
-#### PUTC
+#### LOCAL
 
-* PUTC 0XA0
+* LOCALA offset(int)
 
-将int类型值以字符形式输出到控制台，仅支持ASCII
+获取当前栈帧的某个栈地址并Push进计算栈。offset的为目标地址与FP的距离
 
 ```
-... | value(int) |
+... |
+... | res(addr) |
+```
+
+#### CONST
+
+* CONST index(int)
+
+获取当前Module字符串常量池中下标为index的字符串常量的地址.
+字符串常量参考[字符串常量池](#字符串常量池)
+
+```
+... |
+... | res(addr) |
+```
+
+#### STORESTATIC
+
+* STORESTATIC index(int)
+
+保存value到当前Module的Field常量池中下标为index的static field中。
+XiVM会根据field的类型处理value（不在栈上判断value的type），因此所有赋值判断要在编译阶段完成。
+
+```
+... | value(T) |
+... | value(T) |
+```
+
+#### LOADSTATIC
+
+* LOADSTATIC index(int)
+
+读取当前Module的Field常量池中下标为index的static field的value。
+XiVM会根据field的类型读取value.
+
+```
+... |
+... | value(T) |
+```
+
+#### STORENONSTATIC
+
+* STORENONSTATIC index(int)
+
+保存value到当前Module的Field常量池中下标为index的field中。
+XiVM会根据field的类型处理value（不在栈上判断value的type），因此所有赋值判断要在编译阶段完成。
+
+```
+... | value(T) | object(addr) |
+... | value(T) |
+```
+
+#### LOADNONSTATIC
+
+* LOADNONSTATIC index(int)
+
+读取object的当前Module的Field常量池中下标为index的field的value。
+XiVM会根据field的类型读取value.XiVM不检查object是否有这个field，在编译时检查.
+
+```
+... | object(addr) |
+... | value(T) |
+```
+
+#### NEW
+
+* NEW index(int)
+
+在堆上分配一个当前Module的Class常量池中下标为index的类的对象，返回对象地址
+
+```
+... |
+... | object(addr) |
+```
+
+#### NEWARR
+
+* NEW tag(byte)
+
+在堆上分配一个长度为len的基本类型数组，类型为tag，返回数组地址
+
+```
+... | len(int) |
+... | arr(addr) |
+```
+
+#### NEWAARR
+
+* NEW index(int)
+
+在堆上分配一个长度为len的对象数组，对象的类是当前Module的Class常量池中下标为index的类，返回数组地址
+
+```
+... | len(int) |
+... | aarr(addr) |
+```
+
+#### PUTC
+
+* PUTC
+
+PUTC将int类型值以字符形式输出到控制台，仅支持ASCII.
+
+```
+... | value(T) |
 ... |
 ```
 
 #### PUTI
 
-* PUTC 0XA1
+* PUTI
 
 输出int
 
@@ -460,7 +507,7 @@ Index是模块常量池中MethodPool的index，
 
 #### PUTS
 
-* PUTS 0XA2
+* PUTS
 
 通过地址，获取字符串，取其中的数据转化为UTF8格式字符串输出到控制台
 

@@ -8,7 +8,7 @@ namespace XiVM.Runtime
     /// </summary>
     internal enum MemoryTag
     {
-        STACK, HEAP, METHOD, NULL, INVALID
+        INVALID, NULL, PRESERVED, STACK, HEAP, METHOD
     }
 
     internal static class MemoryMap
@@ -24,6 +24,11 @@ namespace XiVM.Runtime
 
         public static readonly uint NullAddress = 0;
 
+        /// <summary>
+        /// 目前未使用
+        /// </summary>
+        public static readonly int PreservedSpace = 99;
+
 
         /// <summary>
         /// 从addr映射到Tag空间的res
@@ -33,31 +38,38 @@ namespace XiVM.Runtime
         /// <returns></returns>
         public static MemoryTag MapToOffset(uint addr, out uint res)
         {
-            if (addr == NullAddress)
+            res = addr;
+            // 0
+            if (res == NullAddress)
             {
-                res = 0;
                 return MemoryTag.NULL;
             }
 
-            if (addr < Stack.MaxSize)
+            res--;          // 减去null
+            // 1-100
+            if (res < PreservedSpace)
             {
-                res = addr;
+                return MemoryTag.PRESERVED;
+            }
+
+            res = (uint)(res - PreservedSpace);
+            
+            if (res < Stack.MaxSize)
+            {
                 return MemoryTag.STACK;
             }
 
-            addr = (uint)(addr - Stack.MaxSize);
+            res = (uint)(res - Stack.MaxSize);
 
-            if (addr < Heap.MaxSize)
+            if (res < Heap.MaxSize)
             {
-                res = addr;
                 return MemoryTag.HEAP;
             }
 
-            addr = (uint)(addr - Heap.MaxSize);
+            res = (uint)(res - Heap.MaxSize);
 
-            if (addr < MethodArea.MaxSize)
+            if (res < MethodArea.MaxSize)
             {
-                res = addr;
                 return MemoryTag.METHOD;
             }
             else
@@ -78,24 +90,32 @@ namespace XiVM.Runtime
         {
             switch (to)
             {
+                case MemoryTag.NULL:
+                    return NullAddress;
+                case MemoryTag.PRESERVED:
+                    if (offset >= PreservedSpace)
+                    {
+                        throw new XiVMError("Cannot map to preserved space, exceeds max size");
+                    }
+                    return offset + 1;
                 case MemoryTag.STACK:
                     if (offset >= Stack.MaxSize)
                     {
                         throw new XiVMError("Cannot map to stack space, exceeds stack max size");
                     }
-                    return offset;
+                    return (uint)(offset + 1 + PreservedSpace);
                 case MemoryTag.HEAP:
                     if (offset >= Heap.MaxSize)
                     {
                         throw new XiVMError("Cannot map to heap space, exceeds heap max size");
                     }
-                    return (uint)(offset + Stack.MaxSize);
+                    return (uint)(offset + 1 + PreservedSpace + Stack.MaxSize);
                 case MemoryTag.METHOD:
                     if (offset >= MethodArea.MaxSize)
                     {
                         throw new XiVMError("Cannot map to method area, exceeds method area max size");
                     }
-                    return (uint)(offset + Stack.MaxSize + Heap.MaxSize);
+                    return (uint)(offset + 1 + PreservedSpace + Stack.MaxSize + Heap.MaxSize);
                 default:
                     throw new NotImplementedException();
             }

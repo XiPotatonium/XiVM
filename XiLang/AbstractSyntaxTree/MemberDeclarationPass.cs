@@ -24,7 +24,7 @@ namespace XiLang.AbstractSyntaxTree
                 root = root.SiblingAST;
             }
 
-            List<ClassField> fields = new List<ClassField>();
+            List<Field> fields = new List<Field>();
             List<Method> methods = new List<Method>();
 
             // 第二轮生成类方法和域的声明

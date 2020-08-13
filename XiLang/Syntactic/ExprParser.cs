@@ -52,13 +52,13 @@ namespace XiLang.Syntactic
 
             if (Check(TokenType.LBRACKET))
             {
-                Consume(TokenType.LBRACKET);
+                t = Consume(TokenType.LBRACKET);
+                ret.Expr1 = Expr.MakeOp(OpType.ARRAY_ACCESS, null, t.Line);
                 if (expectArraySize)
                 {
-                    ret.ArraySize = ParseCondtionalExpr();
+                    ret.Expr1.Expr1 = ParseCondtionalExpr();
                 }
                 Consume(TokenType.RBRACKET);
-                ret.IsArray = true;
             }
             return ret;
         }

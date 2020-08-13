@@ -57,6 +57,11 @@ namespace XiVM.ConstantTable
             return ElementTable.TryGetValue(element, out index);
         }
 
+        /// <summary>
+        /// 不需要index - 1
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public T Get(int index)
         {
             return ElementList[index - 1];

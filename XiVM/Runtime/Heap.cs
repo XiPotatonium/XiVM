@@ -27,6 +27,20 @@ namespace XiVM.Runtime
             return newData.Value.Offset;
         }
 
+        public static uint MallocArray(int elementSize, int len)
+        {
+            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
+            if (Size + size > MaxSize)
+            {
+                throw new XiVMError("Heap overflow");
+            }
+            LinkedListNode<HeapData> newData = new LinkedListNode<HeapData>(new HeapData(
+                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
+                new byte[size]));
+            Data.AddLast(newData);
+            return newData.Value.Offset;
+        }
+
         /// <summary>
         /// TODO 考虑用哈希表，因为不会有offset
         /// </summary>
@@ -51,16 +65,22 @@ namespace XiVM.Runtime
         }
     }
 
-    internal struct HeapData
+    internal class HeapData
     {
         /// <summary>
-        /// 类型信息
+        /// 类型信息以及GC信息
         /// </summary>
-        public static readonly int MiscDataSize = sizeof(int);
+        public static readonly int MiscDataSize = 2 * sizeof(int);
         /// <summary>
         /// 头部长度信息
         /// </summary>
-        private static int StringLengthSize = sizeof(int);
+        public static int StringLengthSize = sizeof(int);
+        public static int ArrayLengthSize = sizeof(int);
+
+        public static int ArrayOffsetMap(int elementSize, int index)
+        {
+            return index * elementSize + MiscDataSize + ArrayLengthSize;
+        }
 
         public static string GetString(byte[] data)
         {

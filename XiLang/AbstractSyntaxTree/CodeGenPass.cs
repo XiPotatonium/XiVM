@@ -22,15 +22,15 @@ namespace XiLang.AbstractSyntaxTree
         public SymbolTable LocalSymbolTable { set; get; }
 
 
-        private List<ClassField> Fields { get; }
+        private List<Field> Fields { get; }
         /// <summary>
         /// 缓存，免得每次生成构造函数都要重新找一遍
         /// </summary>
-        private Dictionary<Class, List<(VarStmt, ClassField)>> NonStaticFields { set; get; }
+        private Dictionary<Class, List<(VarStmt, Field)>> NonStaticFields { set; get; }
         private List<Method> Methods { get; }
         private List<Class> Classes { get; }
 
-        public CodeGenPass(ModuleConstructor constructor, List<Class> classes, List<ClassField> fields, List<Method> methods)
+        public CodeGenPass(ModuleConstructor constructor, List<Class> classes, List<Field> fields, List<Method> methods)
         {
             Constructor = constructor;
             Classes = classes;
@@ -51,9 +51,9 @@ namespace XiLang.AbstractSyntaxTree
 
             // 最后一轮生成类方法和域的定义
             List<Class>.Enumerator classesEnumerator = Classes.GetEnumerator();
-            List<ClassField>.Enumerator fieldEnumerator = Fields.GetEnumerator();
+            List<Field>.Enumerator fieldEnumerator = Fields.GetEnumerator();
             List<Method>.Enumerator methodEnumerator = Methods.GetEnumerator();
-            NonStaticFields = new Dictionary<Class, List<(VarStmt, ClassField)>>();
+            NonStaticFields = new Dictionary<Class, List<(VarStmt, Field)>>();
             while (root != null)
             {
                 ClassStmt classStmt = (ClassStmt)root;
@@ -64,19 +64,18 @@ namespace XiLang.AbstractSyntaxTree
                 Constructor.CurrentBasicBlock = classType.StaticInitializer.BasicBlocks.First.Value;
 
                 VarStmt varStmt = classStmt.Fields;
-                List<(VarStmt, ClassField)> nonStaticFields = new List<(VarStmt, ClassField)>();
+                List<(VarStmt, Field)> nonStaticFields = new List<(VarStmt, Field)>();
                 while (varStmt != null)
                 {
                     fieldEnumerator.MoveNext();
-                    ClassField field = fieldEnumerator.Current;
+                    Field field = fieldEnumerator.Current;
 
                     if (varStmt.AccessFlag.IsStatic == true)
                     {
                         if (varStmt.Init != null)
                         {
                             VariableType variableType = varStmt.Init.CodeGen(this);
-                            Constructor.AddGetStaticFieldAddress(field);
-                            Constructor.AddAStoreT(variableType);
+                            Constructor.AddStoreStatic(field.ConstantPoolIndex);
                             Constructor.AddPop(variableType);
                         }
                         // XiVM类变量默认全0的
@@ -143,7 +142,7 @@ namespace XiLang.AbstractSyntaxTree
             Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(method);
             if (funcStmt.Id == "(init)")
             {
-                NonStaticFields.TryGetValue(method.Parent, out List<(VarStmt, ClassField)> nonStaticFields);
+                NonStaticFields.TryGetValue(method.Parent, out List<(VarStmt, Field)> nonStaticFields);
                 foreach ((var varStmt, var field) in nonStaticFields)
                 {
                     if (varStmt.Init != null)
@@ -151,8 +150,7 @@ namespace XiLang.AbstractSyntaxTree
                         VariableType variableType = varStmt.Init.CodeGen(this);
                         Constructor.AddLocal(method.Params[0].Offset);
                         Constructor.AddLoadT(method.Params[0].Type);
-                        Constructor.AddGetFieldAddress(field);
-                        Constructor.AddAStoreT(variableType);
+                        Constructor.AddStoreNonStatic(field.ConstantPoolIndex);
                         Constructor.AddPop(variableType);
                     }
                     // XiVM类变量默认全0的

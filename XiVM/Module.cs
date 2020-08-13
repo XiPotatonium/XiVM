@@ -130,10 +130,6 @@ namespace XiVM
         public MethodConstantInfo[] MethodPool { set; get; }
         public List<VMMethod> MethodPoolLink { set; get; }
         public FieldConstantInfo[] FieldPool { set; get; }
-        /// <summary>
-        /// offset，是static field在该类的静态field空间的offset
-        /// 是非static field在该类对象空间中的offset
-        /// </summary>
-        public List<int> FieldPoolLink { set; get; }
+        public List<VMField> FieldPoolLink { set; get; }
     }
 }

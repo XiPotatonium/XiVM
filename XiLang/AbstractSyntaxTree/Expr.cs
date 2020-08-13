@@ -44,6 +44,14 @@ namespace XiLang.AbstractSyntaxTree
 
         #endregion
 
+        /// <summary>
+        /// 因为在生成raw的时候并不知道要访问函数还是域（函数和域允许同名）
+        /// 所以生成raw的时候仅作信息检索不生成字节码
+        /// 在这里做决定，生成field的相关字节码
+        /// </summary>
+        /// <param name="pass"></param>
+        /// <param name="raw"></param>
+        /// <returns></returns>
         private static VariableType ExpectLocalOrField(CodeGenPass pass, VariableType raw)
         {
             if (raw is MemberType memberType)
@@ -59,7 +67,7 @@ namespace XiLang.AbstractSyntaxTree
                             // 多余的object地址要pop
                             pass.Constructor.AddPop(new ObjectType(memberType.ClassType));
                         }
-                        pass.Constructor.AddGetStaticFieldAddress(memberType.FieldPoolIndex);
+                        pass.Constructor.AddLoadStatic(memberType.FieldPoolIndex);
                     }
                     else
                     {
@@ -69,11 +77,10 @@ namespace XiLang.AbstractSyntaxTree
                             pass.Constructor.AddLocal(pass.Constructor.CurrentMethod.Params[0].Offset);
                             pass.Constructor.AddLoadT(pass.Constructor.CurrentMethod.Params[0].Type);
                         }
-                        pass.Constructor.AddGetFieldAddress(memberType.FieldPoolIndex);
+                        pass.Constructor.AddLoadNonStatic(memberType.FieldPoolIndex);
                     }
                     VariableType ret = VariableType.GetType(
                         pass.Constructor.StringPool.Get(fieldConstantInfo.Descriptor));
-                    pass.Constructor.AddALoadT(ret);
                     return ret;
                 }
                 else
@@ -375,7 +382,21 @@ namespace XiLang.AbstractSyntaxTree
                     }
                     throw new NotImplementedException();
                 case OpType.ARRAY_ACCESS:
-                    throw new NotImplementedException();
+                    expr1Type = ExpectLocalOrField(pass, Expr1.CodeGen(pass));
+                    if (expr1Type is ArrayType)
+                    {
+                        arrayType = (ArrayType)expr1Type;
+                        if (ExpectLocalOrField(pass, Expr2.CodeGen(pass)) != VariableType.IntType)
+                        {
+                            throw new XiLangError($"Array size should be an int value");
+                        }
+                        pass.Constructor.AddALoadT(arrayType.ElementType);
+                        return arrayType.ElementType;
+                    }
+                    else
+                    {
+                        throw new XiLangError("lhs of ARRAY_ACCESS is not an array");
+                    }
                 case OpType.NEW:
                     expr1Type = ((TypeExpr)Expr1).ToXirType(pass.Constructor);
                     if (expr1Type is ObjectType)
@@ -388,9 +409,21 @@ namespace XiLang.AbstractSyntaxTree
                     else if (expr1Type is ArrayType)
                     {
                         arrayType = (ArrayType)expr1Type;
-                        if (ExpectLocalOrField(pass, ((TypeExpr)Expr1).CodeGen(pass)) != VariableType.IntType)
+                        // TypeExpr.ARRAY_ACCESS.Expr
+                        if (ExpectLocalOrField(pass, Expr1.Expr1.Expr1?.CodeGen(pass)) != VariableType.IntType)
                         {
                             throw new XiLangError($"Array size should be an int value");
+                        }
+
+                        if (arrayType.ElementType.IsBasicType())
+                        {
+                            // 基础类型的数组
+                            pass.Constructor.AddNewArr(arrayType.ElementType);
+                        }
+                        else
+                        {
+                            // 对象类型的数组
+                            pass.Constructor.AddNewAArr(pass.Constructor.AddClassPoolInfo(((ObjectType)arrayType.ElementType).ClassType));
                         }
 
                         return arrayType;
@@ -410,12 +443,67 @@ namespace XiLang.AbstractSyntaxTree
         /// </summary>
         protected virtual VariableType LeftValueCodeGen(CodeGenPass pass)
         {
+            VariableType lhsType = Expr1.CodeGen(pass);
             switch (OpType)
             {
                 case OpType.CLASS_ACCESS:
-                    throw new NotImplementedException();
+                    int fieldIndex;
+                    FieldConstantInfo fieldInfo;
+                    AccessFlag accessFlag;
+                    if (lhsType is ObjectType objectType)
+                    {
+                        if (!Program.CheckFieldExistence(pass.Constructor, objectType.ClassType, ((IdExpr)Expr2).Id, out fieldIndex))
+                        {
+                            throw new XiLangError($"Field {objectType.ModuleName}.{objectType.ClassName}.{((IdExpr)Expr2).Id} doesn't exist");
+                        }
+                        fieldInfo = pass.Constructor.FieldPool.Get(fieldIndex);
+                        accessFlag = new AccessFlag() { Flag = fieldInfo.Flag };
+                        if (accessFlag.IsStatic)
+                        {
+                            pass.Constructor.AddPop(objectType);    // 访问static不需要object地址
+                            pass.Constructor.AddStoreStatic(fieldIndex);
+                        }
+                        else
+                        {
+                            pass.Constructor.AddStoreNonStatic(fieldIndex);
+                        }
+                    }
+                    else if (lhsType is ClassType classType)
+                    {
+                        if (!Program.CheckFieldExistence(pass.Constructor, classType, ((IdExpr)Expr2).Id, out fieldIndex))
+                        {
+                            throw new XiLangError($"Field {classType.ModuleName}.{classType.ClassName}.{((IdExpr)Expr2).Id} doesn't exist");
+                        }
+                        fieldInfo = pass.Constructor.FieldPool.Get(fieldIndex);
+                        accessFlag = new AccessFlag() { Flag = fieldInfo.Flag };
+                        if (accessFlag.IsStatic)
+                        {
+                            pass.Constructor.AddStoreStatic(fieldIndex);
+                        }
+                        else
+                        {
+                            throw new XiLangError("Cannot access non-static field from ClassType");
+                        }
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    return VariableType.GetType(pass.Constructor.StringPool.Get(fieldInfo.Descriptor));
                 case OpType.ARRAY_ACCESS:
-                    throw new NotImplementedException();
+                    if (lhsType is ArrayType arrayType)
+                    {
+                        if (ExpectLocalOrField(pass, Expr2.CodeGen(pass)) != VariableType.IntType)
+                        {
+                            throw new XiLangError($"Array size should be an int value");
+                        }
+                        pass.Constructor.AddAStoreT(arrayType.ElementType);
+                        return arrayType.ElementType;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -466,7 +554,7 @@ namespace XiLang.AbstractSyntaxTree
             };
 
 
-            if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField classField))
+            if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out Field classField))
             {
                 member.IsField = true;
                 member.FieldPoolIndex = classField.ConstantPoolIndex;
@@ -490,7 +578,7 @@ namespace XiLang.AbstractSyntaxTree
                 }
                 else
                 {
-                    throw new NotImplementedException();
+                    throw new XiLangError($"Unknown id {Id}");
                 }
             }
 
@@ -506,21 +594,20 @@ namespace XiLang.AbstractSyntaxTree
                 pass.Constructor.AddStoreT(variable.Type);
                 return variable.Type;
             }
-            else if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out ClassField field))
+            else if (pass.Constructor.CurrentClass.Fields.TryGetValue(Id, out Field field))
             {
                 // static或者非static field
                 if (field.AccessFlag.IsStatic)
                 {
-                    pass.Constructor.AddGetStaticFieldAddress(field);
+                    pass.Constructor.AddStoreStatic(field.ConstantPoolIndex);
                 }
                 else
                 {
                     pass.LocalSymbolTable.TryGetSymbol("this", out Variable thisVariable); 
                     pass.Constructor.AddLocal(thisVariable.Offset);
                     pass.Constructor.AddLoadT(thisVariable.Type);
-                    pass.Constructor.AddGetFieldAddress(field);
+                    pass.Constructor.AddStoreNonStatic(field.ConstantPoolIndex);
                 }
-                pass.Constructor.AddAStoreT(field.Type);
                 return field.Type;
             }
             else
@@ -534,8 +621,6 @@ namespace XiLang.AbstractSyntaxTree
     internal class TypeExpr : Expr
     {
         public SyntacticValueType Type { set; get; }
-        public bool IsArray { set; get; }
-        public Expr ArraySize { set; get; }
         public List<string> ClassName { set; get; }
 
         public override string ASTLabel()
@@ -562,21 +647,14 @@ namespace XiLang.AbstractSyntaxTree
                     _ => throw new NotImplementedException(),
                 });
             }
-
-
-            sb.Append(IsArray ? "[]>" : ">");
+            sb.Append(">");
 
             return sb.ToString();
         }
 
-        public override AST[] Children()
-        {
-            return new AST[] { ArraySize };
-        }
-
         public VariableType ToXirType(ModuleConstructor constructor)
         {
-            if (IsArray)
+            if (Expr1 != null && Expr1.OpType == OpType.ARRAY_ACCESS)
             {
                 return Type switch
                 {
@@ -636,6 +714,11 @@ namespace XiLang.AbstractSyntaxTree
         public override bool IsConst()
         {
             return false;
+        }
+
+        public override VariableType CodeGen(CodeGenPass pass)
+        {
+            throw new NotImplementedException();
         }
     }
 

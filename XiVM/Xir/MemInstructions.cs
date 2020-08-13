@@ -5,11 +5,25 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddNewArr(int elementTypeIndex)
+        public void AddNewArr(VariableType variableType)
         {
+            if (!variableType.IsBasicType())
+            {
+                throw new XiVMError("AddNewArr expects basic type");
+            }
+
             CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.NEWARR,
+                Params = new byte[] { (byte)(variableType.Tag) }
+            });
+        }
+
+        public void AddNewAArr(int elementTypeIndex)
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.NEWAARR,
                 Params = BitConverter.GetBytes(elementTypeIndex)
             });
         }
@@ -23,17 +37,16 @@ namespace XiVM.Xir
             });
         }
 
-        public void AddGetStaticFieldAddress(ClassField field)
+        /// <summary>
+        /// 请自行保证是static
+        /// </summary>
+        /// <param name="poolIndex"></param>
+        public void AddStoreStatic(int poolIndex)
         {
-            if (!field.AccessFlag.IsStatic)
-            {
-                throw new XiVMError("AddGetStaticFieldAddress only accept static field");
-            }
-
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.STATIC,
-                Params = BitConverter.GetBytes(field.ConstantPoolIndex)
+                OpCode = InstructionType.STORESTATIC,
+                Params = BitConverter.GetBytes(poolIndex)
             });
         }
 
@@ -41,34 +54,37 @@ namespace XiVM.Xir
         /// 请自行保证是static
         /// </summary>
         /// <param name="poolIndex"></param>
-        public void AddGetStaticFieldAddress(int poolIndex)
+        public void AddLoadStatic(int poolIndex)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.STATIC,
+                OpCode = InstructionType.LOADSTATIC,
                 Params = BitConverter.GetBytes(poolIndex)
             });
         }
 
-        public void AddGetFieldAddress(ClassField field)
+        /// <summary>
+        /// 自行保证是non-static
+        /// </summary>
+        /// <param name="poolIndex"></param>
+        public void AddStoreNonStatic(int poolIndex)
         {
-            if (field.AccessFlag.IsStatic)
-            {
-                throw new XiVMError("AddGetFieldAddress only accept non-static field");
-            }
-
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.NONSTATIC,
-                Params = BitConverter.GetBytes(field.ConstantPoolIndex)
+                OpCode = InstructionType.STORENONSTATIC,
+                Params = BitConverter.GetBytes(poolIndex)
             });
         }
 
-        public void AddGetFieldAddress(int poolIndex)
+        /// <summary>
+        /// 自行保证是non-static
+        /// </summary>
+        /// <param name="poolIndex"></param>
+        public void AddLoadNonStatic(int poolIndex)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
-                OpCode = InstructionType.NONSTATIC,
+                OpCode = InstructionType.LOADNONSTATIC,
                 Params = BitConverter.GetBytes(poolIndex)
             });
         }

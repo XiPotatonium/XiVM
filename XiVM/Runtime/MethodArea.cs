@@ -38,7 +38,8 @@ namespace XiVM.Runtime
             // Warning Hardcoding
             StringProgramAddress = AddConstantString("Program");
             StringMainAddress = AddConstantString("Main");
-            StringMainDescriptorAddress = AddConstantString("()V");
+            // Warning Hardcoding
+            StringMainDescriptorAddress = AddConstantString("([LSystem.String;)V");
             StaticConstructorNameAddress = AddConstantString("(sinit)");
             ConstructorNameAddress = AddConstantString("(init)");
         }
@@ -67,7 +68,7 @@ namespace XiVM.Runtime
                 ClassPool = binaryModule.ClassPool,
                 ClassPoolLink = new List<VMClass>(),
                 FieldPool = binaryModule.FieldPool,
-                FieldPoolLink = new List<int>(),
+                FieldPoolLink = new List<VMField>(),
                 MethodPool = binaryModule.MethodPool,
                 MethodPoolLink = new List<VMMethod>()
             };
@@ -98,9 +99,9 @@ namespace XiVM.Runtime
                     {
                         Parent = module,
                         Methods = new Dictionary<uint, List<VMMethod>>(),
-                        StaticFields = new List<VMClassField>(),
+                        StaticFields = new List<VMField>(),
                         StaticFieldSize = 0,
-                        Fields = new List<VMClassField>(),
+                        Fields = new List<VMField>(),
                         FieldSize = HeapData.MiscDataSize       // 头部信息
                     };
                     module.Classes.Add(module.StringPoolLink[classInfo.Name - 1], vmClass);
@@ -118,7 +119,7 @@ namespace XiVM.Runtime
                     // 外部域
                     externalModuleNameIndexes.Add(moduleNameIndex);
                     // 占位
-                    module.FieldPoolLink.Add(0);
+                    module.FieldPoolLink.Add(null);
                 }
                 else
                 {
@@ -127,16 +128,19 @@ namespace XiVM.Runtime
                     // 分配方法区空间并且链接地址
                     accessFlag.Flag = fieldInfo.Flag;
                     VariableType fieldType = VariableType.GetType(binaryModule.StringPool[fieldInfo.Descriptor - 1]);
+                    VMField vmField;
                     if (accessFlag.IsStatic)
                     {
-                        module.FieldPoolLink.Add(vmClass.StaticFieldSize);
-                        vmClass.StaticFields.Add(new VMClassField(fieldInfo.Flag, fieldType, vmClass.StaticFieldSize));
+                        vmField = new VMField(fieldInfo.Flag, fieldType, fieldInfo.Class, vmClass.StaticFieldSize);
+                        module.FieldPoolLink.Add(vmField);
+                        vmClass.StaticFields.Add(vmField);
                         vmClass.StaticFieldSize += fieldType.Size;
                     }
                     else
                     {
-                        module.FieldPoolLink.Add(vmClass.FieldSize);
-                        vmClass.Fields.Add(new VMClassField(fieldInfo.Flag, fieldType, vmClass.FieldSize));
+                        vmField = new VMField(fieldInfo.Flag, fieldType, fieldInfo.Class, vmClass.FieldSize);
+                        module.FieldPoolLink.Add(vmField);
+                        vmClass.Fields.Add(vmField);
                         vmClass.FieldSize += fieldType.Size;
                     }
                 }

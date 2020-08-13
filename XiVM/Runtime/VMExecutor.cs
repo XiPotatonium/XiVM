@@ -37,6 +37,7 @@ namespace XiVM.Runtime
                     Execute();
                 }
             }
+            CurrentMethod = null;
         }
 
         public void ExecuteMain()
@@ -52,7 +53,7 @@ namespace XiVM.Runtime
                 throw new XiVMError("Program.Main() not found");
             }
 
-            // TODO 有string后改成(L)V
+
             foreach (VMMethod method in entryMethodGroup)
             {
                 if (method.DescriptorAddress == MethodArea.StringMainDescriptorAddress)
@@ -64,10 +65,11 @@ namespace XiVM.Runtime
 
             if (CurrentMethod == null)
             {
-                throw new XiVMError("Program.Main() not found");
+                throw new XiVMError("Program.Main(System.String) not found");
             }
 
-            // TODO Main的参数
+            // TODO Main的参数，暂时push了一个null
+            Stack.PushAddress();
             Execute();
         }
 
@@ -81,6 +83,7 @@ namespace XiVM.Runtime
             int iValue, lhsi, rhsi, index, ip;
             double dValue;
             byte[] data;
+            VMField vmField;
 
             while (!Stack.Empty)
             {
@@ -88,6 +91,12 @@ namespace XiVM.Runtime
                 switch ((InstructionType)opCode)
                 {
                     case InstructionType.NOP:
+                        break;
+                    case InstructionType.DUP:
+                        Stack.DupN(1);
+                        break;
+                    case InstructionType.DUP2:
+                        Stack.DupN(2);
                         break;
                     case InstructionType.PUSHB:
                         Stack.PushInt(ConsumeByte());
@@ -110,33 +119,6 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.POPA:
                         Stack.PopAddress();
-                        break;
-                    case InstructionType.DUP:
-                        Stack.DupN(1);
-                        break;
-                    case InstructionType.DUP2:
-                        Stack.DupN(2);
-                        break;
-                    case InstructionType.LOCAL:
-                        iValue = ConsumeInt();
-                        Stack.PushAddress((uint)(Stack.FP + iValue));
-                        break;
-                    case InstructionType.CONST:
-                        Stack.PushAddress(StringConstants[ConsumeInt() - 1]);
-                        break;
-                    case InstructionType.STATIC:
-                        index = ConsumeInt();
-                        Stack.PushAddress(CurrentModule.ClassPoolLink[CurrentModule.FieldPool[index - 1].Class - 1].StaticFieldAddress);
-                        Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
-                        break;
-                    case InstructionType.NONSTATIC:
-                        index = ConsumeInt();
-                        Stack.PushInt(CurrentModule.FieldPoolLink[index - 1]);
-                        break;
-                    case InstructionType.NEW:
-                        iValue = ConsumeInt();
-                        Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize), MemoryTag.HEAP));
                         break;
                     case InstructionType.LOADB:
                     case InstructionType.LOADI:
@@ -230,9 +212,9 @@ namespace XiVM.Runtime
                         addr = Stack.PopAddress();
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                Stack.PushInt(data[index]);
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                Stack.PushInt(data[HeapData.ArrayOffsetMap(sizeof(byte), index)]);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -245,11 +227,7 @@ namespace XiVM.Runtime
                         {
                             case MemoryTag.HEAP:
                                 data = Heap.GetData(addr);
-                                Stack.PushInt(BitConverter.ToInt32(data, index));
-                                break;
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                Stack.PushInt(BitConverter.ToInt32(data, index));
+                                Stack.PushInt(BitConverter.ToInt32(data, HeapData.ArrayOffsetMap(sizeof(int), index)));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -260,9 +238,9 @@ namespace XiVM.Runtime
                         addr = Stack.PopAddress();
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                Stack.PushDouble(BitConverter.ToDouble(data, index));
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                Stack.PushDouble(BitConverter.ToDouble(data, HeapData.ArrayOffsetMap(sizeof(double), index)));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -273,9 +251,9 @@ namespace XiVM.Runtime
                         addr = Stack.PopAddress();
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                Stack.PushAddress(BitConverter.ToUInt32(data, index));
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                Stack.PushAddress(BitConverter.ToUInt32(data, HeapData.ArrayOffsetMap(sizeof(uint), index)));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -287,9 +265,9 @@ namespace XiVM.Runtime
                         iValue = Stack.TopInt;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                data[index] = (byte)iValue;
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                data[HeapData.ArrayOffsetMap(sizeof(byte), index)] = (byte)iValue;
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -303,11 +281,7 @@ namespace XiVM.Runtime
                         {
                             case MemoryTag.HEAP:
                                 data = Heap.GetData(addr);
-                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(int)), iValue);
-                                break;
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(int)), iValue);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, HeapData.ArrayOffsetMap(sizeof(int), index), sizeof(int)), iValue);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -319,9 +293,9 @@ namespace XiVM.Runtime
                         dValue = Stack.TopDouble;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(double)), dValue);
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, HeapData.ArrayOffsetMap(sizeof(double), index), sizeof(double)), dValue);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -333,9 +307,9 @@ namespace XiVM.Runtime
                         uValue = Stack.TopAddress;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
-                            case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
-                                BitConverter.TryWriteBytes(new Span<byte>(data, index, sizeof(uint)), uValue);
+                            case MemoryTag.HEAP:
+                                data = Heap.GetData(addr);
+                                BitConverter.TryWriteBytes(new Span<byte>(data, HeapData.ArrayOffsetMap(sizeof(uint), index), sizeof(uint)), uValue);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -422,6 +396,145 @@ namespace XiVM.Runtime
                         CurrentMethod = MethodArea.MethodIndexTable[index];
                         IP = ip;
                         break;
+                    case InstructionType.LOCAL:
+                        iValue = ConsumeInt();
+                        Stack.PushAddress(MemoryMap.MapToAbsolute((uint)(Stack.FP + iValue), MemoryTag.STACK));
+                        break;
+                    case InstructionType.CONST:
+                        Stack.PushAddress(StringConstants[ConsumeInt() - 1]);
+                        break;
+                    case InstructionType.STORESTATIC:
+                        index = ConsumeInt();
+                        vmField = CurrentModule.FieldPoolLink[index - 1];
+                        addr = CurrentModule.ClassPoolLink[vmField.ClassIndex - 1].StaticFieldAddress;
+                        data = (MemoryMap.MapToOffset(addr, out addr)) switch
+                        {
+                            MemoryTag.METHOD => MethodArea.GetData(addr),
+                            _ => throw new NotImplementedException(),
+                        };
+                        switch (vmField.Type.Tag)
+                        {
+                            case VariableTypeTag.BYTE:
+                                data[vmField.Offset] = (byte)Stack.TopInt;
+                                break;
+                            case VariableTypeTag.INT:
+                                BitConverter.TryWriteBytes(new Span<byte>(data, vmField.Offset, vmField.Type.Size), 
+                                    Stack.TopInt);
+                                break;
+                            case VariableTypeTag.DOUBLE:
+                                BitConverter.TryWriteBytes(new Span<byte>(data, vmField.Offset, vmField.Type.Size), 
+                                    Stack.TopDouble);
+                                break;
+                            case VariableTypeTag.ADDRESS:
+                                BitConverter.TryWriteBytes(new Span<byte>(data, vmField.Offset, vmField.Type.Size), 
+                                    Stack.TopAddress);
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.LOADSTATIC:
+                        index = ConsumeInt();
+                        vmField = CurrentModule.FieldPoolLink[index - 1];
+                        addr = CurrentModule.ClassPoolLink[vmField.ClassIndex - 1].StaticFieldAddress;
+                        data = (MemoryMap.MapToOffset(addr, out addr)) switch
+                        {
+                            MemoryTag.METHOD => MethodArea.GetData(addr),
+                            _ => throw new NotImplementedException(),
+                        };
+                        switch (vmField.Type.Tag)
+                        {
+                            case VariableTypeTag.BYTE:
+                                Stack.PushInt(data[vmField.Offset]);
+                                break;
+                            case VariableTypeTag.INT:
+                                Stack.PushInt(BitConverter.ToInt32(data, vmField.Offset));
+                                break;
+                            case VariableTypeTag.DOUBLE:
+                                Stack.PushDouble(BitConverter.ToDouble(data, vmField.Offset));
+                                break;
+                            case VariableTypeTag.ADDRESS:
+                                Stack.PushAddress(BitConverter.ToUInt32(data, vmField.Offset));
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.STORENONSTATIC:
+                        index = ConsumeInt();
+                        vmField = CurrentModule.FieldPoolLink[index - 1];
+                        addr = Stack.PopAddress();
+                        data = (MemoryMap.MapToOffset(addr, out addr)) switch
+                        {
+                            MemoryTag.HEAP => Heap.GetData(addr),
+                            _ => throw new NotImplementedException(),
+                        };
+                        switch (vmField.Type.Tag)
+                        {
+                            case VariableTypeTag.BYTE:
+                                data[vmField.Offset] = (byte)Stack.TopInt;
+                                break;
+                            case VariableTypeTag.INT:
+                                BitConverter.TryWriteBytes(new Span<byte>(data, vmField.Offset, vmField.Type.Size),
+                                    Stack.TopInt);
+                                break;
+                            case VariableTypeTag.DOUBLE:
+                                BitConverter.TryWriteBytes(new Span<byte>(data, vmField.Offset, vmField.Type.Size),
+                                    Stack.TopDouble);
+                                break;
+                            case VariableTypeTag.ADDRESS:
+                                BitConverter.TryWriteBytes(new Span<byte>(data, vmField.Offset, vmField.Type.Size),
+                                    Stack.TopAddress);
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.LOADNONSTATIC:
+                        index = ConsumeInt();
+                        vmField = CurrentModule.FieldPoolLink[index - 1];
+                        addr = Stack.PopAddress();
+                        data = (MemoryMap.MapToOffset(addr, out addr)) switch
+                        {
+                            MemoryTag.HEAP => Heap.GetData(addr),
+                            _ => throw new NotImplementedException(),
+                        };
+                        switch (vmField.Type.Tag)
+                        {
+                            case VariableTypeTag.BYTE:
+                                Stack.PushInt(data[vmField.Offset]);
+                                break;
+                            case VariableTypeTag.INT:
+                                Stack.PushInt(BitConverter.ToInt32(data, vmField.Offset));
+                                break;
+                            case VariableTypeTag.DOUBLE:
+                                Stack.PushDouble(BitConverter.ToDouble(data, vmField.Offset));
+                                break;
+                            case VariableTypeTag.ADDRESS:
+                                Stack.PushAddress(BitConverter.ToUInt32(data, vmField.Offset));
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        break;
+                    case InstructionType.NEW:
+                        iValue = ConsumeInt();
+                        Stack.PushAddress(MemoryMap.MapToAbsolute(
+                            Heap.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize), MemoryTag.HEAP));
+                        break;
+                    case InstructionType.NEWARR:
+                        iValue = Stack.PopInt();
+                        Stack.PushAddress(MemoryMap.MapToAbsolute(
+                            Heap.MallocArray(VariableType.GetSize((VariableTypeTag)ConsumeByte()), iValue), MemoryTag.HEAP));
+                        break;
+                    case InstructionType.NEWAARR:
+                        iValue = Stack.PopInt();
+                        index = ConsumeInt();   // Warning 未使用的信息，Array类型信息
+                        Stack.PushAddress(MemoryMap.MapToAbsolute(
+                            Heap.MallocArray(VariableType.AddressType.Size, iValue), MemoryTag.HEAP));
+                        break;
+                    case InstructionType.LEN:
+                        throw new NotImplementedException();
                     case InstructionType.PUTC:
                         iValue = Stack.PopInt();
                         Console.Write((char)iValue);
@@ -485,6 +598,9 @@ namespace XiVM.Runtime
                     case 'L':
                         Stack.PushAddress();
                         break;
+                    case '[':
+                        Stack.PushAddress();
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
@@ -510,7 +626,12 @@ namespace XiVM.Runtime
                         Stack.PopAddress();
                         while (!(paramsDescriptor[i] == 'L' && 
                             (i == 0 || paramsDescriptor[i - 1] == 'B' || paramsDescriptor[i - 1] == 'I' ||
-                                paramsDescriptor[i] == 'D' || paramsDescriptor[i] == ';')))
+                                paramsDescriptor[i - 1] == 'D' || paramsDescriptor[i - 1] == ';' || 
+                                paramsDescriptor[i - 1] == '[')))
+                        {
+                            --i;
+                        }
+                        while (i != 0 && paramsDescriptor[i - 1] == '[')
                         {
                             --i;
                         }

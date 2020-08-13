@@ -73,7 +73,7 @@ namespace XiLang
             ModuleConstructor constructor = new ModuleConstructor(moduleName);
             ModuleHeaders.Add(moduleName, constructor.Module);
             List<Class> classes = (List<Class>)astPasses.Run(new ClassDeclarationPass(constructor));
-            (List<ClassField> fields, List<Method> methods) = ((List<ClassField> fields, List<Method> methods))
+            (List<Field> fields, List<Method> methods) = ((List<Field> fields, List<Method> methods))
                 astPasses.Run(new MemberDeclarationPass(constructor, classes));
             astPasses.Run(new CodeGenPass(constructor, classes, fields, methods));
 

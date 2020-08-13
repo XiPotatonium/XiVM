@@ -21,7 +21,34 @@ namespace XiLang.AbstractSyntaxTree
             {
                 return false;
             }
-            return true;
+            // 仅支持部分操作符
+            return OpType switch
+            {
+                OpType.NEG => true,
+                OpType.ADD => true,
+                OpType.SUB => true,
+                OpType.MUL => true,
+                OpType.DIV => true,
+                OpType.MOD => true,
+                OpType.LOG_NOT => true,
+                OpType.LOG_AND => true,
+                OpType.LOG_OR => true,
+                OpType.BIT_NOT => true,
+                OpType.BIT_AND => true,
+                OpType.BIT_XOR => true,
+                OpType.BIT_OR => true,
+                OpType.BIT_SL => true,
+                OpType.BIT_SR => true,
+                OpType.EQ => true,
+                OpType.NE => true,
+                OpType.GE => true,
+                OpType.GT => true,
+                OpType.LE => true,
+                OpType.LT => true,
+                OpType.CONDITIONAL => true,
+                OpType.CAST => true,
+                _ => false,
+            };
         }
 
         public virtual XiLangValue EvaluateConstExpr()

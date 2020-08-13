@@ -12,13 +12,13 @@ namespace XiVM
         /// <summary>
         /// GC信息
         /// </summary>
-        public List<VMClassField> StaticFields { set; get; }
+        public List<VMField> StaticFields { set; get; }
         public uint StaticFieldAddress { set; get; }
         public int StaticFieldSize { set; get; }
         /// <summary>
         /// GC信息
         /// </summary>
-        public List<VMClassField> Fields { set; get; }
+        public List<VMField> Fields { set; get; }
         public int FieldSize { set; get; }
     }
 
@@ -35,7 +35,7 @@ namespace XiVM
         /// <summary>
         /// 成员变量
         /// </summary>
-        public Dictionary<string, ClassField> Fields { private set; get; } = new Dictionary<string, ClassField>();
+        public Dictionary<string, Field> Fields { private set; get; } = new Dictionary<string, Field>();
 
         /// <summary>
         /// 包括静态和非静态方法
@@ -62,14 +62,14 @@ namespace XiVM
         /// <param name="flag"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        internal ClassField AddField(string name, VariableType type, AccessFlag flag, int index)
+        internal Field AddField(string name, VariableType type, AccessFlag flag, int index)
         {
             if (Methods.ContainsKey(name))
             {
                 throw new XiVMError($"Dupilcate Name {name} in class {Name}");
             }
 
-            ClassField field = new ClassField(flag, this, type, index);
+            Field field = new Field(flag, this, type, index);
             Fields.Add(name, field);
             return field;
         }

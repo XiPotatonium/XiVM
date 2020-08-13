@@ -66,6 +66,18 @@ namespace XiVM
 
         #endregion
 
+        public static int GetSize(VariableTypeTag tag)
+        {
+            return tag switch
+            {
+                VariableTypeTag.BYTE => sizeof(byte),
+                VariableTypeTag.INT => sizeof(int),
+                VariableTypeTag.DOUBLE => sizeof(double),
+                VariableTypeTag.ADDRESS => sizeof(uint),
+                _ => throw new NotImplementedException(),
+            };
+        }
+
 
         public VariableTypeTag Tag { private set; get; }
 
@@ -89,14 +101,7 @@ namespace XiVM
         /// <summary>
         /// 获取这个类型占几个byte
         /// </summary>
-        public int Size => Tag switch
-        {
-            VariableTypeTag.BYTE => sizeof(byte),
-            VariableTypeTag.INT => sizeof(int),
-            VariableTypeTag.DOUBLE => sizeof(double),
-            VariableTypeTag.ADDRESS => sizeof(uint),
-            _ => throw new NotImplementedException(),
-        };
+        public int Size => GetSize(Tag);
 
         /// <summary>
         /// Equivalent的类型之间允许（无任何转换）赋值
@@ -110,6 +115,11 @@ namespace XiVM
                 return false;
             }
             return Tag == b.Tag;
+        }
+
+        public bool IsBasicType()
+        {
+            return Tag != VariableTypeTag.ADDRESS && Tag != VariableTypeTag.INVALID;
         }
     }
 
@@ -125,33 +135,6 @@ namespace XiVM
         internal Variable(VariableType type)
         {
             Type = type;
-        }
-    }
-
-    public class ClassField : Variable, IClassMember
-    {
-        public Class Parent { get; set; }
-        public AccessFlag AccessFlag { get; set; }
-        public int ConstantPoolIndex { get; set; }
-
-        internal ClassField(AccessFlag flag, Class parent, VariableType type, int index)
-            : base(type)
-        {
-            Parent = parent;
-            AccessFlag = flag;
-            ConstantPoolIndex = index;
-        }
-    }
-
-    internal class VMClassField : Variable
-    {
-        public AccessFlag AccessFlag { get; set; }
-
-        internal VMClassField(uint flag, VariableType type, int offset)
-            : base(type)
-        {
-            Offset = offset;
-            AccessFlag = new AccessFlag() { Flag = flag };
         }
     }
 }
