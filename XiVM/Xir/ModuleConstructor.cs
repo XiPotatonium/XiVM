@@ -179,6 +179,11 @@ namespace XiVM.Xir
                 StringPool.TryAdd(classType.ModuleName), StringPool.TryAdd(classType.ClassName)));
         }
 
+        public int AddClassPoolInfo(ArrayType arrayType)
+        {
+            return ClassPool.TryAdd(new ClassConstantInfo(0, StringPool.TryAdd(arrayType.GetDescriptor())));
+        }
+
         /// <summary>
         /// 在构造成员的时候不需要手动调用这个函数
         /// 是在方法代码生成过程中遇到（可能是其他module的method）时使用

@@ -44,6 +44,8 @@ namespace XiVM
                     return DoubleType;
                 case 'L':
                     return ObjectType.GetObjectType(descriptor);
+                case '[':
+                    return ArrayType.GetArrayType(descriptor);
                 case 'V':
                     return null;
                 default:

@@ -10,10 +10,10 @@ namespace XiLang.Syntactic
     {
         /// <summary>
         /// TypeExpr
-        ///     (ANY_TYPE | ID (DOT ID)*) (LBRACKET RBRACKET)?
+        ///     (ANY_TYPE | ID (DOT ID)*) (LBRACKET ConditionalExpr? RBRACKET)?
         /// </summary>
         /// <returns></returns>
-        private TypeExpr ParseTypeExpr()
+        private TypeExpr ParseTypeExpr(bool expectArraySize = false)
         {
             TypeExpr ret = new TypeExpr();
 
@@ -53,6 +53,10 @@ namespace XiLang.Syntactic
             if (Check(TokenType.LBRACKET))
             {
                 Consume(TokenType.LBRACKET);
+                if (expectArraySize)
+                {
+                    ret.ArraySize = ParseCondtionalExpr();
+                }
                 Consume(TokenType.RBRACKET);
                 ret.IsArray = true;
             }
@@ -450,7 +454,7 @@ namespace XiLang.Syntactic
             if (Check(TokenType.NEW))
             {
                 Token t = Consume(TokenType.NEW);
-                return Expr.MakeOp(OpType.NEW, ParseTypeExpr(), t.Line);
+                return Expr.MakeOp(OpType.NEW, ParseTypeExpr(true), t.Line);
             }
             return ParseConstExpr();
         }

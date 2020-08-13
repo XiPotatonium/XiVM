@@ -2,16 +2,18 @@
 
 ## TODO
 
-* XiVM数组(数组要放到系统库吗?)
+* XiVM数组
+* 外部模块的类和域的链接
 * 未定义构造函数要生成一个默认的构造函数
-* 条件表达式不再有短路作用，这是一个bug
+* 复杂条件表达式，注意短路作用
 * 堆的GC
 * 似乎寻址可以仅使用addr + offset的形式，这样的话堆空间的管理可以使用哈希表，查找就是O(1)了
 * ref
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiVM的浮点数运算
+* 三元运算符
 * 为了支持动态绑定的函数调用，可能需要另一种Call
-* 目前import都是线性依赖的，互相依赖的模块编译以及执行还没有实现
+* 目前import都是线性依赖的，互相依赖的模块还没有实现.(其实只有共同编译未实现，模块的加载、链接两个pass以及编译的类声明、类成员声明、类成员定义三个pass都做好了)
 
 ## XiLang
 
@@ -39,7 +41,7 @@
 * 分支
     * if语句，then和otherwise必须被花括号包围，otherwise可以是另一个if
 * 循环
-    * while，body必须被花括号包围，或者是空
+    * while，body必须被花括号包围，或者是空(分号)
     * for：可以在init中定义变量，body必须被花括号包围，或者是空
 * 类
     * 静态和非静态域
@@ -90,7 +92,7 @@ ExprStmt
 
 ```
 TypeExpr
-    (ANY_TYPE | ID (DOT ID)*) (LBRACKET RBRACKET)?
+    (ANY_TYPE | ID (DOT ID)*) (LBRACKET ConditionalExpr? RBRACKET)?
 ListExpr
     Expr [COMMA Expr]*
 Expr

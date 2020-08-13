@@ -153,6 +153,7 @@ namespace XiLang.AbstractSyntaxTree
         {
             VariableType expr1Type, expr2Type;
             ObjectType objectType;
+            ArrayType arrayType;
 
             if (IsConst())
             {
@@ -384,6 +385,16 @@ namespace XiLang.AbstractSyntaxTree
                         pass.Constructor.AddDup(objectType);
                         return new MemberType(objectType.ClassType, "(init)", false, true);
                     }
+                    else if (expr1Type is ArrayType)
+                    {
+                        arrayType = (ArrayType)expr1Type;
+                        if (ExpectLocalOrField(pass, ((TypeExpr)Expr1).CodeGen(pass)) != VariableType.IntType)
+                        {
+                            throw new XiLangError($"Array size should be an int value");
+                        }
+
+                        return arrayType;
+                    }
                     else
                     {
                         throw new NotImplementedException();
@@ -524,6 +535,7 @@ namespace XiLang.AbstractSyntaxTree
     {
         public SyntacticValueType Type { set; get; }
         public bool IsArray { set; get; }
+        public Expr ArraySize { set; get; }
         public List<string> ClassName { set; get; }
 
         public override string ASTLabel()
@@ -557,17 +569,22 @@ namespace XiLang.AbstractSyntaxTree
             return sb.ToString();
         }
 
+        public override AST[] Children()
+        {
+            return new AST[] { ArraySize };
+        }
+
         public VariableType ToXirType(ModuleConstructor constructor)
         {
             if (IsArray)
             {
                 return Type switch
                 {
-                    SyntacticValueType.BOOL => ArrayType.IntArrayType,
-                    SyntacticValueType.INT => throw new NotImplementedException(),
-                    SyntacticValueType.DOUBLE => throw new NotImplementedException(),
-                    SyntacticValueType.STRING => throw new NotImplementedException(),
-                    SyntacticValueType.CLASS => throw new NotImplementedException(),
+                    SyntacticValueType.BOOL => ArrayType.ByteArrayType,
+                    SyntacticValueType.INT => ArrayType.IntArrayType,
+                    SyntacticValueType.DOUBLE => ArrayType.DoubleArrayType,
+                    SyntacticValueType.STRING => Program.StringArray,
+                    SyntacticValueType.CLASS => new ArrayType(new ObjectType(ToClassType(constructor))),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -578,7 +595,7 @@ namespace XiLang.AbstractSyntaxTree
                     SyntacticValueType.BOOL => VariableType.IntType,
                     SyntacticValueType.INT => VariableType.IntType,
                     SyntacticValueType.DOUBLE => VariableType.DoubleType,
-                    SyntacticValueType.STRING => throw new NotImplementedException(),
+                    SyntacticValueType.STRING => Program.StringObject,
                     SyntacticValueType.CLASS => new ObjectType(ToClassType(constructor)),
                     SyntacticValueType.VOID => null,
                     _ => throw new NotImplementedException(),

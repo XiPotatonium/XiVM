@@ -24,6 +24,8 @@ namespace XiVM
         STATIC = 0x1A,
         NONSTATIC = 0x1B,
         NEW = 0x1C,
+        NEWARR = 0x1D,
+        LEN = 0x1E,
 
         LOADB = 0x20,
         LOADI = 0x21,
@@ -116,6 +118,8 @@ namespace XiVM
                 InstructionType.STATIC => $"STATIC {BitConverter.ToInt32(Params)}",
                 InstructionType.NONSTATIC => $"NONSTATIC {BitConverter.ToInt32(Params)}",
                 InstructionType.NEW => $"NEW {BitConverter.ToInt32(Params)}",
+                InstructionType.NEWARR => $"NEWARR {BitConverter.ToInt32(Params)}",
+                InstructionType.LEN => $"LEN",
                 InstructionType.LOADB => "LOADB",
                 InstructionType.LOADI => "LOADI",
                 InstructionType.LOADD => "LOADD",

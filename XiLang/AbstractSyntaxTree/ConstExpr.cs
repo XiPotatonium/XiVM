@@ -318,7 +318,7 @@ namespace XiLang.AbstractSyntaxTree
                     return VariableType.DoubleType;
                 case ValueType.STRING:
                     pass.Constructor.AddConst(pass.Constructor.StringPool.TryAdd(Value.StringValue));
-                    return new ObjectType(new ClassType(SystemLib.Program.ModuleName, SystemLib.System.String.String.ClassName));
+                    return Program.StringObject;
                 case ValueType.BOOL:
                     pass.Constructor.AddPushB(Value.BoolValue ? (byte)1 : (byte)0);
                     return VariableType.ByteType;

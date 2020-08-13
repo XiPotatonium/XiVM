@@ -5,12 +5,21 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddNew(int index)
+        public void AddNewArr(int elementTypeIndex)
+        {
+            CurrentInstructions.AddLast(new Instruction()
+            {
+                OpCode = InstructionType.NEWARR,
+                Params = BitConverter.GetBytes(elementTypeIndex)
+            });
+        }
+
+        public void AddNew(int classTypeIndex)
         {
             CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.NEW,
-                Params = BitConverter.GetBytes(index)
+                Params = BitConverter.GetBytes(classTypeIndex)
             });
         }
 

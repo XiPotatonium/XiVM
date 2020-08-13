@@ -1,26 +1,35 @@
-﻿namespace XiLang.AbstractSyntaxTree
+﻿using System.Text;
+
+namespace XiLang.AbstractSyntaxTree
 {
     internal class JsonPass : IASTPass
     {
+        public StringBuilder StringBuilder { private set; get; }
+
         public object Run(AST root)
         {
+            StringBuilder = new StringBuilder("{\n");
             // 递归打印
-            return ToJson(root);
+            ToJson(root);
+            StringBuilder.Append("\n}");
+
+            return StringBuilder.ToString();
         }
 
-        public string ToJson(AST ast)
+        public void ToJson(AST ast)
         {
-            string ret = $"{{\"name\": \"{ast.ASTLabel()}\" {PrintChildren(ast.Children())}}}";
+            StringBuilder.Append("{\"name\": \"").Append(ast.ASTLabel()).Append("\" ");
+            PrintChildren(ast.Children());
+            StringBuilder.Append('}');
             if (ast.SiblingAST != null)
             {
-                ret += ", " + ToJson(ast.SiblingAST);
+                StringBuilder.Append(", ");
+                ToJson(ast.SiblingAST);
             }
-            return ret;
         }
 
-        private string PrintChildren(params AST[] children)
+        private void PrintChildren(params AST[] children)
         {
-            string ret = string.Empty;
             bool hasChild = false;
             foreach (AST child in children)
             {
@@ -30,20 +39,19 @@
                 }
                 if (hasChild)
                 {
-                    ret += ", ";
+                    StringBuilder.Append(", ");
                 }
                 else
                 {
-                    ret += ",\n\"children\": [";
+                    StringBuilder.Append(",\n\"children\": [");
                 }
-                ret += ToJson(child);
+                ToJson(child);
                 hasChild = true;
             }
             if (hasChild)
             {
-                ret += "]\n";
+                StringBuilder.Append("]\n");
             }
-            return ret;
         }
     }
 }

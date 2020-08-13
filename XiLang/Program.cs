@@ -14,6 +14,10 @@ namespace XiLang
 {
     public class Program
     {
+        public static readonly ClassType StringClass = new ClassType(SystemLib.Program.ModuleName, SystemLib.System.String.String.ClassName);
+        public static readonly ObjectType StringObject = new ObjectType(StringClass);
+        public static readonly ArrayType StringArray = new ArrayType(StringObject);
+
         public static Dictionary<string, ModuleHeader> ModuleHeaders { private set; get; } = new Dictionary<string, ModuleHeader>();
         public static string DirName { private set; get; } = ".";
 
