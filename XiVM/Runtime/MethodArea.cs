@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using XiVM.ConstantTable;
 using XiVM.Errors;
@@ -14,7 +13,7 @@ namespace XiVM.Runtime
 
 
 
-        private static Dictionary<uint, VMModule> Modules { get; } = new Dictionary<uint, VMModule>();
+        public static Dictionary<uint, VMModule> Modules { get; } = new Dictionary<uint, VMModule>();
         private static LinkedList<HeapData> Data { get; } = new LinkedList<HeapData>();
         private static int Size { set; get; }
 
@@ -38,7 +37,6 @@ namespace XiVM.Runtime
             // Warning Hardcoding
             StringProgramAddress = AddConstantString("Program");
             StringMainAddress = AddConstantString("Main");
-            // Warning Hardcoding
             StringMainDescriptorAddress = AddConstantString("([LSystem.String;)V");
             StaticConstructorNameAddress = AddConstantString("(sinit)");
             ConstructorNameAddress = AddConstantString("(init)");
@@ -48,11 +46,23 @@ namespace XiVM.Runtime
         {
             if (!StringPool.TryGetValue(value, out LinkedListNode<HeapData> data))
             {
-                byte[] vs = HeapData.StoreString(value);
-                data = new LinkedListNode<HeapData>(new HeapData(
-                    Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                    vs));
-                Data.AddLast(data);
+                // 分配byte数组
+                LinkedListNode<HeapData> stringData = MallocArray(sizeof(byte), Encoding.UTF8.GetByteCount(value));
+                Encoding.UTF8.GetBytes(value, new Span<byte>(stringData.Value.Data, HeapData.ArrayLengthSize + HeapData.MiscDataSize,
+                    stringData.Value.Data.Length - HeapData.ArrayLengthSize - HeapData.MiscDataSize));
+
+                // String对象
+                byte[] vs = new byte[HeapData.StringLengthSize + HeapData.MiscDataSize + HeapData.StringDataSize];
+                // TODO 头部信息
+                // 长度信息
+                BitConverter.TryWriteBytes(new Span<byte>(vs, HeapData.MiscDataSize, HeapData.StringLengthSize), value.Length);
+                // Data信息
+                BitConverter.TryWriteBytes(new Span<byte>(vs, HeapData.MiscDataSize + HeapData.StringLengthSize, HeapData.StringDataSize),
+                    MemoryMap.MapToAbsolute(stringData.Value.Offset, MemoryTag.METHOD));
+
+                // 字符串
+                data = Data.AddLast(new HeapData(
+                    Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length, vs));
                 StringPool.Add(value, data);
             }
             return MemoryMap.MapToAbsolute(data.Value.Offset, MemoryTag.METHOD);
@@ -100,7 +110,7 @@ namespace XiVM.Runtime
                         Parent = module,
                         Methods = new Dictionary<uint, List<VMMethod>>(),
                         StaticFields = new List<VMField>(),
-                        StaticFieldSize = 0,
+                        StaticFieldSize = sizeof(uint),         // 注意这个uint其实没有任何信息，但是不能Malloc 大小为0的空间
                         Fields = new List<VMField>(),
                         FieldSize = HeapData.MiscDataSize       // 头部信息
                     };
@@ -225,7 +235,60 @@ namespace XiVM.Runtime
 
         private static void ExternalSymbolResolution(VMModule module)
         {
-            // TODO 外部类和外部域
+            uint moduleNameAddress, nameAddress, classNameAddress;
+            VMModule importedModule;
+            VMClass outerClass;
+            // 外部类
+            for (int i = 0; i < module.ClassPool.Length; ++i)
+            {
+                if (module.ClassPoolLink[i] != null)
+                {
+                    continue;
+                }
+
+                ClassConstantInfo classInfo = module.ClassPool[i];
+                moduleNameAddress = module.StringPoolLink[classInfo.Module - 1];
+                Modules.TryGetValue(moduleNameAddress, out importedModule);
+
+                nameAddress = module.StringPoolLink[classInfo.Name - 1];
+                if (!importedModule.Classes.TryGetValue(nameAddress, out outerClass))
+                {
+                    throw new XiVMError($"Outer class not found");
+                }
+                module.ClassPoolLink[i] = outerClass;
+            }
+
+            // 外部域
+            for (int i = 0; i < module.FieldPool.Length; ++i)
+            {
+                if (module.FieldPoolLink[i] != null)
+                {
+                    continue;
+                }
+
+                FieldConstantInfo fieldInfo = module.FieldPool[i];
+                moduleNameAddress = module.StringPoolLink[module.ClassPool[fieldInfo.Class - 1].Module - 1];
+                Modules.TryGetValue(moduleNameAddress, out importedModule);
+
+                // TODO 可以将VMModule.Classes的结构化信息补全，这样直接在结构化信息中查找效率更高一些
+                // 外部函数符号也可以这样优化
+                classNameAddress = module.StringPoolLink[module.ClassPool[fieldInfo.Class - 1].Name - 1];
+                nameAddress = module.StringPoolLink[fieldInfo.Name - 1];
+                uint descriptorAddress = module.StringPoolLink[fieldInfo.Descriptor - 1];
+                foreach ((FieldConstantInfo candidateFieldInfo, VMField vmField) in importedModule.FieldPool.Zip(importedModule.FieldPoolLink))
+                {
+                    // 模块名类名函数名描述符匹配，未比较flag
+                    if (moduleNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateFieldInfo.Class - 1].Module - 1] &&
+                        classNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateFieldInfo.Class - 1].Name - 1] &&
+                        nameAddress == importedModule.StringPoolLink[candidateFieldInfo.Name - 1] &&
+                        descriptorAddress == importedModule.StringPoolLink[candidateFieldInfo.Descriptor - 1])
+                    {
+                        // 建立Link
+                        module.FieldPoolLink[i] = vmField;
+                        break;
+                    }
+                }
+            }
 
             // 外部函数符号
             for (int i = 0; i < module.MethodPool.Length; ++i)
@@ -237,15 +300,15 @@ namespace XiVM.Runtime
                 }
 
                 MethodConstantInfo methodInfo = module.MethodPool[i];
-                uint moduleNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Module - 1];
-                Modules.TryGetValue(moduleNameAddress, out VMModule importedModule);
+                moduleNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Module - 1];
+                Modules.TryGetValue(moduleNameAddress, out importedModule);
 
-                uint classNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Name - 1];
-                uint nameAddress = module.StringPoolLink[methodInfo.Name - 1];
+                classNameAddress = module.StringPoolLink[module.ClassPool[methodInfo.Class - 1].Name - 1];
+                nameAddress = module.StringPoolLink[methodInfo.Name - 1];
                 uint descriptorAddress = module.StringPoolLink[methodInfo.Descriptor - 1];
                 foreach ((MethodConstantInfo candidateMethodInfo, VMMethod vmMethod) in importedModule.MethodPool.Zip(importedModule.MethodPoolLink))
                 {
-                    // 模块名类名函数名描述符匹配
+                    // 模块名类名函数名描述符匹配，未比较flag
                     if (moduleNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Module - 1] &&
                         classNameAddress == importedModule.StringPoolLink[importedModule.ClassPool[candidateMethodInfo.Class - 1].Name - 1] &&
                         nameAddress == importedModule.StringPoolLink[candidateMethodInfo.Name - 1] &&
@@ -279,14 +342,18 @@ namespace XiVM.Runtime
                 }
                 cur = cur.Next;
             }
-            return null;
+            throw new XiVMError($"Invalid method area addr {addr}");
         }
 
-        public static uint Malloc(int size)
+        private static uint Malloc(int size)
         {
+            if (size == 0)
+            {
+                throw new XiVMError("Malloc space of size 0 is not supported");
+            }
             if (Size + size > MaxSize)
             {
-                throw new XiVMError("Heap overflow");
+                throw new XiVMError("MethodArea overflow");
             }
             LinkedListNode<HeapData> newData = new LinkedListNode<HeapData>(new HeapData(
                 Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
@@ -295,11 +362,27 @@ namespace XiVM.Runtime
             return newData.Value.Offset;
         }
 
-        public static LinkedListNode<HeapData> Malloc(byte[] data)
+        private static LinkedListNode<HeapData> MallocArray(int elementSize, int len)
         {
+            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
+            if (Size + size > MaxSize)
+            {
+                throw new XiVMError("MethodArea overflow");
+            }
+            return Data.AddLast(new HeapData(
+                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
+                new byte[size]));
+        }
+
+        private static LinkedListNode<HeapData> Malloc(byte[] data)
+        {
+            if (data.Length == 0)
+            {
+                throw new XiVMError("Malloc space of size 0 is not supported");
+            }
             if (Size + data.Length > MaxSize)
             {
-                throw new XiVMError("Heap overflow");
+                throw new XiVMError("MethodArea overflow");
             }
             return Data.AddLast(new HeapData(
                 Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,

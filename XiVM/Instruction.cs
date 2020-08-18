@@ -82,6 +82,8 @@ namespace XiVM
         PUTC = 0xB0,
         PUTI = 0xB1,
         PUTS = 0xB2,
+
+        MEMCPY = 0xB4,
     }
 
     [Serializable]
@@ -170,6 +172,7 @@ namespace XiVM
                 InstructionType.PUTC => "PUTC",
                 InstructionType.PUTI => "PUTI",
                 InstructionType.PUTS => "PUTS",
+                InstructionType.MEMCPY => "MEMCPY",
                 _ => throw new NotImplementedException(),
             };
         }

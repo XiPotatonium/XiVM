@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 using XiVM.Errors;
-using XiVM.Xir;
 
 namespace XiVM
 {
@@ -20,6 +18,10 @@ namespace XiVM
         /// </summary>
         public List<VMField> Fields { set; get; }
         public int FieldSize { set; get; }
+        /// <summary>
+        /// 是否执行过静态构造，只应该执行一遍
+        /// </summary>
+        public bool IsStaticConstructorExecuted { set; get; } = false;
     }
 
     /// <summary>
@@ -148,7 +150,7 @@ namespace XiVM
         public string ModuleName { get; }
         public string ClassName { get; }
 
-        public ClassType(string moduleName, string className) 
+        public ClassType(string moduleName, string className)
             : base(VariableTypeTag.INVALID)
         {
             ModuleName = moduleName;
@@ -225,7 +227,7 @@ namespace XiVM
     {
 
         public ClassType ClassType { set; get; }
-        public string Name {  get; }
+        public string Name { get; }
         /// <summary>
         /// 是否来自一个隐式的this.
         /// </summary>
@@ -240,7 +242,7 @@ namespace XiVM
         public bool IsField { set; get; }
         public int FieldPoolIndex { set; get; }
 
-        public MemberType(ClassType classType, string name, bool fromThis, bool fromObject) 
+        public MemberType(ClassType classType, string name, bool fromThis, bool fromObject)
             : base(VariableTypeTag.INVALID)
         {
             ClassType = classType;

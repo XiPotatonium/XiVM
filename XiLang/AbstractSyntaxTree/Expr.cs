@@ -560,7 +560,7 @@ namespace XiLang.AbstractSyntaxTree
                 member.FieldPoolIndex = classField.ConstantPoolIndex;
             }
             else if (!pass.Constructor.CurrentClass.Methods.ContainsKey(Id))
-            { 
+            {
                 // 不是域和方法，有可能是类或模块
                 Class classInfo = pass.Constructor.Classes.Find(c => c.Name == Id);
                 if (classInfo != null)
@@ -603,7 +603,7 @@ namespace XiLang.AbstractSyntaxTree
                 }
                 else
                 {
-                    pass.LocalSymbolTable.TryGetSymbol("this", out Variable thisVariable); 
+                    pass.LocalSymbolTable.TryGetSymbol("this", out Variable thisVariable);
                     pass.Constructor.AddLocal(thisVariable.Offset);
                     pass.Constructor.AddLoadT(thisVariable.Type);
                     pass.Constructor.AddStoreNonStatic(field.ConstantPoolIndex);

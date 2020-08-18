@@ -433,9 +433,20 @@ namespace XiLang.Syntactic
         /// <returns></returns>
         private Expr ParsePrimaryExpr()
         {
+            Token t;
             if (Check(TokenType.ID))
             {
                 return ParseId();
+            }
+            if (Check(TokenType.STRING))
+            {
+                // 注意，有时候string会像Id一样使用，例如string.Empty，
+                // 要将其展开成System.String
+                t = Consume(TokenType.STRING);
+                return Expr.MakeOp(OpType.CLASS_ACCESS,
+                    new IdExpr(Program.StringClass.ModuleName, t.Line),
+                    new IdExpr(Program.StringClass.ClassName, t.Line),
+                    t.Line);
             }
             if (Check(TokenType.LPAREN))
             {
@@ -453,7 +464,7 @@ namespace XiLang.Syntactic
             }
             if (Check(TokenType.NEW))
             {
-                Token t = Consume(TokenType.NEW);
+                t = Consume(TokenType.NEW);
                 return Expr.MakeOp(OpType.NEW, ParseTypeExpr(true), t.Line);
             }
             return ParseConstExpr();

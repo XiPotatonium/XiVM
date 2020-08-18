@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using XiVM;
+﻿using XiVM;
 using XiVM.Xir;
 
 namespace SystemLib
@@ -16,6 +15,9 @@ namespace SystemLib
             Parent = parent;
         }
 
+        /// <summary>
+        /// 在这里填上this.Method，完成Constructor中的Method创建
+        /// </summary>
         internal abstract void DeclarationGen();
 
         internal abstract void MethodGen();

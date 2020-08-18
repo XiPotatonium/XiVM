@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using XiVM.Errors;
 
 namespace XiVM.Runtime
@@ -16,6 +14,10 @@ namespace XiVM.Runtime
 
         public static uint Malloc(int size)
         {
+            if (size == 0)
+            {
+                throw new XiVMError("Malloc space of size 0 is not supported");
+            }
             if (Size + size > MaxSize)
             {
                 throw new XiVMError("Heap overflow");
@@ -42,7 +44,7 @@ namespace XiVM.Runtime
         }
 
         /// <summary>
-        /// TODO 考虑用哈希表，因为不会有offset
+        /// TODO 考虑用哈希表
         /// </summary>
         /// <param name="addr"></param>
         /// <returns></returns>
@@ -61,7 +63,7 @@ namespace XiVM.Runtime
                 }
                 cur = cur.Next;
             }
-            return null;
+            throw new XiVMError($"Invalid heap addr {addr}");
         }
     }
 
@@ -72,32 +74,21 @@ namespace XiVM.Runtime
         /// </summary>
         public static readonly int MiscDataSize = 2 * sizeof(int);
         /// <summary>
-        /// 头部长度信息
+        /// 字符串头部长度信息
         /// </summary>
         public static int StringLengthSize = sizeof(int);
+        /// <summary>
+        /// 字符串指向的数组
+        /// </summary>
+        public static int StringDataSize = sizeof(uint);
+        /// <summary>
+        /// 数组头部长度信息
+        /// </summary>
         public static int ArrayLengthSize = sizeof(int);
 
         public static int ArrayOffsetMap(int elementSize, int index)
         {
             return index * elementSize + MiscDataSize + ArrayLengthSize;
-        }
-
-        public static string GetString(byte[] data)
-        {
-            return Encoding.UTF8.GetString(data, StringLengthSize + MiscDataSize,
-                data.Length - StringLengthSize - MiscDataSize);
-        }
-
-        public static byte[] StoreString(string value)
-        {
-            byte[] ret = new byte[StringLengthSize + MiscDataSize + Encoding.UTF8.GetByteCount(value)];
-            // TODO 头部信息
-            // 长度信息
-            BitConverter.TryWriteBytes(new Span<byte>(ret, MiscDataSize, StringLengthSize), value.Length);
-            // 字符串
-            Encoding.UTF8.GetBytes(value, new Span<byte>(ret, 
-                StringLengthSize + MiscDataSize, ret.Length - StringLengthSize - MiscDataSize));
-            return ret;
         }
 
         /// <summary>

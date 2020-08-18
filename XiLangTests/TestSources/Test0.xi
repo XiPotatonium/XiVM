@@ -6,7 +6,7 @@ class Program {
 	static int AValue = 9;
 	static int BValue = 4 * 3;
 
-	static void Main(String[] args) {
+	static void Main(string[] args) {
 		int x = AValue * 3;
 		Demo d = new Demo(1, BValue);
 		System.IO.Write(d.Foo(5));

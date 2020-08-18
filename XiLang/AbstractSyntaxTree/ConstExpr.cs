@@ -234,7 +234,6 @@ namespace XiLang.AbstractSyntaxTree
                         SyntacticValueType.BOOL => ValueType.BOOL,
                         SyntacticValueType.INT => ValueType.INT,
                         SyntacticValueType.DOUBLE => ValueType.DOUBLE,
-                        SyntacticValueType.STRING => ValueType.STRING,
                         _ => throw new NotImplementedException(),
                     }, v2, Expr1.Line);
                     break;

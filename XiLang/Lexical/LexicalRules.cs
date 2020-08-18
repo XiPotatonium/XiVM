@@ -47,7 +47,7 @@ namespace XiLang.Lexical
             { "int", TokenType.INT },
             { "double", TokenType.DOUBLE },
             { "void", TokenType.VOID },
-            { "String", TokenType.STRING },
+            { "string", TokenType.STRING },
 
             { "class", TokenType.CLASS },
             { "base", TokenType.BASE },

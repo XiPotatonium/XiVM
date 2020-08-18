@@ -26,8 +26,6 @@ namespace SystemLib.System.IO
 
         internal override void MethodGen()
         {
-            Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(Method);
-
             Constructor.AddLocal(Method.Params[0].Offset);
             Constructor.AddLoadT(Method.Params[0].Type);
             Constructor.AddPutS();
@@ -58,8 +56,6 @@ namespace SystemLib.System.IO
 
         internal override void MethodGen()
         {
-            Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(Method);
-
             Constructor.AddLocal(Method.Params[0].Offset);
             Constructor.AddLoadT(Method.Params[0].Type);
             Constructor.AddPutI();

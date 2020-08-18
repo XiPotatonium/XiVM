@@ -8,7 +8,7 @@ namespace XiVM.Tests
         [TestMethod()]
         public void MainTest()
         {
-            Program.Main(new string[] { "Test1", "-d", "D:/Usr/XiVM/XiLangTests/TestSources" });
+            Program.Main(new string[] { "HelloWorld", "-d", "D:/Usr/XiVM/XiLangTests/TestSources" });
         }
     }
 }

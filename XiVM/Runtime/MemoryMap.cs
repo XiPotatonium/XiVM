@@ -53,7 +53,7 @@ namespace XiVM.Runtime
             }
 
             res = (uint)(res - PreservedSpace);
-            
+
             if (res < Stack.MaxSize)
             {
                 return MemoryTag.STACK;

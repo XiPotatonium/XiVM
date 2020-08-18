@@ -18,13 +18,19 @@ namespace SystemLib
 
         internal abstract void DeclarationGen();
 
+        /// <summary>
+        /// 不用设置bb
+        /// </summary>
+        internal abstract void StaticInitializerGen();
+
         internal virtual void CodeGen()
         {
             Constructor.CurrentBasicBlock = Class.StaticInitializer.BasicBlocks.First.Value;
-            Constructor.AddRet();
+            StaticInitializerGen();
 
             foreach (AbstractMethod method in Methods)
             {
+                Constructor.CurrentBasicBlock = Constructor.AddBasicBlock(method.Method);
                 method.MethodGen();
             }
         }

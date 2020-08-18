@@ -2,16 +2,16 @@
 
 ## TODO
 
-* 外部模块的类和域的链接, System.String的构造函数
 * 未定义构造函数要生成一个默认的构造函数
+* XiVM diagnose参数，输出模块加载时间，最大堆/方法区占用等信息
 * 复杂条件表达式，注意短路作用;三元运算符
 * 堆的GC
 * 似乎寻址可以仅使用addr + offset的形式，这样的话堆空间的管理可以使用哈希表，查找就是O(1)了
-* ref
 * XiLang中char字面量和string字面量中的转义字符问题
 * XiVM的浮点数运算
-* 为了支持动态绑定的函数调用，可能需要另一种Call
 * 目前import都是线性依赖的，互相依赖的模块还没有实现.(其实只有共同编译未实现，模块的加载、链接两个pass以及编译的类声明、类成员声明、类成员定义三个pass都做好了)
+* ref
+* 为了支持动态绑定的函数调用，可能需要另一种Call
 
 ## XiLang
 
@@ -28,7 +28,7 @@
     * 整数：32位整数int
     * 浮点：64位浮点数double
     * 数组
-    * 其他：void, string
+    * 其他：void, string(是System.String的别名)
 * 运算符
     * 单目运算符
     * 双目运算符
@@ -234,7 +234,7 @@ value = *src
 * ALOADD
 * ALOADA
 
-value = arr[index]，暂不清楚是否要兼容string
+value = arr[index]
 
 ```
 ... | arr(addr) | index(int) |
@@ -248,7 +248,7 @@ value = arr[index]，暂不清楚是否要兼容string
 * ASTORED
 * ASTOREA
 
-arr[index] = value，暂不清楚是否要兼容string
+arr[index] = value
 
 ```
 ... | value(T) | arr(addr) | index(int) |
@@ -640,17 +640,30 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 
 ### IO
 
-#### PutChar
-
 ```
-void System.IO.PutChar(int ch);
-```
-
-#### Write
-
-```
-void System.IO.Write(int val);
-void System.IO.Write(System.String val);
+class IO {
+    // 打印字母
+    static void PutChar(int ch);
+    // 打印整数
+    static void Write(int val);
+    // 打印字符串
+    static void Write(System.String val);
+}
 ```
 
 ### String
+
+```
+class String {
+    // 和C#里一样
+    static String Empty;
+
+    // 字符串长度
+    int Length;   
+    // 保存字符串的数组（UTF格式）
+    byte[] Data;    
+
+    // 可以接受字面量
+    String(String str);
+}
+```

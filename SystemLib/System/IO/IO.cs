@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SystemLib.System.IO
+﻿namespace SystemLib.System.IO
 {
     public class IO : AbstractClass
     {
@@ -15,6 +13,11 @@ namespace SystemLib.System.IO
             Methods.Add(new PutChar(this));
             Methods.Add(new WriteInt(this));
             Methods.Add(new WriteString(this));
+        }
+
+        internal override void StaticInitializerGen()
+        {
+            Constructor.AddRet();
         }
     }
 }

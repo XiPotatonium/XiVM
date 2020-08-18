@@ -4,7 +4,7 @@ import System;
 
 class Program {
 
-	static void Main(String[] args) {
+	static void Main(string[] args) {
 		Demo d = new Demo(1, 12);
 		int x = Gcd(27, d.Foo(5));		// Gcd(27, 18)
 		System.IO.Write(x);

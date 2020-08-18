@@ -1,6 +1,5 @@
 ﻿using System;
 using XiVM.Runtime;
-using XiVM.Xir;
 
 namespace XiVM
 {

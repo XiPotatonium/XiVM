@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using XiLang.Errors;
 using XiLang.Symbol;
 using XiVM;
@@ -93,6 +92,9 @@ namespace XiLang.AbstractSyntaxTree
                 // 静态构造是return void
                 Constructor.AddRet();
 
+                // TODO 为非静态成员生成代码（只生成BB，不产生Function）
+                // 这个BB要被挂载到每个构造函数的开头，有点像inline
+
                 // 生成所有函数
                 FuncStmt funcStmt = classStmt.Methods;
                 while (funcStmt != null)
@@ -103,8 +105,6 @@ namespace XiLang.AbstractSyntaxTree
 
                     funcStmt = (FuncStmt)funcStmt.SiblingAST;
                 }
-
-                // TODO 如果没有构造函数，默认生成一个
 
                 root = root.SiblingAST;
             }

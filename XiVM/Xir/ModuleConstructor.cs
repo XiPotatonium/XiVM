@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using XiVM.ConstantTable;
@@ -60,7 +59,7 @@ namespace XiVM.Xir
                     sw.WriteLine($"\n.ClassPool");
                     for (int i = 0; i < binaryModule.ClassPool.Length; ++i)
                     {
-                        sw.WriteLine("{0, 8}{1} {2}", $"#{i + 1}: ", 
+                        sw.WriteLine("{0, 8}{1} {2}", $"#{i + 1}: ",
                             binaryModule.ClassPool[i].Module,
                             binaryModule.ClassPool[i].Name);
                     }
@@ -155,7 +154,7 @@ namespace XiVM.Xir
 
         public Method AddMethod(Class classType, string name, VariableType retType, List<VariableType> ps, AccessFlag flag)
         {
-            MethodDeclarationInfo declarationInfo = new MethodDeclarationInfo(retType, ps, 
+            MethodDeclarationInfo declarationInfo = new MethodDeclarationInfo(retType, ps,
                 StringPool.TryAdd(MethodDeclarationInfo.GetDescriptor(retType, ps)));
             int index = MethodPool.Add(new MethodConstantInfo(
                 classType.ConstantPoolIndex,
@@ -189,7 +188,7 @@ namespace XiVM.Xir
         /// <returns></returns>
         public int AddMethodPoolInfo(MemberType methodType, string descriptor, uint flag)
         {
-            int index = MethodPool.TryAdd(new MethodConstantInfo(AddClassPoolInfo(methodType.ClassType), 
+            int index = MethodPool.TryAdd(new MethodConstantInfo(AddClassPoolInfo(methodType.ClassType),
                 StringPool.TryAdd(methodType.Name), StringPool.TryAdd(descriptor), flag));
             if (index > Methods.Count)
             {
@@ -209,7 +208,7 @@ namespace XiVM.Xir
         /// <returns></returns>
         public int AddFieldPoolInfo(MemberType fieldType, string descriptor, uint flag)
         {
-            return FieldPool.TryAdd(new FieldConstantInfo(AddClassPoolInfo(fieldType.ClassType), 
+            return FieldPool.TryAdd(new FieldConstantInfo(AddClassPoolInfo(fieldType.ClassType),
                 StringPool.TryAdd(fieldType.Name), StringPool.TryAdd(descriptor), flag));
         }
 
@@ -268,10 +267,5 @@ namespace XiVM.Xir
         }
 
         #endregion
-
-        public uint AddConstantPool(string name)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
