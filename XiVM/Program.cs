@@ -11,11 +11,11 @@ namespace XiVM
         public static void Main(string[] args)
         {
             ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
-            argumentParser.AddArgument(new ConsoleArgument("d", ArgumentValueType.STRING));
+            ConsoleArgument dirArg = new ConsoleArgument("d", ArgumentValueType.STRING);
+            argumentParser.AddArgument(dirArg);
             argumentParser.Parse(args);
 
-            string moduleName = argumentParser.GetValue().StringValue;
-            ConsoleArgument dirArg = argumentParser.GetValue("d");
+            string moduleName = argumentParser.DefaultRule.StringValue;
             if (dirArg.IsSet)
             {
                 DirName = dirArg.StringValue;

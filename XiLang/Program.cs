@@ -24,13 +24,14 @@ namespace XiLang
         public static void Main(string[] args)
         {
             ArgumentParser argumentParser = new ArgumentParser(new ConsoleArgument());
-            argumentParser.AddArgument(new ConsoleArgument("d", ArgumentValueType.STRING));
-            argumentParser.AddArgument(new ConsoleArgument("verbose"));
+            ConsoleArgument dirArg = new ConsoleArgument("d", ArgumentValueType.STRING);
+            ConsoleArgument verboseArg = new ConsoleArgument("verbose");
+            argumentParser.AddArgument(dirArg);
+            argumentParser.AddArgument(verboseArg);
 
             argumentParser.Parse(args);
 
-            string moduleName = argumentParser.GetValue().StringValue;
-            ConsoleArgument dirArg = argumentParser.GetValue("d");
+            string moduleName = argumentParser.DefaultRule.StringValue;
             if (dirArg.IsSet)
             {
                 DirName = dirArg.StringValue;
@@ -63,7 +64,7 @@ namespace XiLang
             ASTPassManager astPasses = new ASTPassManager(root);
 
             //, 打印json文件
-            if (argumentParser.GetValue("verbose").IsSet)
+            if (verboseArg.IsSet)
             {
                 string json = (string)astPasses.Run(new JsonPass());
                 File.WriteAllText(fileName + ".ast.json", json);
@@ -78,7 +79,7 @@ namespace XiLang
             astPasses.Run(new CodeGenPass(constructor, classes, fields, methods));
 
             // 输出生成字节码
-            constructor.Dump(DirName, argumentParser.GetValue("verbose").IsSet);
+            constructor.Dump(DirName, verboseArg.IsSet);
         }
 
         public static void Import(string moduleName)

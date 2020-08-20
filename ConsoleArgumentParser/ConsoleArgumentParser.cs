@@ -9,7 +9,7 @@ namespace ConsoleArgumentParser
         /// <summary>
         /// 目前default rule只支持一个string，如果要支持数组再说
         /// </summary>
-        private ConsoleArgument DefaultRule { get; }
+        public ConsoleArgument DefaultRule { get; }
 
         /// <summary>
         /// 必须要有一个参数，这个参数是默认规则（不需要-xxx）
@@ -73,16 +73,6 @@ namespace ConsoleArgumentParser
             {
                 throw new Exception($"Default rule not set");
             }
-        }
-
-        public ConsoleArgument GetValue(string argName = null)
-        {
-            if (string.IsNullOrEmpty(argName))
-            {
-                return DefaultRule;
-            }
-            Arguments.TryGetValue(argName, out ConsoleArgument arg);
-            return arg;
         }
     }
 }
