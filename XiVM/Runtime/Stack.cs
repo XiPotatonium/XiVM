@@ -3,6 +3,7 @@ using XiVM.Errors;
 
 namespace XiVM.Runtime
 {
+
     internal class Stack
     {
         /// <summary>

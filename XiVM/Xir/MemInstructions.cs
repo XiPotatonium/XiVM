@@ -5,13 +5,6 @@ namespace XiVM.Xir
 {
     public partial class ModuleConstructor
     {
-        public void AddMemCpy()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.MEMCPY
-            });
-        }
 
         public void AddNewArr(VariableType variableType)
         {

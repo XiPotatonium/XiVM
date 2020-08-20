@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using XiVM;
+using XiVM.Runtime;
 
 namespace SystemLib.System.IO
 {
@@ -28,7 +29,8 @@ namespace SystemLib.System.IO
         {
             Constructor.AddLocal(Method.Params[0].Offset);
             Constructor.AddLoadT(Method.Params[0].Type);
-            Constructor.AddPutS();
+            Constructor.AddPushA(Preserved.GetAbsoluteAddress(PreservedAddressTag.STDSTRINGIO));
+            Constructor.AddStoreT(Method.Params[0].Type);
 
             Constructor.AddRet();
         }
@@ -58,7 +60,8 @@ namespace SystemLib.System.IO
         {
             Constructor.AddLocal(Method.Params[0].Offset);
             Constructor.AddLoadT(Method.Params[0].Type);
-            Constructor.AddPutI();
+            Constructor.AddPushA(Preserved.GetAbsoluteAddress(PreservedAddressTag.STDINTIO));
+            Constructor.AddStoreT(Method.Params[0].Type);
 
             Constructor.AddRet();
         }

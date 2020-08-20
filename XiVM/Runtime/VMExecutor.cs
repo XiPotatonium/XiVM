@@ -176,6 +176,9 @@ namespace XiVM.Runtime
                         iValue = Stack.TopInt;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
+                            case MemoryTag.PRESERVED:
+                                Preserved.SetInt(addr, iValue);
+                                break;
                             case MemoryTag.STACK:
                                 Stack.SetValue(addr, iValue);
                                 break;
@@ -204,6 +207,9 @@ namespace XiVM.Runtime
                         uValue = Stack.TopAddress;
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
+                            case MemoryTag.PRESERVED:
+                                Preserved.SetAddress(addr, uValue);
+                                break;
                             case MemoryTag.STACK:
                                 Stack.SetValue(addr, uValue);
                                 break;
@@ -540,27 +546,18 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.LEN:
                         throw new NotImplementedException();
-                    case InstructionType.PUTC:
-                        iValue = Stack.PopInt();
-                        Console.Write((char)iValue);
-                        break;
-                    case InstructionType.PUTI:
-                        iValue = Stack.PopInt();
-                        Console.Write(iValue);
-                        break;
-                    case InstructionType.PUTS:
-                        // 这个地址应该指向一个StringType
-                        addr = Stack.PopAddress();
-                        Console.Write(GetString(addr));
-                        break;
                     default:
                         throw new NotImplementedException();
                 }
             }
         }
 
-
-        private string GetString(uint addr)
+        /// <summary>
+        /// 从绝对地址（可以是堆空间或方法区）获取一个字符串
+        /// </summary>
+        /// <param name="addr"></param>
+        /// <returns></returns>
+        public static string GetString(uint addr)
         {
             byte[] data;
             switch (MemoryMap.MapToOffset(addr, out addr))
@@ -575,6 +572,7 @@ namespace XiVM.Runtime
                     throw new XiVMError("String not in method area nor heap");
             }
 
+            // TODO 判断是不是字符串
             // data的地址
             addr = BitConverter.ToUInt32(data, HeapData.MiscDataSize + HeapData.StringLengthSize);
             switch (MemoryMap.MapToOffset(addr, out addr))

@@ -12,29 +12,5 @@ namespace XiVM.Xir
                 Params = BitConverter.GetBytes(methodIndex)
             });
         }
-
-        public void AddPutC()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.PUTC
-            });
-        }
-
-        public void AddPutI()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.PUTI
-            });
-        }
-
-        public void AddPutS()
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.PUTS
-            });
-        }
     }
 }

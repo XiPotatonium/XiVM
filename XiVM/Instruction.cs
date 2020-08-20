@@ -78,12 +78,6 @@ namespace XiVM
         NEWARR = 0xA7,
         NEWAARR = 0xA8,
         LEN = 0xA9,
-
-        PUTC = 0xB0,
-        PUTI = 0xB1,
-        PUTS = 0xB2,
-
-        MEMCPY = 0xB4,
     }
 
     [Serializable]
@@ -169,10 +163,6 @@ namespace XiVM
                 },
                 InstructionType.NEWAARR => $"NEWAARR {BitConverter.ToInt32(Params)}",
                 InstructionType.LEN => $"LEN",
-                InstructionType.PUTC => "PUTC",
-                InstructionType.PUTI => "PUTI",
-                InstructionType.PUTS => "PUTS",
-                InstructionType.MEMCPY => "MEMCPY",
                 _ => throw new NotImplementedException(),
             };
         }

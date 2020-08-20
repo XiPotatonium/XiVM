@@ -46,6 +46,7 @@ namespace XiVM.Runtime
             }
 
             res--;          // 减去null
+            // Warning 不要轻易改动保留区的大小，PreservedAddressTag依赖于它
             // 1-100
             if (res < PreservedSpace)
             {
@@ -84,11 +85,11 @@ namespace XiVM.Runtime
         /// 映射到绝对空间
         /// </summary>
         /// <param name="offset"></param>
-        /// <param name="to"></param>
+        /// <param name="from"></param>
         /// <returns></returns>
-        public static uint MapToAbsolute(uint offset, MemoryTag to)
+        public static uint MapToAbsolute(uint offset, MemoryTag from)
         {
-            switch (to)
+            switch (from)
             {
                 case MemoryTag.NULL:
                     return NullAddress;

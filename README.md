@@ -1,6 +1,6 @@
 # XiVM
 
-## TODO
+## T: TODO
 
 * 未定义构造函数要生成一个默认的构造函数
 * 复杂条件表达式，注意短路作用;三元运算符
@@ -11,7 +11,9 @@
 * ref
 * 为了支持动态绑定的函数调用，可能需要另一种Call
 
-## XiLang
+---
+
+## L: XiLang
 
 * 使用正则表达式实现词法分析
 * 使用TopDown Parser实现语法分析
@@ -19,7 +21,7 @@
 * 生成AST并可以格式化为Json
 * 超级超级强类型，禁止隐式类型转换
 
-### 实现列表
+### L.1: 实现列表
 
 * 类型
     * 布尔：bool
@@ -45,11 +47,10 @@
     * 静态和非静态方法：支持重载
 * import，目前仅支持线性依赖，会自动查找同一文件夹下的.xibc。
 
-### Grammar
-
-#### Stmt
+### L.2: Grammar
 
 ```
+// Stmt
 Program
     (ImportStmt)* (ClassStmt)*
 ImportStmt
@@ -82,11 +83,8 @@ JumpStmt
     (CONTINUE | BREAK | RETURN (ListExpr)?) SEMICOLON
 ExprStmt
     ListExpr SEMICOLON
-```
 
-#### Expr
-
-```
+// Expr
 TypeExpr
     (ANY_TYPE | ID (DOT ID)*) (LBRACKET ConditionalExpr? RBRACKET)?
 ListExpr
@@ -128,12 +126,15 @@ ConstExpr
     TRUE | FALSE | NULL | DEC_LITERAL | HEX_LITERAL | FLOAT_LITERAL | STR_LITERAL
 ```
 
-## XiVM
+---
+
+## VM: XiVM
 
 * 栈式虚拟机
 * Stack Based Runtime Environment without Local Procedure
 * 支持生成.xibc字节码和.xir文本中间码，字节码参考了JVM
 * 字节码生成API设计参考了LLVM-C，使用BasicBlock的思想，代码中unreachable code不会再生成
+* 设计了保留区地址，这些特殊地址类似计算机组成中CPU操纵外设中的外设地址。这些特殊功功能弥补了虚拟机指令集的low coverage的问题。
 * XiVM一般不对类型进行检查，在编译期间要保证操作（特别是非基本类型）的有效性
 * diagnose参数输出诊断信息，包括：
     * 模块总加载时间
@@ -144,12 +145,7 @@ ConstExpr
     * 堆空间最大占用
     * 方法区空间最大占用
 
-### 堆栈
-
-堆栈本质上是一个变长Slot数组。Slot包含一个数据块（sizeof(int))，包含一个Tag，表明这个slot包含什么数据。
-目前仅表示是不是地址，因为要支持未来可能支持的GC。
-
-### 指令集
+### VM.1: 指令集
 
 以下说明中的T为类型，可以是B(byte 1字节，1Slot), I(int 4字节，1Slot), D(double 8字节，2Slots), A(addr 4字节，1Slot)；
 N为大小（单位为Slot）。
@@ -489,70 +485,8 @@ XiVM会根据field的类型读取value.XiVM不检查object是否有这个field�
 ... | aarr(addr) |
 ```
 
-#### PUTC
 
-* PUTC
-
-PUTC将int类型值以字符形式输出到控制台，仅支持ASCII.
-
-```
-... | value(T) |
-... |
-```
-
-#### PUTI
-
-* PUTI
-
-输出int
-
-```
-... | value(int) |
-... |
-```
-
-#### PUTS
-
-* PUTS
-
-通过地址，获取字符串，取其中的数据转化为UTF8格式字符串输出到控制台
-
-```
-... | src(addr) |
-... |
-```
-
-
-### 字节码结构
-
-注意字节码中常量池的Index都是从1开始的，0表示无常量池信息，和JVM相同。
-注意常量池中的类、域、方法可能是该模块引用的别的模块的类、域和方法。
-
-#### 模块信息
-
-字节码以模块为单位，字节码中包含模块名在字符串常量池中的Index
-
-#### 字节码的字符串常量池
-
-UTF字符串
-
-#### 类常量池
-
-模块名Index、类名Index
-
-#### 域常量池
-
-类Index、域名Index、类型Index、修饰符Flag
-
-#### 方法常量池
-
-类Index、方法名Index、类型Index、修饰符Flag
-
-#### 代码
-
-代码区和方法常量池一一对应。对于模块内方法，存放byte[]的指令，以及局部变量类型Index列表，对于模块外的方法，存一个null。
-
-### 函数调用规范
+### VM.2: 函数调用规范
 
 #### 参数传递
 
@@ -613,8 +547,59 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
     FP                  SP
 ```
 
+### VM.3: 字节码结构
 
-### 堆空间
+注意字节码中常量池的Index都是从1开始的，0表示无常量池信息，和JVM相同。
+注意常量池中的类、域、方法可能是该模块引用的别的模块的类、域和方法。
+
+#### 模块信息
+
+字节码以模块为单位，字节码中包含模块名在字符串常量池中的Index
+
+#### 字节码的字符串常量池
+
+UTF字符串
+
+#### 类常量池
+
+模块名Index、类名Index
+
+#### 域常量池
+
+类Index、域名Index、类型Index、修饰符Flag
+
+#### 方法常量池
+
+类Index、方法名Index、类型Index、修饰符Flag
+
+#### 代码
+
+代码区和方法常量池一一对应。对于模块内方法，存放byte[]的指令，以及局部变量类型Index列表，对于模块外的方法，存一个null。
+
+### VM.4: 地址
+
+绝对地址可以用于确定一个对象或者内建类型的位置，注意访问一个对象的某个域，一个类的某个静态域，一个数组的某个index均要使用这个对象、类静态区、数组的起始位置的绝对地址与offset二元组的方式来索引，这和操作系统上不一样，这么设计是为了让内存可以用哈希表优化读取。相对地址该位置在所属内存区域的offset。关于绝对地址和相对地址的转换可以看XiVM.Runtime.MemoryMap。目前有效的地址区域是NULL，保留区，线程堆栈，堆，方法区。
+
+### VM.5: 保留区
+
+保留区的设计初衷类似计算机组成中的用CPU操纵外设，可以对这些地址进行LOAD和STORE。这类特殊地址补充了指令集无法涵盖的并且往往是比较Native的功能。
+
+（设想）目前仅实现了IO，这是将这些地址当作外设使用。然而在设计上可以为指令集添加一个特殊指令，call一个地址，这个时候这些保留区内容可以像中断表一样使用，甚至可以支持用户定义中断。
+
+具体地址见XiVM.Runtime.PreservedAddressTag
+
+* NULL 空设备
+* STDCHARIO 字符输入输出
+* STDINTIO 整数输入输出
+* STDSTRINGIO 字符串输入输出
+
+### VM.6: 堆栈
+
+堆栈本质上是一个变长Slot数组。Slot包含一个数据块（sizeof(int))，包含一个Tag，表明这个slot包含什么数据。
+目前仅表示是不是地址，因为要支持未来可能支持的GC。
+
+
+### VM.7: 堆空间
 
 堆空间整个虚拟机全局唯一
 
@@ -624,7 +609,7 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 
 使用一个链表记录所有对象，用哈希表保证O(1)的读取。内存分配使用first fit O(N)。
 
-### 方法区
+### VM.8: 方法区
 
 方法区数据和堆空间相同。
 但是因为方法区设计上不会GC，所以内存管理并不需要链表来记录对象，只有一个哈希表，内存分配直接分配在最后，读取和分配都是O(1)
@@ -645,9 +630,11 @@ Call执行之后，会创建函数栈帧，局部变量空间会被创建，修�
 加载模块时会动态链接，因此VM在执行CONSTA时依然能够从Index直到字符串常量的堆地址。
 (设想)字符串常量的结构和堆上的字符串完全相同，不能被GC。
 
-## 系统库
+---
 
-### IO
+## SY: 系统库
+
+### SY.1: IO
 
 ```
 class IO {
@@ -660,7 +647,7 @@ class IO {
 }
 ```
 
-### String
+### SY.2: String
 
 ```
 class String {
