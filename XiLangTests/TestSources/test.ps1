@@ -5,7 +5,7 @@ function Build-Module {
 
 function Invoke-Module {
     param ($moduleName)
-    ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe $moduleName
+    ../../XiVM/bin/Debug/netcoreapp3.1/XiVM.exe $moduleName -diagnose
 }
 
 Copy-Item ../../SystemLib/bin/Debug/netcoreapp3.1/System.xibc System.xibc
@@ -13,12 +13,8 @@ Copy-Item ../../SystemLib/bin/Debug/netcoreapp3.1/System.xibc System.xibc
 Build-Module Test0
 Invoke-Module Test0
 
-Write-Output --------------------------------------------
-
 Build-Module Test1
 Invoke-Module Test1
-
-Write-Output --------------------------------------------
 
 Build-Module HelloWorld
 Invoke-Module HelloWorld

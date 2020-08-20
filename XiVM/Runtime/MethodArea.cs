@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using XiVM.ConstantTable;
@@ -14,10 +15,22 @@ namespace XiVM.Runtime
 
 
         public static Dictionary<uint, VMModule> Modules { get; } = new Dictionary<uint, VMModule>();
+
+        private static Stopwatch LoadWatch { get; } = new Stopwatch();
+        private static Stopwatch DependencyLoadWatch { get; } = new Stopwatch();
+        /// <summary>
+        /// 总加载时间，包括依赖，单位ms
+        /// </summary>
+        public static long ModuleLoadTime => LoadWatch.ElapsedMilliseconds;
+        /// <summary>
+        /// 依赖加载时间，单位ms
+        /// </summary>
+        public static long DependencyLoadTime => DependencyLoadWatch.ElapsedMilliseconds;
+
         /// <summary>
         /// 当前占用，由于不回收，当前占用就是历史最高占用
         /// </summary>
-        private static int Size { set; get; }
+        public static int Size { private set; get; }
         /// <summary>
         /// key是offset，因为设定上方法区对象不回收，所以不用记录内碎片
         /// </summary>
@@ -74,8 +87,19 @@ namespace XiVM.Runtime
         }
 
 
-        public static VMModule AddModule(BinaryModule binaryModule)
+        /// <summary>
+        /// 加载模块
+        /// </summary>
+        /// <param name="binaryModule"></param>
+        /// <param name="isDependency">是执行模块还是依赖模块</param>
+        /// <returns></returns>
+        public static VMModule AddModule(BinaryModule binaryModule, bool isDependency)
         {
+            if (!isDependency)
+            {
+                LoadWatch.Start();
+            }
+
             VMModule module = new VMModule()
             {
                 StringPoolLink = new List<uint>(),
@@ -222,18 +246,33 @@ namespace XiVM.Runtime
                 }
             }
 
+            if (!isDependency)
+            {
+                DependencyLoadWatch.Start();
+            }
+
             // 导入外部模块
             foreach (int externalModuleNameIndex in externalModuleNameIndexes)
             {
                 if (!Modules.ContainsKey(module.StringPoolLink[externalModuleNameIndex - 1]))
                 {
                     // 导入未导入的模块，图的广度优先遍历
-                    AddModule(Program.LoadModule(binaryModule.StringPool[externalModuleNameIndex - 1]));
+                    AddModule(Program.LoadModule(binaryModule.StringPool[externalModuleNameIndex - 1]), true);
                 }
+            }
+
+            if (!isDependency)
+            {
+                DependencyLoadWatch.Stop();
             }
 
             // 链接外部符号
             ExternalSymbolResolution(module);
+
+            if (!isDependency)
+            {
+                LoadWatch.Stop();
+            }
 
             return module;
         }
