@@ -6,64 +6,101 @@ namespace XiVM.Runtime
 
     internal static class Heap
     {
-        public static readonly int MaxSize = 0x1000000;
+        public static readonly int SizeLimit = 0x1000000;
 
 
         private static LinkedList<HeapData> Data { get; } = new LinkedList<HeapData>();
-        internal static uint Size { private set; get; } = 0;
+        private static Dictionary<uint, HeapData> DataMap { get; } = new Dictionary<uint, HeapData>();
+        internal static int Size { private set; get; } = 0;
+        internal static int MaxSize { private set; get; } = 0;
 
-        public static uint Malloc(int size)
+        public static HeapData Malloc(int size)
         {
             if (size == 0)
             {
                 throw new XiVMError("Malloc space of size 0 is not supported");
             }
-            if (Size + size > MaxSize)
+            if (Size + size > SizeLimit)
             {
                 throw new XiVMError("Heap overflow");
             }
-            LinkedListNode<HeapData> newData = new LinkedListNode<HeapData>(new HeapData(
-                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                new byte[size]));
-            Data.AddLast(newData);
-            return newData.Value.Offset;
-        }
 
-        public static uint MallocArray(int elementSize, int len)
-        {
-            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
-            if (Size + size > MaxSize)
-            {
-                throw new XiVMError("Heap overflow");
-            }
-            LinkedListNode<HeapData> newData = new LinkedListNode<HeapData>(new HeapData(
-                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                new byte[size]));
-            Data.AddLast(newData);
-            return newData.Value.Offset;
-        }
-
-        /// <summary>
-        /// TODO 考虑用哈希表
-        /// </summary>
-        /// <param name="addr"></param>
-        /// <returns></returns>
-        public static byte[] GetData(uint addr)
-        {
+            // Best Fit
+            LinkedListNode<HeapData> best = null;
+            int bestFragmentSize = 0;
             LinkedListNode<HeapData> cur = Data.First;
             while (cur != null)
             {
-                if (addr < cur.Value.Offset)
+                if (cur.Next != null)
                 {
-                    break;
+                    int fragmentSize = (int)(cur.Next.Value.Offset - (cur.Value.Offset + cur.Value.Data.Length));
+                    if (fragmentSize >= size)
+                    {
+                        // 可以填入
+                        if (best == null || bestFragmentSize > fragmentSize)
+                        {
+                            // best fit
+                            best = cur;
+                            bestFragmentSize = fragmentSize;
+                        }
+                    }
                 }
-                else if (addr == cur.Value.Offset)
-                {
-                    return cur.Value.Data;
-                }
+
                 cur = cur.Next;
             }
-            throw new XiVMError($"Invalid heap addr {addr}");
+
+            HeapData ret = null;
+            if (best == null)
+            {
+                // 未找到内碎片，在末尾添加
+                ret = new HeapData(
+                    Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
+                    new byte[size]);
+                Data.AddLast(ret);
+            }
+            else
+            {
+                // fit
+                ret = new HeapData(best.Value.Offset + (uint)best.Value.Data.Length,
+                    new byte[size]);
+                Data.AddAfter(best, ret);
+
+            }
+
+            DataMap.Add(ret.Offset, ret);
+            Size += size;
+            if (Size > MaxSize)
+            {
+                MaxSize = size;
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// TODO 数组的length信息
+        /// </summary>
+        /// <param name="elementSize"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public static HeapData MallocArray(int elementSize, int len)
+        {
+            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
+
+            HeapData ret = Malloc(size);
+            return ret;
+        }
+
+        public static byte[] GetData(uint addr)
+        {
+            if (DataMap.TryGetValue(addr, out HeapData data))
+            {
+                return data.Data;
+            }
+            else
+            {
+                throw new XiVMError($"Invalid heap area addr {addr}");
+            }
         }
     }
 

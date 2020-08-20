@@ -8,7 +8,7 @@ namespace XiVM.Runtime
         /// <summary>
         /// 最大1M个slot
         /// </summary>
-        public static readonly int MaxSize = 0x100000;
+        public static readonly int SizeLimit = 0x100000;
         /// <summary>
         /// 函数栈中用于储存调用返回信息的MiscData是FP后的3个Slot
         /// </summary>
@@ -22,6 +22,10 @@ namespace XiVM.Runtime
         /// Stack Pointer，函数栈帧顶
         /// </summary>
         public int SP { private set; get; }
+        /// <summary>
+        /// 最大堆栈占用，诊断信息
+        /// </summary>
+        public int MaxSP { private set; get; }
 
         private int Capacity { set; get; }
 
@@ -30,10 +34,11 @@ namespace XiVM.Runtime
 
         public Stack()
         {
-            Capacity = MaxSize;
+            Capacity = SizeLimit;
             Slots = new Slot[Capacity];
             FP = 0;
             SP = 0;
+            MaxSP = 0;
         }
 
         #region Stack Size Modification
@@ -74,6 +79,7 @@ namespace XiVM.Runtime
 
         /// <summary>
         /// 新slots的tag会默认设置为OTHER
+        /// 只能用这个增加SP
         /// </summary>
         /// <param name="slots">新增的slots</param>
         private void PushN(int slots)
@@ -89,6 +95,11 @@ namespace XiVM.Runtime
                 Slots[SP + i].DataTag = SlotDataTag.OTHER;
             }
             SP += slots;
+
+            if (SP > MaxSP)
+            {
+                MaxSP = SP;
+            }
         }
 
         /// <summary>
@@ -268,5 +279,7 @@ namespace XiVM.Runtime
         }
 
         #endregion
+    
+    
     }
 }

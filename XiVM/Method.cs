@@ -30,7 +30,7 @@ namespace XiVM
         /// VMMethod在MethodArea的MethodIndexTable中的Index
         /// </summary>
         public int MethodIndex { set; get; }
-        public LinkedListNode<HeapData> CodeBlock { set; get; }
+        public HeapData CodeBlock { set; get; }
     }
 
     public class MethodDeclarationInfo : IConstantPoolValue

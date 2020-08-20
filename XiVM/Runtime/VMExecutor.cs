@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Text;
 using XiVM.Errors;
 
@@ -10,7 +11,7 @@ namespace XiVM.Runtime
         private int IP { set; get; }                        // 指令在函数中的IP
         private VMMethod CurrentMethod { set; get; }
         private int MethodIndex => CurrentMethod.MethodIndex;
-        private byte[] CurrentInstructions => CurrentMethod.CodeBlock.Value.Data;
+        private byte[] CurrentInstructions => CurrentMethod.CodeBlock.Data;
         private VMClass CurrentClass => CurrentMethod.Parent;
         private VMModule CurrentModule => CurrentClass.Parent;
         private List<uint> StringConstants => CurrentModule.StringPoolLink;
@@ -524,18 +525,18 @@ namespace XiVM.Runtime
                     case InstructionType.NEW:
                         iValue = ConsumeInt();
                         Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize), MemoryTag.HEAP));
+                            Heap.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize).Offset, MemoryTag.HEAP));
                         break;
                     case InstructionType.NEWARR:
                         iValue = Stack.PopInt();
                         Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.MallocArray(VariableType.GetSize((VariableTypeTag)ConsumeByte()), iValue), MemoryTag.HEAP));
+                            Heap.MallocArray(VariableType.GetSize((VariableTypeTag)ConsumeByte()), iValue).Offset, MemoryTag.HEAP));
                         break;
                     case InstructionType.NEWAARR:
                         iValue = Stack.PopInt();
                         index = ConsumeInt();   // Warning 未使用的信息，Array类型信息
                         Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.MallocArray(VariableType.AddressType.Size, iValue), MemoryTag.HEAP));
+                            Heap.MallocArray(VariableType.AddressType.Size, iValue).Offset, MemoryTag.HEAP));
                         break;
                     case InstructionType.LEN:
                         throw new NotImplementedException();
@@ -719,5 +720,21 @@ namespace XiVM.Runtime
             IP += 1;
             return CurrentInstructions[IP - 1];
         }
+
+
+        public ExecutorDiagnoseInfo GetDiagnoseInfo()
+        {
+            return new ExecutorDiagnoseInfo()
+            {
+                MaxSP = Stack.MaxSP,
+                CurrentSP = Stack.SP
+            };
+        }
+    }
+
+    public class ExecutorDiagnoseInfo
+    {
+        public int MaxSP { set; get; }
+        public int CurrentSP { set; get; }
     }
 }

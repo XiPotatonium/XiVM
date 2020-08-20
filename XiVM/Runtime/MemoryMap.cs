@@ -54,21 +54,21 @@ namespace XiVM.Runtime
 
             res = (uint)(res - PreservedSpace);
 
-            if (res < Stack.MaxSize)
+            if (res < Stack.SizeLimit)
             {
                 return MemoryTag.STACK;
             }
 
-            res = (uint)(res - Stack.MaxSize);
+            res = (uint)(res - Stack.SizeLimit);
 
-            if (res < Heap.MaxSize)
+            if (res < Heap.SizeLimit)
             {
                 return MemoryTag.HEAP;
             }
 
-            res = (uint)(res - Heap.MaxSize);
+            res = (uint)(res - Heap.SizeLimit);
 
-            if (res < MethodArea.MaxSize)
+            if (res < MethodArea.SizeLimit)
             {
                 return MemoryTag.METHOD;
             }
@@ -99,23 +99,23 @@ namespace XiVM.Runtime
                     }
                     return offset + 1;
                 case MemoryTag.STACK:
-                    if (offset >= Stack.MaxSize)
+                    if (offset >= Stack.SizeLimit)
                     {
                         throw new XiVMError("Cannot map to stack space, exceeds stack max size");
                     }
                     return (uint)(offset + 1 + PreservedSpace);
                 case MemoryTag.HEAP:
-                    if (offset >= Heap.MaxSize)
+                    if (offset >= Heap.SizeLimit)
                     {
                         throw new XiVMError("Cannot map to heap space, exceeds heap max size");
                     }
-                    return (uint)(offset + 1 + PreservedSpace + Stack.MaxSize);
+                    return (uint)(offset + 1 + PreservedSpace + Stack.SizeLimit);
                 case MemoryTag.METHOD:
-                    if (offset >= MethodArea.MaxSize)
+                    if (offset >= MethodArea.SizeLimit)
                     {
                         throw new XiVMError("Cannot map to method area, exceeds method area max size");
                     }
-                    return (uint)(offset + 1 + PreservedSpace + Stack.MaxSize + Heap.MaxSize);
+                    return (uint)(offset + 1 + PreservedSpace + Stack.SizeLimit + Heap.SizeLimit);
                 default:
                     throw new NotImplementedException();
             }

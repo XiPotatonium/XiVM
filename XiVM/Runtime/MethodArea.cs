@@ -9,13 +9,19 @@ namespace XiVM.Runtime
 {
     internal static class MethodArea
     {
-        public static readonly int MaxSize = 0x1000000;
+        public static readonly int SizeLimit = 0x1000000;
 
 
 
         public static Dictionary<uint, VMModule> Modules { get; } = new Dictionary<uint, VMModule>();
-        private static LinkedList<HeapData> Data { get; } = new LinkedList<HeapData>();
+        /// <summary>
+        /// 当前占用，由于不回收，当前占用就是历史最高占用
+        /// </summary>
         private static int Size { set; get; }
+        /// <summary>
+        /// key是offset，因为设定上方法区对象不回收，所以不用记录内碎片
+        /// </summary>
+        private static Dictionary<uint, HeapData> DataMap { get; } = new Dictionary<uint, HeapData>();
 
 
         /// <summary>
@@ -23,7 +29,7 @@ namespace XiVM.Runtime
         /// </summary>
         public static VMMethod[] MethodIndexTable { private set; get; } = new VMMethod[0x400];
 
-        public static Dictionary<string, LinkedListNode<HeapData>> StringPool { get; } = new Dictionary<string, LinkedListNode<HeapData>>();
+        public static Dictionary<string, HeapData> StringPool { get; } = new Dictionary<string, HeapData>();
         public static uint StringProgramAddress { private set; get; }
         public static uint StringMainAddress { private set; get; }
         public static uint StringMainDescriptorAddress { private set; get; }
@@ -44,12 +50,12 @@ namespace XiVM.Runtime
 
         private static uint AddConstantString(string value)
         {
-            if (!StringPool.TryGetValue(value, out LinkedListNode<HeapData> data))
+            if (!StringPool.TryGetValue(value, out HeapData data))
             {
                 // 分配byte数组
-                LinkedListNode<HeapData> stringData = MallocArray(sizeof(byte), Encoding.UTF8.GetByteCount(value));
-                Encoding.UTF8.GetBytes(value, new Span<byte>(stringData.Value.Data, HeapData.ArrayLengthSize + HeapData.MiscDataSize,
-                    stringData.Value.Data.Length - HeapData.ArrayLengthSize - HeapData.MiscDataSize));
+                HeapData stringData = MallocArray(sizeof(byte), Encoding.UTF8.GetByteCount(value));
+                Encoding.UTF8.GetBytes(value, new Span<byte>(stringData.Data, HeapData.ArrayLengthSize + HeapData.MiscDataSize,
+                    stringData.Data.Length - HeapData.ArrayLengthSize - HeapData.MiscDataSize));
 
                 // String对象
                 byte[] vs = new byte[HeapData.StringLengthSize + HeapData.MiscDataSize + HeapData.StringDataSize];
@@ -58,14 +64,13 @@ namespace XiVM.Runtime
                 BitConverter.TryWriteBytes(new Span<byte>(vs, HeapData.MiscDataSize, HeapData.StringLengthSize), value.Length);
                 // Data信息
                 BitConverter.TryWriteBytes(new Span<byte>(vs, HeapData.MiscDataSize + HeapData.StringLengthSize, HeapData.StringDataSize),
-                    MemoryMap.MapToAbsolute(stringData.Value.Offset, MemoryTag.METHOD));
+                    MemoryMap.MapToAbsolute(stringData.Offset, MemoryTag.METHOD));
 
                 // 字符串
-                data = Data.AddLast(new HeapData(
-                    Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length, vs));
+                data = Malloc(vs);
                 StringPool.Add(value, data);
             }
-            return MemoryMap.MapToAbsolute(data.Value.Offset, MemoryTag.METHOD);
+            return MemoryMap.MapToAbsolute(data.Offset, MemoryTag.METHOD);
         }
 
 
@@ -161,7 +166,7 @@ namespace XiVM.Runtime
             {
                 if (vmClass != null)
                 {
-                    vmClass.StaticFieldAddress = MemoryMap.MapToAbsolute(Malloc(vmClass.StaticFieldSize), MemoryTag.METHOD);
+                    vmClass.StaticFieldAddress = MemoryMap.MapToAbsolute(Malloc(vmClass.StaticFieldSize).Offset, MemoryTag.METHOD);
                 }
             }
 
@@ -322,71 +327,67 @@ namespace XiVM.Runtime
             }
         }
 
-        /// <summary>
-        /// TODO 考虑用哈希表，因为不会有offset
-        /// </summary>
-        /// <param name="addr"></param>
-        /// <returns></returns>
         public static byte[] GetData(uint addr)
         {
-            LinkedListNode<HeapData> cur = Data.First;
-            while (cur != null)
+            if (DataMap.TryGetValue(addr, out HeapData data))
             {
-                if (addr < cur.Value.Offset)
-                {
-                    break;
-                }
-                else if (addr == cur.Value.Offset)
-                {
-                    return cur.Value.Data;
-                }
-                cur = cur.Next;
+                return data.Data;
             }
-            throw new XiVMError($"Invalid method area addr {addr}");
+            else
+            {
+                throw new XiVMError($"Invalid method area addr {addr}");
+            }
         }
 
-        private static uint Malloc(int size)
+        #region Mallocs
+
+        private static HeapData Malloc(int size)
         {
             if (size == 0)
             {
                 throw new XiVMError("Malloc space of size 0 is not supported");
             }
-            if (Size + size > MaxSize)
+            if (Size + size > SizeLimit)
             {
                 throw new XiVMError("MethodArea overflow");
             }
-            LinkedListNode<HeapData> newData = new LinkedListNode<HeapData>(new HeapData(
-                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                new byte[size]));
-            Data.AddLast(newData);
-            return newData.Value.Offset;
+            HeapData ret = new HeapData((uint)Size, new byte[size]);
+            DataMap.Add((uint)Size, ret);
+            Size += size;
+            return ret;
         }
 
-        private static LinkedListNode<HeapData> MallocArray(int elementSize, int len)
-        {
-            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
-            if (Size + size > MaxSize)
-            {
-                throw new XiVMError("MethodArea overflow");
-            }
-            return Data.AddLast(new HeapData(
-                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                new byte[size]));
-        }
-
-        private static LinkedListNode<HeapData> Malloc(byte[] data)
+        private static HeapData Malloc(byte[] data)
         {
             if (data.Length == 0)
             {
                 throw new XiVMError("Malloc space of size 0 is not supported");
             }
-            if (Size + data.Length > MaxSize)
+            if (Size + data.Length > SizeLimit)
             {
                 throw new XiVMError("MethodArea overflow");
             }
-            return Data.AddLast(new HeapData(
-                Data.Count == 0 ? 0 : Data.Last.Value.Offset + (uint)Data.Last.Value.Data.Length,
-                data));
+
+            HeapData ret = new HeapData((uint)Size, data);
+            DataMap.Add((uint)Size, ret);
+            Size += data.Length;
+            return ret;
         }
+
+        /// <summary>
+        /// TODO Array的长度信息
+        /// </summary>
+        /// <param name="elementSize"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        private static HeapData MallocArray(int elementSize, int len)
+        {
+            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
+
+            HeapData ret = Malloc(size);
+            return ret;
+        }
+
+        #endregion
     }
 }
