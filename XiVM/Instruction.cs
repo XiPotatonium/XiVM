@@ -76,7 +76,6 @@ namespace XiVM
 
         NEW = 0xA6,
         NEWARR = 0xA7,
-        NEWAARR = 0xA8,
     }
 
     [Serializable]
@@ -158,9 +157,9 @@ namespace XiVM
                     VariableTypeTag.BYTE => "NEWARR byte",
                     VariableTypeTag.INT => "NEWARR int",
                     VariableTypeTag.DOUBLE => "NEWARR double",
+                    VariableTypeTag.ADDRESS => "NEWARR object",
                     _ => throw new NotImplementedException(),
                 },
-                InstructionType.NEWAARR => $"NEWAARR {BitConverter.ToInt32(Params)}",
                 _ => throw new NotImplementedException(),
             };
         }

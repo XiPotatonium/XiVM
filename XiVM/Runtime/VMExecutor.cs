@@ -485,11 +485,6 @@ namespace XiVM.Runtime
                         iValue = Stack.PopInt();
                         Stack.PushAddress(Heap.Singleton.MallocArray((VariableTypeTag)ConsumeByte(), iValue));
                         break;
-                    case InstructionType.NEWAARR:
-                        iValue = Stack.PopInt();
-                        ConsumeInt();       // Warning 类型没有用到
-                        Stack.PushAddress(Heap.Singleton.MallocArray(VariableTypeTag.ADDRESS, iValue));
-                        break;
                     default:
                         throw new NotImplementedException();
                 }

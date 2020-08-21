@@ -13,7 +13,7 @@ class Program {
 		System.IO.PutChar(10);
 		x = Gcd(x, d.Foo(5));		// Gcd(27, 18)
 		System.IO.Write(x);
-		System.IO.PutChar(10);
+		System.IO.PutChar('\n');
 		d.Value = d.Value + 10;
 		System.IO.Write(d.Value);
 		System.IO.PutChar(10);

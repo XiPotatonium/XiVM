@@ -8,24 +8,10 @@ namespace XiVM.Xir
 
         public void AddNewArr(VariableType variableType)
         {
-            if (!variableType.IsBasicType())
-            {
-                throw new XiVMError("AddNewArr expects basic type");
-            }
-
             CurrentInstructions.AddLast(new Instruction()
             {
                 OpCode = InstructionType.NEWARR,
                 Params = new byte[] { (byte)(variableType.Tag) }
-            });
-        }
-
-        public void AddNewAArr(int elementTypeIndex)
-        {
-            CurrentInstructions.AddLast(new Instruction()
-            {
-                OpCode = InstructionType.NEWAARR,
-                Params = BitConverter.GetBytes(elementTypeIndex)
             });
         }
 

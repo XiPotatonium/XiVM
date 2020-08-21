@@ -415,16 +415,7 @@ namespace XiLang.AbstractSyntaxTree
                             throw new XiLangError($"Array size should be an int value");
                         }
 
-                        if (arrayType.ElementType.IsBasicType())
-                        {
-                            // 基础类型的数组
-                            pass.Constructor.AddNewArr(arrayType.ElementType);
-                        }
-                        else
-                        {
-                            // 对象类型的数组
-                            pass.Constructor.AddNewAArr(pass.Constructor.AddClassPoolInfo(((ObjectType)arrayType.ElementType).ClassType));
-                        }
+                        pass.Constructor.AddNewArr(arrayType.ElementType);
 
                         return arrayType;
                     }

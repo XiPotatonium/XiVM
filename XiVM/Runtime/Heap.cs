@@ -107,7 +107,7 @@ namespace XiVM.Runtime
         }
 
         /// <summary>
-        /// 基础类型数组
+        /// 数组
         /// </summary>
         /// <param name="typeTag"></param>
         /// <param name="len"></param>

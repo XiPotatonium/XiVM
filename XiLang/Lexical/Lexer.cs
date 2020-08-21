@@ -62,6 +62,7 @@ namespace XiLang.Lexical
                     Column += maxLen;
                 }
             }
+
             return ret;
         }
     }

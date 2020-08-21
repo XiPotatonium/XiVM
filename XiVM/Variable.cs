@@ -115,11 +115,6 @@ namespace XiVM
             }
             return Tag == b.Tag;
         }
-
-        public bool IsBasicType()
-        {
-            return Tag != VariableTypeTag.ADDRESS && Tag != VariableTypeTag.INVALID;
-        }
     }
 
     public class Variable

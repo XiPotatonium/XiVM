@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using XiLang.Errors;
 
 namespace XiLang
@@ -75,25 +76,56 @@ namespace XiLang
         /// <returns></returns>
         public static XiLangValue MakeString(string literal)
         {
-            literal = literal[1..^1];
+            StringBuilder sb = new StringBuilder();
+            for (int i = 1; i < literal.Length - 1; ++i)
+            {
+                if (literal[i] == '\\')
+                {
+                    ++i;
+                    // TODO 更多的转义字符
+                    sb.Append((char)((literal[i]) switch
+                    {
+                        'n' => 10,
+                        _ => throw new NotImplementedException(),
+                    }));
+                }
+                else
+                {
+                    sb.Append(literal[i]);
+                }
+            }
             return new XiLangValue()
             {
                 Type = ValueType.STRING,
-                StringValue = literal
+                StringValue = sb.ToString()
             };
         }
 
         /// <summary>
-        /// TODO 转义字符
+        /// 
         /// </summary>
         /// <param name="literal"></param>
         /// <returns></returns>
         public static XiLangValue MakeChar(string literal)
         {
+            int value;
+            if (literal[1] == '\\')
+            {
+                // TODO 更多的转义字符
+                value = (literal[2]) switch
+                {
+                    'n' => 10,
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else
+            {
+                value = literal[1];
+            }
             return new XiLangValue()
             {
                 Type = ValueType.INT,
-                IntValue = literal[1]
+                IntValue = value
             };
         }
 
