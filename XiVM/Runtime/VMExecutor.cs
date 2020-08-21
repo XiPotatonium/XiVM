@@ -129,10 +129,6 @@ namespace XiVM.Runtime
                             case MemoryTag.STACK:
                                 Stack.PushInt(Stack.GetInt(addr));
                                 break;
-                            case MemoryTag.METHOD:
-                                data = MethodArea.Singleton.GetData(addr);
-                                Stack.PushInt(BitConverter.ToInt32(data));
-                                break;
                             default:
                                 throw new NotImplementedException();
                         }
@@ -144,10 +140,6 @@ namespace XiVM.Runtime
                             case MemoryTag.STACK:
                                 Stack.PushDouble(Stack.GetDouble(addr));
                                 break;
-                            case MemoryTag.METHOD:
-                                data = MethodArea.Singleton.GetData(addr);
-                                Stack.PushDouble(BitConverter.ToDouble(data));
-                                break;
                             default:
                                 throw new NotImplementedException();
                         }
@@ -158,10 +150,6 @@ namespace XiVM.Runtime
                         {
                             case MemoryTag.STACK:
                                 Stack.PushAddress(Stack.GetAddress(addr));
-                                break;
-                            case MemoryTag.METHOD:
-                                data = MethodArea.Singleton.GetData(addr);
-                                Stack.PushAddress(BitConverter.ToUInt32(data));
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -178,10 +166,6 @@ namespace XiVM.Runtime
                                 break;
                             case MemoryTag.STACK:
                                 Stack.SetValue(addr, iValue);
-                                break;
-                            case MemoryTag.METHOD:
-                                data = MethodArea.Singleton.GetData(addr);
-                                BitConverter.TryWriteBytes(data, iValue);
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -528,22 +512,16 @@ namespace XiVM.Runtime
                         break;
                     case InstructionType.NEW:
                         iValue = ConsumeInt();
-                        Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.Singleton.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize).Offset, MemoryTag.HEAP));
+                        Stack.PushAddress(Heap.Singleton.New(CurrentModule.ClassPoolLink[iValue - 1]));
                         break;
                     case InstructionType.NEWARR:
                         iValue = Stack.PopInt();
-                        Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.Singleton.MallocArray(VariableType.GetSize((VariableTypeTag)ConsumeByte()), iValue).Offset, MemoryTag.HEAP));
+                        Stack.PushAddress(Heap.Singleton.MallocArray((VariableTypeTag)ConsumeByte(), iValue));
                         break;
                     case InstructionType.NEWAARR:
                         iValue = Stack.PopInt();
-                        index = ConsumeInt();   // Warning 未使用的信息，Array类型信息
-                        Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.Singleton.MallocArray(VariableType.AddressType.Size, iValue).Offset, MemoryTag.HEAP));
+                        Stack.PushAddress(Heap.Singleton.MallocArray(CurrentModule.ClassPoolLink[ConsumeInt() - 1], iValue));
                         break;
-                    case InstructionType.LEN:
-                        throw new NotImplementedException();
                     default:
                         throw new NotImplementedException();
                 }
@@ -564,7 +542,7 @@ namespace XiVM.Runtime
                 _ => throw new XiVMError("String not in method area nor heap"),
             };
 
-            // TODO 判断是不是字符串
+            // TODO 判断是不是字符串，注意方法区可能头部信息是没有的，方法区就不判断了（是不是也没有必要？）
             // data的地址
             addr = BitConverter.ToUInt32(data, HeapData.MiscDataSize + HeapData.StringLengthSize);
             data = (MemoryMap.MapToOffset(addr, out addr)) switch

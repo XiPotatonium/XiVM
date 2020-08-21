@@ -44,7 +44,7 @@ namespace XiVM.Runtime
         }
 
         /// <summary>
-        /// 
+        /// 注意要和SystemLib中的String的对象格式相同
         /// </summary>
         /// <param name="value"></param>
         /// <returns>绝对地址</returns>
@@ -53,13 +53,13 @@ namespace XiVM.Runtime
             if (!StringPool.TryGetValue(value, out HeapData data))
             {
                 // 分配byte数组
-                HeapData stringData = MallocArray(sizeof(byte), Encoding.UTF8.GetByteCount(value));
+                HeapData stringData = MallocCharArray(Encoding.UTF8.GetByteCount(value));
                 Encoding.UTF8.GetBytes(value, new Span<byte>(stringData.Data, HeapData.ArrayLengthSize + HeapData.MiscDataSize,
                     stringData.Data.Length - HeapData.ArrayLengthSize - HeapData.MiscDataSize));
 
                 // String对象
                 byte[] vs = new byte[HeapData.MiscDataSize + HeapData.StringLengthSize + HeapData.StringDataSize];
-                // TODO 头部信息
+                // 头部信息可以不填，因为MethodArea是内存的边界，GC不会继续walk
                 // 长度信息
                 BitConverter.TryWriteBytes(new Span<byte>(vs, HeapData.MiscDataSize, HeapData.StringLengthSize), value.Length);
                 // Data信息
@@ -109,16 +109,20 @@ namespace XiVM.Runtime
         }
 
         /// <summary>
-        /// TODO Array的长度信息
+        /// 构建字符串的char数组
         /// </summary>
-        /// <param name="elementSize"></param>
-        /// <param name="len"></param>
+        /// <param name="len">byte长度</param>
         /// <returns></returns>
-        public HeapData MallocArray(int elementSize, int len)
+        private HeapData MallocCharArray(int len)
         {
-            int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
+            int size = len * sizeof(byte) + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
 
             HeapData ret = Malloc(size);
+
+            // 长度信息
+            BitConverter.TryWriteBytes(new Span<byte>(ret.Data, HeapData.MiscDataSize, HeapData.ArrayLengthSize), len);
+            // 头部信息可以不填，因为MethodArea是内存的边界，GC不会继续walk
+
             return ret;
         }
 

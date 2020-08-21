@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using XiVM.Errors;
 
 namespace XiVM.Runtime
@@ -20,6 +21,21 @@ namespace XiVM.Runtime
         {
             Size = 0;
             MaxSize = 0;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="objectClass"></param>
+        /// <returns>绝对地址</returns>
+        public uint New(VMClass objectClass)
+        {
+            HeapData data = Malloc(objectClass.FieldSize);
+
+            // 类型信息
+            data.TypeInfo = objectClass.StaticFieldAddress;
+
+            return MemoryMap.MapToAbsolute(data.Offset, MemoryTag.HEAP);
         }
 
         public HeapData Malloc(int size)
@@ -85,18 +101,48 @@ namespace XiVM.Runtime
             return ret;
         }
 
-        /// <summary>
-        /// TODO 数组的length信息
-        /// </summary>
-        /// <param name="elementSize"></param>
-        /// <param name="len"></param>
-        /// <returns></returns>
-        public HeapData MallocArray(int elementSize, int len)
+        private HeapData MallocArray(int elementSize, int len)
         {
             int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
             
             HeapData ret = Malloc(size);
+
+            // 数组长度
+            BitConverter.TryWriteBytes(new Span<byte>(ret.Data, HeapData.MiscDataSize, HeapData.ArrayLengthSize), len);
+            // GC的数组tag
+            BitConverter.TryWriteBytes(new Span<byte>(ret.Data, sizeof(uint), sizeof(uint)), (uint)GCTag.ArrayMark);
+
             return ret;
+        }
+
+        /// <summary>
+        /// 对象数组
+        /// </summary>
+        /// <param name="objectClass"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public uint MallocArray(VMClass objectClass, int len)
+        {
+            HeapData ret = MallocArray(VariableType.AddressType.Size, len);
+
+            ret.TypeInfo = objectClass.StaticFieldAddress;
+
+            return MemoryMap.MapToAbsolute(ret.Offset, MemoryTag.HEAP);
+        }
+
+        /// <summary>
+        /// 基础类型数组
+        /// </summary>
+        /// <param name="typeTag"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public uint MallocArray(VariableTypeTag typeTag, int len)
+        {
+            HeapData ret = MallocArray(VariableType.GetSize(typeTag), len);
+
+            ret.TypeInfo = (uint)typeTag;
+
+            return MemoryMap.MapToAbsolute(ret.Offset, MemoryTag.HEAP);
         }
 
         public byte[] GetData(uint addr)

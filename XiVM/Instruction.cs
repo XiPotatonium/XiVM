@@ -77,7 +77,6 @@ namespace XiVM
         NEW = 0xA6,
         NEWARR = 0xA7,
         NEWAARR = 0xA8,
-        LEN = 0xA9,
     }
 
     [Serializable]
@@ -162,7 +161,6 @@ namespace XiVM
                     _ => throw new NotImplementedException(),
                 },
                 InstructionType.NEWAARR => $"NEWAARR {BitConverter.ToInt32(Params)}",
-                InstructionType.LEN => $"LEN",
                 _ => throw new NotImplementedException(),
             };
         }

@@ -37,6 +37,20 @@ namespace XiVM.Runtime
             return ret;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="vmClass"></param>
+        /// <returns>绝对地址</returns>
+        public uint MallocClassStaticArea(VMClass vmClass)
+        {
+            HeapData ret = Malloc(vmClass.StaticFieldSize);
+
+            // TODO 头部信息暂时不知道填什么
+
+            return MemoryMap.MapToAbsolute(ret.Offset, MemoryTag.STATIC);
+        }
+
         public byte[] GetData(uint addr)
         {
             if (DataMap.TryGetValue(addr, out HeapData data))

@@ -12,11 +12,17 @@ namespace XiVM
         /// </summary>
         public List<VMField> StaticFields { set; get; }
         public uint StaticFieldAddress { set; get; }
+        /// <summary>
+        /// 包含了头部信息
+        /// </summary>
         public int StaticFieldSize { set; get; }
         /// <summary>
         /// GC信息
         /// </summary>
         public List<VMField> Fields { set; get; }
+        /// <summary>
+        /// 包含了头部信息
+        /// </summary>
         public int FieldSize { set; get; }
         /// <summary>
         /// 是否执行过静态构造，只应该执行一遍

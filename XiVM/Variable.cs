@@ -69,7 +69,7 @@ namespace XiVM
         {
             return tag switch
             {
-                VariableTypeTag.BYTE => sizeof(byte),
+                VariableTypeTag.BYTE => sizeof(byte),   // byte可能不能随意调整size，因为XiVM的字符串常量的内存分配是按照C#的byte来计算长度的
                 VariableTypeTag.INT => sizeof(int),
                 VariableTypeTag.DOUBLE => sizeof(double),
                 VariableTypeTag.ADDRESS => sizeof(uint),

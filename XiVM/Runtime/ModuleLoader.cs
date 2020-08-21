@@ -138,8 +138,7 @@ namespace XiVM.Runtime
             {
                 if (vmClass != null)
                 {
-                    vmClass.StaticFieldAddress = MemoryMap.MapToAbsolute(
-                        StaticArea.Singleton.Malloc(vmClass.StaticFieldSize).Offset, MemoryTag.STATIC);
+                    vmClass.StaticFieldAddress = StaticArea.Singleton.MallocClassStaticArea(vmClass);
                     Classes.Add(vmClass.StaticFieldAddress, vmClass);
                 }
             }

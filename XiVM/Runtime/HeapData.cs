@@ -16,7 +16,7 @@ namespace XiVM.Runtime
         /// <summary>
         /// 类型信息以及GC信息
         /// </summary>
-        public static readonly int MiscDataSize = 2 * sizeof(int);
+        public static readonly int MiscDataSize = 2 * sizeof(uint);
         /// <summary>
         /// 字符串头部长度信息
         /// </summary>
