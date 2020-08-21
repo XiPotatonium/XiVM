@@ -16,19 +16,21 @@ namespace XiVM.Runtime
         /// <summary>
         /// 字符输入输出
         /// </summary>
-        STDCHARIO = 2,
+        STDCHARIO = 1,
         /// <summary>
-        /// 整数输入输出
+        /// 标准类型输入输出
         /// </summary>
-        STDINTIO = 3,
+        STDTIO = 2,
         /// <summary>
         /// 字符串输入输出
         /// </summary>
-        STDSTRINGIO = 5
+        STDSTRINGIO = 3
     }
 
     public static class Preserved
     {
+        public static readonly int SizeLimit = 99;
+
         public static uint GetAbsoluteAddress(PreservedAddressTag tag)
         {
             return MemoryMap.MapToAbsolute((uint)tag, MemoryTag.PRESERVED);
@@ -44,7 +46,7 @@ namespace XiVM.Runtime
                 case PreservedAddressTag.STDCHARIO:
                     Console.Write((char)value);
                     break;
-                case PreservedAddressTag.STDINTIO:
+                case PreservedAddressTag.STDTIO:
                     Console.Write(value);
                     break;
                 default:

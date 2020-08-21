@@ -26,11 +26,8 @@ namespace XiVM
         /// </summary>
         public uint DescriptorAddress { set; get; }
         public List<uint> LocalDescriptorAddress { set; get; }
-        /// <summary>
-        /// VMMethod在MethodArea的MethodIndexTable中的Index
-        /// </summary>
-        public int MethodIndex { set; get; }
         public HeapData CodeBlock { set; get; }
+        public uint CodeAddress => MemoryMap.MapToAbsolute(CodeBlock.Offset, MemoryTag.METHOD);
     }
 
     public class MethodDeclarationInfo : IConstantPoolValue

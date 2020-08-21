@@ -10,7 +10,7 @@ namespace XiVM.Runtime
     {
         private int IP { set; get; }                        // 指令在函数中的IP
         private VMMethod CurrentMethod { set; get; }
-        private int MethodIndex => CurrentMethod.MethodIndex;
+        private uint MethodAddress => CurrentMethod.CodeAddress;
         private byte[] CurrentInstructions => CurrentMethod.CodeBlock.Data;
         private VMClass CurrentClass => CurrentMethod.Parent;
         private VMModule CurrentModule => CurrentClass.Parent;
@@ -27,18 +27,15 @@ namespace XiVM.Runtime
 
         public void ExecuteStaticConstructor()
         {
-            foreach (var vmModule in MethodArea.Modules.Values)
+            foreach (var vmClass in ModuleLoader.Classes.Values)
             {
-                foreach (var vmClass in vmModule.Classes.Values)
+                if (!vmClass.IsStaticConstructorExecuted)
                 {
-                    if (!vmClass.IsStaticConstructorExecuted)
-                    {
-                        // 最多执行一遍
-                        vmClass.IsStaticConstructorExecuted = true;
-                        vmClass.Methods.TryGetValue(MethodArea.StaticConstructorNameAddress, out List<VMMethod> sinit);
-                        CurrentMethod = sinit[0];
-                        Execute();
-                    }
+                    // 最多执行一遍
+                    vmClass.IsStaticConstructorExecuted = true;
+                    vmClass.Methods.TryGetValue(MethodArea.Singleton.StaticConstructorNameAddress, out List<VMMethod> sinit);
+                    CurrentMethod = sinit[0];
+                    Execute();
                 }
             }
             CurrentMethod = null;
@@ -47,12 +44,12 @@ namespace XiVM.Runtime
         public void ExecuteMain()
         {
             // 定位Main函数
-            if (!MainModule.Classes.TryGetValue(MethodArea.StringProgramAddress, out VMClass entryClass))
+            if (!MainModule.Classes.TryGetValue(MethodArea.Singleton.StringProgramAddress, out VMClass entryClass))
             {
                 throw new XiVMError("Program.Main() not found");
             }
 
-            if (!entryClass.Methods.TryGetValue(MethodArea.StringMainAddress, out List<VMMethod> entryMethodGroup))
+            if (!entryClass.Methods.TryGetValue(MethodArea.Singleton.StringMainAddress, out List<VMMethod> entryMethodGroup))
             {
                 throw new XiVMError("Program.Main() not found");
             }
@@ -60,7 +57,7 @@ namespace XiVM.Runtime
 
             foreach (VMMethod method in entryMethodGroup)
             {
-                if (method.DescriptorAddress == MethodArea.StringMainDescriptorAddress)
+                if (method.DescriptorAddress == MethodArea.Singleton.StringMainDescriptorAddress)
                 {
                     CurrentMethod = method;
                     break;
@@ -133,7 +130,7 @@ namespace XiVM.Runtime
                                 Stack.PushInt(Stack.GetInt(addr));
                                 break;
                             case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
+                                data = MethodArea.Singleton.GetData(addr);
                                 Stack.PushInt(BitConverter.ToInt32(data));
                                 break;
                             default:
@@ -148,7 +145,7 @@ namespace XiVM.Runtime
                                 Stack.PushDouble(Stack.GetDouble(addr));
                                 break;
                             case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
+                                data = MethodArea.Singleton.GetData(addr);
                                 Stack.PushDouble(BitConverter.ToDouble(data));
                                 break;
                             default:
@@ -163,7 +160,7 @@ namespace XiVM.Runtime
                                 Stack.PushAddress(Stack.GetAddress(addr));
                                 break;
                             case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
+                                data = MethodArea.Singleton.GetData(addr);
                                 Stack.PushAddress(BitConverter.ToUInt32(data));
                                 break;
                             default:
@@ -183,7 +180,7 @@ namespace XiVM.Runtime
                                 Stack.SetValue(addr, iValue);
                                 break;
                             case MemoryTag.METHOD:
-                                data = MethodArea.GetData(addr);
+                                data = MethodArea.Singleton.GetData(addr);
                                 BitConverter.TryWriteBytes(data, iValue);
                                 break;
                             default:
@@ -223,7 +220,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 Stack.PushInt(data[HeapData.ArrayOffsetMap(sizeof(byte), index)]);
                                 break;
                             default:
@@ -236,7 +233,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 Stack.PushInt(BitConverter.ToInt32(data, HeapData.ArrayOffsetMap(sizeof(int), index)));
                                 break;
                             default:
@@ -249,7 +246,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 Stack.PushDouble(BitConverter.ToDouble(data, HeapData.ArrayOffsetMap(sizeof(double), index)));
                                 break;
                             default:
@@ -262,7 +259,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 Stack.PushAddress(BitConverter.ToUInt32(data, HeapData.ArrayOffsetMap(sizeof(uint), index)));
                                 break;
                             default:
@@ -276,7 +273,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 data[HeapData.ArrayOffsetMap(sizeof(byte), index)] = (byte)iValue;
                                 break;
                             default:
@@ -290,7 +287,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 BitConverter.TryWriteBytes(new Span<byte>(data, HeapData.ArrayOffsetMap(sizeof(int), index), sizeof(int)), iValue);
                                 break;
                             default:
@@ -304,7 +301,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 BitConverter.TryWriteBytes(new Span<byte>(data, HeapData.ArrayOffsetMap(sizeof(double), index), sizeof(double)), dValue);
                                 break;
                             default:
@@ -318,7 +315,7 @@ namespace XiVM.Runtime
                         switch (MemoryMap.MapToOffset(addr, out addr))
                         {
                             case MemoryTag.HEAP:
-                                data = Heap.GetData(addr);
+                                data = Heap.Singleton.GetData(addr);
                                 BitConverter.TryWriteBytes(new Span<byte>(data, HeapData.ArrayOffsetMap(sizeof(uint), index), sizeof(uint)), uValue);
                                 break;
                             default:
@@ -394,7 +391,7 @@ namespace XiVM.Runtime
                     case InstructionType.CALL:
                         index = ConsumeInt();
 
-                        Stack.PushFrame(MethodIndex, IP);
+                        Stack.PushFrame(MethodAddress, IP);
 
                         CurrentMethod = CurrentModule.MethodPoolLink[index - 1];
 
@@ -402,8 +399,9 @@ namespace XiVM.Runtime
                         PushLocals();
                         break;
                     case InstructionType.RET:
-                        MethodReturn(out index, out ip);
-                        CurrentMethod = MethodArea.MethodIndexTable[index];
+                        MethodReturn(out addr, out ip);
+                        ModuleLoader.Methods.TryGetValue(addr, out VMMethod currentMethod);
+                        CurrentMethod = currentMethod;
                         IP = ip;
                         break;
                     case InstructionType.LOCAL:
@@ -419,7 +417,7 @@ namespace XiVM.Runtime
                         addr = CurrentModule.ClassPoolLink[vmField.ClassIndex - 1].StaticFieldAddress;
                         data = (MemoryMap.MapToOffset(addr, out addr)) switch
                         {
-                            MemoryTag.METHOD => MethodArea.GetData(addr),
+                            MemoryTag.STATIC => StaticArea.Singleton.GetData(addr),
                             _ => throw new NotImplementedException(),
                         };
                         switch (vmField.Type.Tag)
@@ -449,7 +447,7 @@ namespace XiVM.Runtime
                         addr = CurrentModule.ClassPoolLink[vmField.ClassIndex - 1].StaticFieldAddress;
                         data = (MemoryMap.MapToOffset(addr, out addr)) switch
                         {
-                            MemoryTag.METHOD => MethodArea.GetData(addr),
+                            MemoryTag.STATIC => StaticArea.Singleton.GetData(addr),
                             _ => throw new NotImplementedException(),
                         };
                         switch (vmField.Type.Tag)
@@ -476,7 +474,7 @@ namespace XiVM.Runtime
                         addr = Stack.PopAddress();
                         data = (MemoryMap.MapToOffset(addr, out addr)) switch
                         {
-                            MemoryTag.HEAP => Heap.GetData(addr),
+                            MemoryTag.HEAP => Heap.Singleton.GetData(addr),
                             _ => throw new NotImplementedException(),
                         };
                         switch (vmField.Type.Tag)
@@ -506,8 +504,8 @@ namespace XiVM.Runtime
                         addr = Stack.PopAddress();
                         data = (MemoryMap.MapToOffset(addr, out addr)) switch
                         {
-                            MemoryTag.HEAP => Heap.GetData(addr),
-                            MemoryTag.METHOD => MethodArea.GetData(addr),       // 常量池中的String是在方法区里面的
+                            MemoryTag.HEAP => Heap.Singleton.GetData(addr),
+                            MemoryTag.METHOD => MethodArea.Singleton.GetData(addr),       // 常量池中的String是在方法区里面的
                             _ => throw new NotImplementedException(),
                         };
                         switch (vmField.Type.Tag)
@@ -531,18 +529,18 @@ namespace XiVM.Runtime
                     case InstructionType.NEW:
                         iValue = ConsumeInt();
                         Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize).Offset, MemoryTag.HEAP));
+                            Heap.Singleton.Malloc(CurrentModule.ClassPoolLink[iValue - 1].FieldSize).Offset, MemoryTag.HEAP));
                         break;
                     case InstructionType.NEWARR:
                         iValue = Stack.PopInt();
                         Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.MallocArray(VariableType.GetSize((VariableTypeTag)ConsumeByte()), iValue).Offset, MemoryTag.HEAP));
+                            Heap.Singleton.MallocArray(VariableType.GetSize((VariableTypeTag)ConsumeByte()), iValue).Offset, MemoryTag.HEAP));
                         break;
                     case InstructionType.NEWAARR:
                         iValue = Stack.PopInt();
                         index = ConsumeInt();   // Warning 未使用的信息，Array类型信息
                         Stack.PushAddress(MemoryMap.MapToAbsolute(
-                            Heap.MallocArray(VariableType.AddressType.Size, iValue).Offset, MemoryTag.HEAP));
+                            Heap.Singleton.MallocArray(VariableType.AddressType.Size, iValue).Offset, MemoryTag.HEAP));
                         break;
                     case InstructionType.LEN:
                         throw new NotImplementedException();
@@ -559,34 +557,22 @@ namespace XiVM.Runtime
         /// <returns></returns>
         public static string GetString(uint addr)
         {
-            byte[] data;
-            switch (MemoryMap.MapToOffset(addr, out addr))
+            byte[] data = (MemoryMap.MapToOffset(addr, out addr)) switch
             {
-                case MemoryTag.HEAP:
-                    data = Heap.GetData(addr);
-                    break;
-                case MemoryTag.METHOD:
-                    data = MethodArea.GetData(addr);
-                    break;
-                default:
-                    throw new XiVMError("String not in method area nor heap");
-            }
+                MemoryTag.HEAP => Heap.Singleton.GetData(addr),
+                MemoryTag.METHOD => MethodArea.Singleton.GetData(addr),
+                _ => throw new XiVMError("String not in method area nor heap"),
+            };
 
             // TODO 判断是不是字符串
             // data的地址
             addr = BitConverter.ToUInt32(data, HeapData.MiscDataSize + HeapData.StringLengthSize);
-            switch (MemoryMap.MapToOffset(addr, out addr))
+            data = (MemoryMap.MapToOffset(addr, out addr)) switch
             {
-                case MemoryTag.HEAP:
-                    data = Heap.GetData(addr);
-                    break;
-                case MemoryTag.METHOD:
-                    data = MethodArea.GetData(addr);
-                    break;
-                default:
-                    throw new XiVMError("Array not in method area nor heap");
-            }
-
+                MemoryTag.HEAP => Heap.Singleton.GetData(addr),
+                MemoryTag.METHOD => MethodArea.Singleton.GetData(addr),
+                _ => throw new XiVMError("Array not in method area nor heap"),
+            };
             return Encoding.UTF8.GetString(data, HeapData.MiscDataSize + HeapData.ArrayLengthSize,
                         data.Length - HeapData.MiscDataSize - HeapData.ArrayLengthSize);
         }
@@ -659,7 +645,7 @@ namespace XiVM.Runtime
             }
         }
 
-        private void MethodReturn(out int index, out int ip)
+        private void MethodReturn(out uint addr, out int ip)
         {
             string descriptor = GetString(CurrentMethod.DescriptorAddress).Substring(1);
             string[] vs = descriptor.Split(')');
@@ -669,24 +655,24 @@ namespace XiVM.Runtime
                 case 'B':
                 case 'I':
                     int iValue = Stack.PopInt();
-                    Stack.PopFrame(out index, out ip);
+                    Stack.PopFrame(out addr, out ip);
                     PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     Stack.PushInt(iValue);
                     break;
                 case 'D':
                     double dValue = Stack.PopDouble();
-                    Stack.PopFrame(out index, out ip);
+                    Stack.PopFrame(out addr, out ip);
                     PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     Stack.PushDouble(dValue);
                     break;
                 case 'L':
                     uint aValue = Stack.PopAddress();
-                    Stack.PopFrame(out index, out ip);
+                    Stack.PopFrame(out addr, out ip);
                     PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     Stack.PushAddress(aValue);
                     break;
                 case 'V':
-                    Stack.PopFrame(out index, out ip);
+                    Stack.PopFrame(out addr, out ip);
                     PopParams(vs[0], CurrentMethod.Flag.IsStatic);
                     break;
                 default:

@@ -60,7 +60,7 @@ namespace SystemLib.System.IO
         {
             Constructor.AddLocal(Method.Params[0].Offset);
             Constructor.AddLoadT(Method.Params[0].Type);
-            Constructor.AddPushA(Preserved.GetAbsoluteAddress(PreservedAddressTag.STDINTIO));
+            Constructor.AddPushA(Preserved.GetAbsoluteAddress(PreservedAddressTag.STDTIO));
             Constructor.AddStoreT(Method.Params[0].Type);
 
             Constructor.AddRet();

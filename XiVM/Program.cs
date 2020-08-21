@@ -28,7 +28,7 @@ namespace XiVM
                 DirName = dirArg.StringValue;
             }
 
-            VMExecutor executor = new VMExecutor(MethodArea.AddModule(LoadModule(moduleName), false));
+            VMExecutor executor = new VMExecutor(ModuleLoader.AddModule(LoadModule(moduleName), false));
             StaticInitWatch.Start();
             executor.ExecuteStaticConstructor();
             StaticInitWatch.Stop();
@@ -51,13 +51,14 @@ namespace XiVM
             Console.WriteLine($"\n=================================================================\nDiagnose:");
             string[][] vs = new string[][]
             {
-                new string[] { "ModulesLoadTime", $"{MethodArea.ModuleLoadTime}(ms)" },
-                new string[] { "DependenciesLoadTime", $"{MethodArea.DependencyLoadTime}(ms)" },
+                new string[] { "ModulesLoadTime", $"{ModuleLoader.ModuleLoadTime}(ms)" },
+                new string[] { "DependenciesLoadTime", $"{ModuleLoader.DependencyLoadTime}(ms)" },
                 new string[] { "StaticInitExecutionTime", $"{StaticInitWatch.ElapsedMilliseconds}(ms)" },
                 new string[] { "MainFunctionExecutionTime", $"{MainWatch.ElapsedMilliseconds}(ms)" },
                 new string[] { "MainThreadStackConsumption", $"{executorDiagnoseInfo.MaxSP}/{Stack.SizeLimit}(slots)" },
-                new string[] { "HeapConsumption", $"{Heap.MaxSize}/{Heap.SizeLimit}(byte)" },
-                new string[] { "MethodAreaConsumption", $"{MethodArea.Size}/{MethodArea.SizeLimit}(byte)" },
+                new string[] { "HeapConsumption", $"{Heap.Singleton.MaxSize}/{Heap.SizeLimit}(byte)" },
+                new string[] { "StaticAreaConsumption", $"{StaticArea.Singleton.MaxSize}/{StaticArea.SizeLimit}(byte)" },
+                new string[] { "MethodAreaConsumption", $"{MethodArea.Singleton.Size}/{MethodArea.SizeLimit}(byte)" },
             };
 
             foreach (var row in vs)

@@ -4,17 +4,25 @@ using XiVM.Errors;
 namespace XiVM.Runtime
 {
 
-    internal static class Heap
+    internal class Heap : IObjectArea
     {
         public static readonly int SizeLimit = 0x1000000;
 
+        public static Heap Singleton { get; } = new Heap();
 
-        private static LinkedList<HeapData> Data { get; } = new LinkedList<HeapData>();
-        private static Dictionary<uint, HeapData> DataMap { get; } = new Dictionary<uint, HeapData>();
-        internal static int Size { private set; get; } = 0;
-        internal static int MaxSize { private set; get; } = 0;
 
-        public static HeapData Malloc(int size)
+        public LinkedList<HeapData> Data { get; } = new LinkedList<HeapData>();
+        public Dictionary<uint, HeapData> DataMap { get; } = new Dictionary<uint, HeapData>();
+        public int Size { private set; get; }
+        public int MaxSize { private set; get; }
+
+        private Heap()
+        {
+            Size = 0;
+            MaxSize = 0;
+        }
+
+        public HeapData Malloc(int size)
         {
             if (size == 0)
             {
@@ -83,15 +91,15 @@ namespace XiVM.Runtime
         /// <param name="elementSize"></param>
         /// <param name="len"></param>
         /// <returns></returns>
-        public static HeapData MallocArray(int elementSize, int len)
+        public HeapData MallocArray(int elementSize, int len)
         {
             int size = len * elementSize + HeapData.MiscDataSize + HeapData.ArrayLengthSize;
-
+            
             HeapData ret = Malloc(size);
             return ret;
         }
 
-        public static byte[] GetData(uint addr)
+        public byte[] GetData(uint addr)
         {
             if (DataMap.TryGetValue(addr, out HeapData data))
             {
@@ -99,45 +107,8 @@ namespace XiVM.Runtime
             }
             else
             {
-                throw new XiVMError($"Invalid heap area addr {addr}");
+                throw new XiVMError($"Invalid Heap address {addr}");
             }
-        }
-    }
-
-    internal class HeapData
-    {
-        /// <summary>
-        /// 类型信息以及GC信息
-        /// </summary>
-        public static readonly int MiscDataSize = 2 * sizeof(int);
-        /// <summary>
-        /// 字符串头部长度信息
-        /// </summary>
-        public static int StringLengthSize = sizeof(int);
-        /// <summary>
-        /// 字符串指向的数组
-        /// </summary>
-        public static int StringDataSize = sizeof(uint);
-        /// <summary>
-        /// 数组头部长度信息
-        /// </summary>
-        public static int ArrayLengthSize = sizeof(int);
-
-        public static int ArrayOffsetMap(int elementSize, int index)
-        {
-            return index * elementSize + MiscDataSize + ArrayLengthSize;
-        }
-
-        /// <summary>
-        /// 这个记录的是到空间开头的offset，是相对地址而不是绝对地址
-        /// </summary>
-        public uint Offset { private set; get; }
-        public byte[] Data { private set; get; }
-
-        public HeapData(uint offset, byte[] data)
-        {
-            Offset = offset;
-            Data = data;
         }
     }
 }

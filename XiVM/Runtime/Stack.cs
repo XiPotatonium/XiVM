@@ -30,7 +30,7 @@ namespace XiVM.Runtime
 
         private int Capacity { set; get; }
 
-        private Slot[] Slots { set; get; }
+        public Slot[] Slots { private set; get; }
         public bool Empty => SP <= 0;
 
         public Stack()
@@ -47,13 +47,13 @@ namespace XiVM.Runtime
         /// <summary>
         /// 压入函数栈帧
         /// </summary>
-        /// <param name="index">Caller函数地址</param>
+        /// <param name="addr">Caller函数地址</param>
         /// <param name="ip">Caller IP</param>
-        public void PushFrame(int index, int ip)
+        public void PushFrame(uint addr, int ip)
         {
             int oldSP = SP;
             PushInt(FP);
-            PushInt(index);
+            PushAddress(addr);
             PushInt(ip);
             FP = oldSP;
         }
@@ -61,9 +61,9 @@ namespace XiVM.Runtime
         /// <summary>
         /// 弹出函数栈
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="addr"></param>
         /// <param name="ip"></param>
-        public void PopFrame(out int index, out int ip)
+        public void PopFrame(out uint addr, out int ip)
         {
             if (Empty)
             {
@@ -72,7 +72,7 @@ namespace XiVM.Runtime
 
             // 恢复寄存器
             int oldBP = Slots[FP].Data;
-            index = Slots[FP + 1].Data;
+            addr = (uint)Slots[FP + 1].Data;
             ip = Slots[FP + 2].Data;
             SP = FP;
             FP = oldBP;
