@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using XiVM.Errors;
+﻿using System.Collections.Generic;
 
 namespace XiVM.Runtime
 {
@@ -16,6 +13,6 @@ namespace XiVM.Runtime
         /// </summary>
         /// <param name="addr">相对地址</param>
         /// <returns></returns>
-        public byte[] GetData(uint addr);
+        public HeapData GetData(uint addr);
     }
 }

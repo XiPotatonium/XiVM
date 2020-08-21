@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace XiVM.Runtime
 {
@@ -41,7 +39,7 @@ namespace XiVM.Runtime
         public uint Offset { private set; get; }
         public byte[] Data { private set; get; }
 
-        public uint TypeInfo 
+        public uint TypeInfo
         {
             set => BitConverter.TryWriteBytes(Data, value);
             get => BitConverter.ToUInt32(Data, 0);

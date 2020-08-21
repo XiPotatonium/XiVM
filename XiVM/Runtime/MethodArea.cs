@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using XiVM.ConstantTable;
 using XiVM.Errors;
 
 namespace XiVM.Runtime
@@ -126,11 +123,11 @@ namespace XiVM.Runtime
             return ret;
         }
 
-        public byte[] GetData(uint addr)
+        public HeapData GetData(uint addr)
         {
             if (DataMap.TryGetValue(addr, out HeapData data))
             {
-                return data.Data;
+                return data;
             }
             else
             {

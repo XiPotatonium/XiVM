@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using XiVM.Errors;
 
 namespace XiVM.Runtime
@@ -51,11 +49,11 @@ namespace XiVM.Runtime
             return MemoryMap.MapToAbsolute(ret.Offset, MemoryTag.STATIC);
         }
 
-        public byte[] GetData(uint addr)
+        public HeapData GetData(uint addr)
         {
             if (DataMap.TryGetValue(addr, out HeapData data))
             {
-                return data.Data;
+                return data;
             }
             else
             {

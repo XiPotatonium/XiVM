@@ -24,10 +24,6 @@ namespace XiVM
         /// 包含了头部信息
         /// </summary>
         public int FieldSize { set; get; }
-        /// <summary>
-        /// 是否执行过静态构造，只应该执行一遍
-        /// </summary>
-        public bool IsStaticConstructorExecuted { set; get; } = false;
     }
 
     /// <summary>

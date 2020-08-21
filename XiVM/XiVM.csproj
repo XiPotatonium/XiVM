@@ -9,8 +9,4 @@
     <ProjectReference Include="..\ConsoleArgumentParser\ConsoleArgumentParser.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Diagnose\" />
-  </ItemGroup>
-
 </Project>
