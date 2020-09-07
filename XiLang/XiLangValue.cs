@@ -122,6 +122,7 @@ namespace XiLang
             {
                 value = literal[1];
             }
+
             return new XiLangValue()
             {
                 Type = ValueType.INT,
