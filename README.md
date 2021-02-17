@@ -1,6 +1,6 @@
 # XiVM
 
-这是一个学习用版本。未来功能相对完善之后可能会考虑用C++重写，[C++版本](https://github.com/XiPotatonium/XiVM-Project)。
+这个项目已弃用。新仓库[xilang](https://github.com/XiPotatonium/xilang)。
 
 ## T: TODO
 
